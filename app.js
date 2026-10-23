@@ -1125,8 +1125,11 @@
   function renderBreakdowns(calc) {
     $('#breakdownGrid').innerHTML = calc.scenarios.map((scenario) => {
       const lines = Object.entries(scenario.details).map(([key, value]) => {
-        const isRate = key.toLowerCase().includes('taxa bruta nominal');
-        return `<div><dt>${escapeHtml(key)}</dt><dd>${isRate ? percent.format(value) : money.format(value)}</dd></div>`;
+        const lowerKey = key.toLowerCase();
+        const isRate = lowerKey.includes('taxa bruta nominal') || lowerKey.includes('impacto admin. na diária');
+        const isPercentagePoint = lowerKey.includes('impacto admin. na ocupação');
+        const formatted = isPercentagePoint ? `${number1.format(value)} p.p.` : (isRate ? percent.format(value) : money.format(value));
+        return `<div><dt>${escapeHtml(key)}</dt><dd>${formatted}</dd></div>`;
       }).join('');
       return `<article class="breakdown"><h3>${escapeHtml(scenario.label)}</h3><dl>${lines}</dl></article>`;
     }).join('');
