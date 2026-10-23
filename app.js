@@ -1,0 +1,1243 @@
+(() => {
+  'use strict';
+
+  const APP_VERSION = 6;
+  const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
+  const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
+
+  const defaultState = {
+    version: APP_VERSION,
+    name: 'Estudo Airbnb – exemplo da planilha',
+    analysis: {
+      startingPosition: 'property',
+      horizonYears: 1
+    },
+    globals: {
+      propertyValue: 636000,
+      inflationPct: 8,
+      propertyRealAppreciationPct: 0,
+      ownerHourlyValue: 0
+    },
+    work: {
+      selfHoursMonthly: 0,
+      supervisionAdminHoursMonthly: 0,
+      traditionalHoursMonthly: 0,
+      investmentHoursMonthly: 0,
+      rentedAirbnbHoursMonthly: 0
+    },
+    airbnb: {
+      platformFeePct: 16,
+      avgStayNights: 5.32,
+      cleaningFeeRevenue: 0,
+      otherGuestFeeRevenue: 0,
+      taxPct: 0,
+      adminFeePct: 25,
+      adminMonthlyFee: 0,
+      adminOnboardingFee: 0,
+      adminIncludesPlatformFee: false,
+      platformFeeDeductibleIR: true,
+      adminFeeDeductibleIR: false,
+      adminMonthlyFeeDeductibleIR: false
+    },
+    rentedAirbnb: {
+      monthlyLeaseRent: 3000,
+      securityDeposit: 0,
+      initialLeaseCosts: 0,
+      annualLeaseCosts: 0,
+      annualLeaseCostsDeductibleIR: false
+    },
+    traditional: {
+      monthlyRent: 5000,
+      occupancyPct: 80,
+      managementFeePct: 8,
+      taxPct: 11,
+      maintenancePct: 0,
+      lossPct: 0,
+      newLeaseCommissionMonths: 0,
+      avgContractMonths: 30,
+      annualOtherCosts: 0,
+      managementFeeDeductibleIR: false,
+      maintenanceDeductibleIR: false,
+      lossDeductibleIR: false,
+      newLeaseCommissionDeductibleIR: false,
+      annualOtherCostsDeductibleIR: false
+    },
+    investment: {
+      mode: 'ipcaPlus',
+      nominalRatePct: 14,
+      realRatePct: 8,
+      taxPct: 17.5,
+      feesPct: 0
+    },
+    seasons: [
+      { id: 'reveillon', name: 'Réveillon', days: 4, unavailableDays: 0, nightlyRate: 1000, occupancyPct: 100 },
+      { id: 'verao', name: 'Verão', days: 81, unavailableDays: 0, nightlyRate: 350, occupancyPct: 90 },
+      { id: 'carnaval', name: 'Carnaval', days: 7, unavailableDays: 0, nightlyRate: 1000, occupancyPct: 100 },
+      { id: 'outono', name: 'Outono', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 70 },
+      { id: 'inverno', name: 'Inverno', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 60 },
+      { id: 'primavera', name: 'Primavera', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 70 }
+    ],
+    stayCosts: [
+      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 80, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'limpeza', name: 'Limpeza', amount: 200, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 10, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }
+    ],
+    monthlyCosts: [
+      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro', name: 'Seguro', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'agua', name: 'Água', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'luz', name: 'Luz', amount: 300, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'gas', name: 'Gás', amount: 98, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'condominio', name: 'Condomínio', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }
+    ],
+    percentageCosts: [
+      { id: 'maintenance', name: 'Manutenção e reparos', pct: 0, adminIncluded: false, deductibleIR: false },
+      { id: 'losses', name: 'Perdas, danos e reembolsos não recuperados', pct: 0, adminIncluded: false, deductibleIR: false }
+    ],
+    reserveFunds: [
+      { id: 'replacement', name: 'Fundo de reposição de móveis e equipamentos', pct: 5, openingBalance: 0, adminIncluded: false }
+    ],
+    setupCosts: [
+      { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'mobilia', name: 'Mobiliário', amount: 0, residualPct: 40, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'eletro', name: 'Eletrodomésticos', amount: 0, residualPct: 35, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'enxoval', name: 'Roupa de cama e banho inicial', amount: 0, residualPct: 10, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'utensilios', name: 'Utensílios e equipamentos', amount: 0, residualPct: 20, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'fechadura', name: 'Fechadura eletrônica / acesso', amount: 0, residualPct: 30, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'decoracao', name: 'Decoração', amount: 0, residualPct: 25, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'fotografia', name: 'Fotografia profissional', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'setup-anuncio', name: 'Setup inicial do anúncio', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
+      { id: 'cadastros', name: 'Licenças / cadastros iniciais', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false }
+    ]
+  };
+
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const money2 = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const percent = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const number1 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  function structuredCloneSafe(value) {
+    return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+  }
+
+  function uid(prefix = 'item') {
+    if (typeof window !== 'undefined' && window.crypto && crypto.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
+    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function n(value, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+  function getPath(obj, path) { return path.split('.').reduce((acc, key) => acc?.[key], obj); }
+
+  function setPath(obj, path, value) {
+    const parts = path.split('.');
+    let ref = obj;
+    parts.slice(0, -1).forEach((key) => {
+      if (!ref[key] || typeof ref[key] !== 'object') ref[key] = {};
+      ref = ref[key];
+    });
+    ref[parts.at(-1)] = value;
+  }
+
+  function mergeDefaults(base, incoming) {
+    if (Array.isArray(base)) return Array.isArray(incoming) ? structuredCloneSafe(incoming) : structuredCloneSafe(base);
+    if (base && typeof base === 'object') {
+      const out = {};
+      for (const key of Object.keys(base)) out[key] = mergeDefaults(base[key], incoming?.[key]);
+      if (incoming && typeof incoming === 'object') {
+        for (const key of Object.keys(incoming)) if (!(key in out)) out[key] = incoming[key];
+      }
+      return out;
+    }
+    return incoming ?? base;
+  }
+
+  function mergeArrayById(defaults, incoming) {
+    if (!Array.isArray(incoming)) return structuredCloneSafe(defaults);
+    const byId = new Map(incoming.map((item) => [String(item.id), structuredCloneSafe(item)]));
+    const result = defaults.map((def) => ({ ...structuredCloneSafe(def), ...(byId.get(String(def.id)) || {}) }));
+    const defaultIds = new Set(defaults.map((x) => String(x.id)));
+    for (const item of incoming) if (!defaultIds.has(String(item.id))) result.push(structuredCloneSafe(item));
+    return result;
+  }
+
+  function normalizeState(incoming) {
+    const source = incoming && typeof incoming === 'object' ? incoming : {};
+    const incomingVersion = Math.max(1, n(source.version, 1));
+    const merged = mergeDefaults(defaultState, source);
+
+    merged.seasons = (Array.isArray(source.seasons) ? source.seasons : defaultState.seasons).map((item) => ({
+      ...item,
+      unavailableDays: n(item.unavailableDays, 0)
+    }));
+
+    const staySource = incomingVersion >= 2 && Array.isArray(source.stayCosts) ? source.stayCosts : mergeArrayById(defaultState.stayCosts, source.stayCosts);
+    const monthlySource = incomingVersion >= 2 && Array.isArray(source.monthlyCosts) ? source.monthlyCosts : mergeArrayById(defaultState.monthlyCosts, source.monthlyCosts);
+    let percentageSource = incomingVersion >= 2 && Array.isArray(source.percentageCosts) ? source.percentageCosts : mergeArrayById(defaultState.percentageCosts, source.percentageCosts);
+    const setupSource = incomingVersion >= 2 && Array.isArray(source.setupCosts) ? source.setupCosts : mergeArrayById(defaultState.setupCosts, source.setupCosts);
+
+    merged.stayCosts = staySource.map((item) => {
+      const def = defaultState.stayCosts.find((x) => String(x.id) === String(item.id));
+      return {
+        ...item,
+        ownerHoursPerReservation: Math.max(0, n(item.ownerHoursPerReservation, def?.ownerHoursPerReservation ?? 0)),
+        adminManages: Boolean(item.adminManages),
+        adminIncluded: Boolean(item.adminIncluded),
+        deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
+      };
+    });
+    merged.monthlyCosts = monthlySource.map((item) => {
+      const def = defaultState.monthlyCosts.find((x) => String(x.id) === String(item.id));
+      return {
+        ...item,
+        ownerHoursMonthly: Math.max(0, n(item.ownerHoursMonthly, def?.ownerHoursMonthly ?? 0)),
+        airbnb: item.airbnb !== false,
+        rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
+        traditional: Boolean(item.traditional),
+        adminManages: Boolean(item.adminManages),
+        adminIncluded: Boolean(item.adminIncluded),
+        deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
+      };
+    });
+
+    // A partir da V3, provisões/reservas deixam de ser OPEX. Arquivos antigos
+    // que tinham o FRA dentro de percentageCosts são migrados para reserveFunds.
+    let legacyReplacement = null;
+    if (Array.isArray(percentageSource)) {
+      legacyReplacement = percentageSource.find((x) => String(x.id) === 'replacement') || null;
+      percentageSource = percentageSource.filter((x) => String(x.id) !== 'replacement');
+    }
+    merged.percentageCosts = percentageSource.map((item) => {
+      const def = defaultState.percentageCosts.find((x) => String(x.id) === String(item.id));
+      return {
+        ...item,
+        adminIncluded: Boolean(item.adminIncluded),
+        deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
+      };
+    });
+
+    let reserveSource;
+    if (Array.isArray(source.reserveFunds)) reserveSource = source.reserveFunds;
+    else if (legacyReplacement) reserveSource = [{
+      id: 'replacement',
+      name: legacyReplacement.name || 'Fundo de reposição de móveis e equipamentos',
+      pct: n(legacyReplacement.pct, 0),
+      openingBalance: 0,
+      adminIncluded: Boolean(legacyReplacement.adminIncluded)
+    }];
+    else reserveSource = structuredCloneSafe(defaultState.reserveFunds);
+    merged.reserveFunds = reserveSource.map((item) => ({
+      ...item,
+      pct: Math.max(0, n(item.pct)),
+      openingBalance: Math.max(0, n(item.openingBalance)),
+      adminIncluded: Boolean(item.adminIncluded)
+    }));
+
+    merged.setupCosts = setupSource.map((item) => {
+      const defaultItem = defaultState.setupCosts.find((x) => String(x.id) === String(item.id));
+      return {
+        ...item,
+        residualPct: clamp(n(item.residualPct, defaultItem?.residualPct ?? 0), 0, 100),
+        airbnb: item.airbnb !== false,
+        rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
+        traditional: Boolean(item.traditional),
+        adminIncluded: Boolean(item.adminIncluded)
+      };
+    });
+
+    // Migração transparente da V1.
+    if (!Array.isArray(source.percentageCosts) && source.airbnb?.reservePct != null) {
+      const replacement = merged.reserveFunds.find((x) => x.id === 'replacement');
+      if (replacement) replacement.pct = n(source.airbnb.reservePct);
+    }
+    if (source.airbnb?.adminIncludesTurnover != null && Array.isArray(source.stayCosts) && !source.stayCosts.some((x) => Object.prototype.hasOwnProperty.call(x, 'adminIncluded'))) {
+      merged.stayCosts.forEach((item) => { item.adminIncluded = Boolean(source.airbnb.adminIncludesTurnover); });
+    }
+    if (source.traditional?.reservePct != null && source.traditional?.maintenancePct == null) {
+      merged.traditional.maintenancePct = n(source.traditional.reservePct);
+    }
+
+    // V4: a valorização do imóvel passa a ser informada em termos reais
+    // (acima da inflação). Arquivos anteriores guardavam uma taxa nominal.
+    if (source.globals?.propertyRealAppreciationPct == null) {
+      if (source.globals?.propertyAppreciationPct != null) {
+        const legacyNominal = n(source.globals.propertyAppreciationPct) / 100;
+        const legacyInflation = n(source.globals.inflationPct, defaultState.globals.inflationPct) / 100;
+        merged.globals.propertyRealAppreciationPct = (1 + legacyInflation) > 0
+          ? (((1 + legacyNominal) / (1 + legacyInflation)) - 1) * 100
+          : n(defaultState.globals.propertyRealAppreciationPct);
+      } else merged.globals.propertyRealAppreciationPct = n(defaultState.globals.propertyRealAppreciationPct);
+    }
+    if (merged.globals && Object.prototype.hasOwnProperty.call(merged.globals, 'propertyAppreciationPct')) delete merged.globals.propertyAppreciationPct;
+
+    // V6 / Rodada A: o tempo do cenário administrado passa a ser derivado das
+    // atividades não delegadas + uma supervisão residual. O antigo campo
+    // adminHoursMonthly é migrado para supervisão para não perder simulações.
+    if (source.work?.supervisionAdminHoursMonthly == null) {
+      merged.work.supervisionAdminHoursMonthly = Math.max(0, n(source.work?.adminHoursMonthly, 0));
+    }
+    if (merged.work && Object.prototype.hasOwnProperty.call(merged.work, 'adminHoursMonthly')) delete merged.work.adminHoursMonthly;
+
+    merged.version = APP_VERSION;
+    return merged;
+  }
+
+  function loadAutosave() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return normalizeState(JSON.parse(raw));
+    } catch { return null; }
+  }
+
+  let state = loadAutosave() || normalizeState(defaultState);
+  let lastCalculation = null;
+
+  function autosave() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const el = $('#autosaveStatus');
+      if (el) el.textContent = 'salvo localmente';
+    } catch {
+      const el = $('#autosaveStatus');
+      if (el) el.textContent = 'sem autosave';
+    }
+  }
+
+  function bindStaticInputs() {
+    $$('[data-path]').forEach((input) => {
+      const eventName = input.type === 'checkbox' ? 'change' : 'input';
+      input.addEventListener(eventName, () => {
+        let value;
+        if (input.type === 'checkbox') value = input.checked;
+        else if (input.type === 'number') value = input.value === '' ? 0 : n(input.value);
+        else value = input.value;
+        setPath(state, input.dataset.path, value);
+        autosave();
+        calculateAndRender();
+      });
+    });
+
+    $$('input[name="investmentMode"]').forEach((radio) => radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      state.investment.mode = radio.value;
+      autosave();
+      renderInvestmentMode();
+      calculateAndRender();
+    }));
+  }
+
+  function hydrateStaticInputs() {
+    $$('[data-path]').forEach((input) => {
+      const value = getPath(state, input.dataset.path);
+      if (input.type === 'checkbox') input.checked = Boolean(value);
+      else input.value = value ?? '';
+    });
+    $$('input[name="investmentMode"]').forEach((radio) => { radio.checked = radio.value === state.investment.mode; });
+    renderInvestmentMode();
+  }
+
+  function renderInvestmentMode() {
+    const nominal = state.investment.mode === 'nominal';
+    $('#nominalRateGroup')?.classList.toggle('hidden', !nominal);
+    $('#realRateGroup')?.classList.toggle('hidden', nominal);
+  }
+
+  function renderSeasons() {
+    $('#seasonRows').innerHTML = state.seasons.map((item) => {
+      const available = Math.max(0, n(item.days) - n(item.unavailableDays));
+      return `
+      <tr data-id="${escapeAttr(item.id)}">
+        <td><input class="row-name" data-array="seasons" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="seasons" data-field="days" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.days)}" /></td>
+        <td><input data-array="seasons" data-field="unavailableDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.unavailableDays)}" /></td>
+        <td class="number-cell" data-season-available="${escapeAttr(item.id)}">${number1.format(available)}</td>
+        <td><input data-array="seasons" data-field="nightlyRate" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.nightlyRate)}" /></td>
+        <td><input data-array="seasons" data-field="occupancyPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.occupancyPct)}" /></td>
+        <td class="money-cell" data-season-revenue="${escapeAttr(item.id)}">—</td>
+        <td><button class="button icon" type="button" data-remove-array="seasons" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStayCosts() {
+    $('#stayCostRows').innerHTML = state.stayCosts.map((item) => `
+      <tr>
+        <td><input class="row-name" data-array="stayCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="stayCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="5" value="${n(item.amount)}" /></td>
+        <td><input data-array="stayCosts" data-field="ownerHoursPerReservation" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.ownerHoursPerReservation)}" aria-label="Horas suas por reserva" /></td>
+        <td class="center-cell"><input data-array="stayCosts" data-field="adminManages" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminManages ? 'checked' : ''} aria-label="Administradora gerencia esta atividade" /></td>
+        <td class="center-cell"><input data-array="stayCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} aria-label="Custo incluído na administradora" /></td>
+        <td class="center-cell"><input data-array="stayCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} aria-label="Dedutível da base de IR" /></td>
+        <td><button class="button icon" type="button" data-remove-array="stayCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`).join('');
+  }
+
+  function renderMonthlyCosts() {
+    $('#monthlyCostRows').innerHTML = state.monthlyCosts.map((item) => `
+      <tr>
+        <td><input class="row-name" data-array="monthlyCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="monthlyCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.amount)}" /></td>
+        <td><input data-array="monthlyCosts" data-field="ownerHoursMonthly" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.ownerHoursMonthly)}" aria-label="Horas suas por mês" /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="adminManages" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminManages ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} /></td>
+        <td><button class="button icon" type="button" data-remove-array="monthlyCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`).join('');
+  }
+
+  function renderPercentageCosts() {
+    $('#percentageCostRows').innerHTML = state.percentageCosts.map((item) => `
+      <tr>
+        <td><input class="row-name" data-array="percentageCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="percentageCosts" data-field="pct" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.pct)}" /></td>
+        <td class="center-cell"><input data-array="percentageCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="percentageCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} /></td>
+        <td><button class="button icon" type="button" data-remove-array="percentageCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`).join('');
+  }
+
+  function renderReserveFunds() {
+    $('#reserveFundRows').innerHTML = state.reserveFunds.map((item) => `
+      <tr>
+        <td><input class="row-name" data-array="reserveFunds" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="reserveFunds" data-field="pct" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.pct)}" /></td>
+        <td><input data-array="reserveFunds" data-field="openingBalance" data-id="${escapeAttr(item.id)}" type="number" min="0" step="50" value="${n(item.openingBalance)}" /></td>
+        <td class="center-cell"><input data-array="reserveFunds" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} /></td>
+        <td><button class="button icon" type="button" data-remove-array="reserveFunds" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`).join('');
+  }
+
+  function renderSetupCosts() {
+    $('#setupCostRows').innerHTML = state.setupCosts.map((item) => {
+      const residualValue = Math.max(0, n(item.amount)) * clamp(n(item.residualPct), 0, 100) / 100;
+      return `
+      <tr>
+        <td><input class="row-name" data-array="setupCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><input data-array="setupCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="50" value="${n(item.amount)}" /></td>
+        <td><input data-array="setupCosts" data-field="residualPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.residualPct)}" /></td>
+        <td class="money-cell">${money.format(residualValue)}</td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
+        <td><button class="button icon" type="button" data-remove-array="setupCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderDynamicTables() {
+    renderSeasons();
+    renderStayCosts();
+    renderMonthlyCosts();
+    renderPercentageCosts();
+    renderReserveFunds();
+    renderSetupCosts();
+  }
+
+  function bindDynamicTables() {
+    ['#seasonRows', '#stayCostRows', '#monthlyCostRows', '#percentageCostRows', '#reserveFundRows', '#setupCostRows'].forEach((selector) => {
+      const root = $(selector);
+      root.addEventListener('input', handleDynamicInput);
+      root.addEventListener('change', handleDynamicInput);
+      root.addEventListener('click', handleDynamicClick);
+    });
+  }
+
+  function handleDynamicInput(event) {
+    const input = event.target.closest('[data-array][data-field][data-id]');
+    if (!input) return;
+    const list = state[input.dataset.array];
+    const item = list?.find((entry) => String(entry.id) === input.dataset.id);
+    if (!item) return;
+    let value;
+    if (input.type === 'checkbox') value = input.checked;
+    else if (input.type === 'number') value = input.value === '' ? 0 : n(input.value);
+    else value = input.value;
+    item[input.dataset.field] = value;
+    autosave();
+    if (input.dataset.array === 'monthlyCosts' || input.dataset.array === 'setupCosts') {
+      renderMonthlyCosts();
+      renderSetupCosts();
+    }
+    calculateAndRender();
+  }
+
+  function handleDynamicClick(event) {
+    const button = event.target.closest('[data-remove-array][data-id]');
+    if (!button) return;
+    const key = button.dataset.removeArray;
+    if (!Array.isArray(state[key])) return;
+    state[key] = state[key].filter((item) => String(item.id) !== button.dataset.id);
+    autosave();
+    renderDynamicTables();
+    calculateAndRender();
+  }
+
+  function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
+  function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
+  function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false }); refreshDynamic(); }
+  function refreshDynamic() { autosave(); renderDynamicTables(); calculateAndRender(); }
+
+  function calculateModel(inputState = state) {
+    const currentState = inputState;
+    const propertyValue = Math.max(0, n(currentState.globals.propertyValue));
+    const inflation = n(currentState.globals.inflationPct) / 100;
+    const realAppreciation = n(currentState.globals.propertyRealAppreciationPct) / 100;
+    const nominalPropertyAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
+    const hourlyValue = Math.max(0, n(currentState.globals.ownerHourlyValue));
+
+    const seasonDetails = currentState.seasons.map((season) => {
+      const days = Math.max(0, n(season.days));
+      const unavailableDays = clamp(n(season.unavailableDays), 0, days);
+      const availableDays = Math.max(0, days - unavailableDays);
+      const occupancy = clamp(n(season.occupancyPct), 0, 100) / 100;
+      const nightlyRate = Math.max(0, n(season.nightlyRate));
+      const occupiedNights = availableDays * occupancy;
+      const revenue = occupiedNights * nightlyRate;
+      return { ...season, days, unavailableDays, availableDays, occupancy, nightlyRate, occupiedNights, revenue };
+    });
+
+    const totalDays = seasonDetails.reduce((sum, x) => sum + x.days, 0);
+    const blockedDays = seasonDetails.reduce((sum, x) => sum + x.unavailableDays, 0);
+    const availableDays = seasonDetails.reduce((sum, x) => sum + x.availableDays, 0);
+    const occupiedNights = seasonDetails.reduce((sum, x) => sum + x.occupiedNights, 0);
+    const accommodationRevenue = seasonDetails.reduce((sum, x) => sum + x.revenue, 0);
+    const weightedOccupancy = availableDays > 0 ? occupiedNights / availableDays : 0;
+    const calendarOccupancy = totalDays > 0 ? occupiedNights / totalDays : 0;
+    const adr = occupiedNights > 0 ? accommodationRevenue / occupiedNights : 0;
+    const revPar = availableDays > 0 ? accommodationRevenue / availableDays : 0;
+    const avgStay = Math.max(0.1, n(currentState.airbnb.avgStayNights, 1));
+    const reservations = occupiedNights / avgStay;
+    const guestFeeRevenue = reservations * (Math.max(0, n(currentState.airbnb.cleaningFeeRevenue)) + Math.max(0, n(currentState.airbnb.otherGuestFeeRevenue)));
+    const airbnbRevenue = accommodationRevenue + guestFeeRevenue;
+
+    const stayCostPerReservation = currentState.stayCosts.reduce((sum, x) => sum + Math.max(0, n(x.amount)), 0);
+    const selfStayCosts = reservations * stayCostPerReservation;
+    const adminStayCostPerReservation = currentState.stayCosts.reduce((sum, x) => sum + (x.adminIncluded ? 0 : Math.max(0, n(x.amount))), 0);
+    const adminStayCosts = reservations * adminStayCostPerReservation;
+
+    // Tempo do proprietário por atividade. "Admin gerencia" remove as horas,
+    // enquanto "custo incluído" afeta apenas o desembolso monetário.
+    const stayOwnerHoursAnnual = reservations * currentState.stayCosts.reduce((sum, x) => sum + Math.max(0, n(x.ownerHoursPerReservation)), 0);
+    const adminStayOwnerHoursAnnual = reservations * currentState.stayCosts.reduce((sum, x) => sum + (x.adminManages ? 0 : Math.max(0, n(x.ownerHoursPerReservation))), 0);
+    const monthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
+    const adminMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminManages ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
+    const rentedMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
+
+    const fixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const fixedRentedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const adminFixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const fixedTraditional = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+
+    // OPEX percentual: apenas custos efetivamente consumidos. Reservas ficam fora daqui.
+    const pctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
+    const adminPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.adminIncluded ? 0 : Math.max(0, n(x.pct)) / 100), 0);
+    const selfPctCosts = airbnbRevenue * pctCostRate;
+    const adminPctCosts = airbnbRevenue * adminPctCostRate;
+
+    // Reservas vinculadas: reduzem caixa livre, mas não patrimônio líquido.
+    const reserveRate = currentState.reserveFunds.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
+    const adminReserveRate = currentState.reserveFunds.reduce((sum, x) => sum + (x.adminIncluded ? 0 : Math.max(0, n(x.pct)) / 100), 0);
+    const reserveOpening = currentState.reserveFunds.reduce((sum, x) => sum + Math.max(0, n(x.openingBalance)), 0);
+    // Saldo inicial já existe e continua sendo patrimônio mesmo se a admin
+    // assumir os novos aportes futuros.
+    const adminReserveOpening = reserveOpening;
+    const selfReserveContribution = airbnbRevenue * reserveRate;
+    const adminReserveContribution = airbnbRevenue * adminReserveRate;
+    const selfLinkedReserveEnd = reserveOpening + selfReserveContribution;
+    const adminLinkedReserveEnd = adminReserveOpening + adminReserveContribution;
+
+    const platformFee = airbnbRevenue * Math.max(0, n(currentState.airbnb.platformFeePct)) / 100;
+    const selfOperatingCosts = platformFee + selfStayCosts + fixedAirbnb + selfPctCosts;
+
+    // Base tributável configurável. Apenas itens marcados como dedutíveis
+    // reduzem a base; despesas operacionais continuam afetando o caixa mesmo
+    // quando não são dedutíveis.
+    const selfStayTaxDeductions = reservations * currentState.stayCosts.reduce((sum, x) => sum + (x.deductibleIR ? Math.max(0, n(x.amount)) : 0), 0);
+    const adminStayTaxDeductions = reservations * currentState.stayCosts.reduce((sum, x) => sum + (x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.amount)) : 0), 0);
+    const rentedStayTaxDeductions = selfStayTaxDeductions;
+    const selfMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const adminMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const rentedMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const traditionalMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const selfPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR ? Math.max(0, n(x.pct)) / 100 : 0), 0);
+    const adminPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.pct)) / 100 : 0), 0);
+    const rentedPctTaxDeductions = selfPctTaxDeductions;
+    const selfPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? platformFee : 0;
+
+    const selfTaxDeductions = selfPlatformTaxDeduction + selfStayTaxDeductions + selfMonthlyTaxDeductions + selfPctTaxDeductions;
+    const selfTaxBase = Math.max(0, airbnbRevenue - selfTaxDeductions);
+    const selfTax = selfTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
+    const selfOperatingCash = airbnbRevenue - selfOperatingCosts - selfTax;
+
+    const adminFee = airbnbRevenue * Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
+    const adminMonthlyFee = Math.max(0, n(currentState.airbnb.adminMonthlyFee)) * 12;
+    const adminPlatformFee = currentState.airbnb.adminIncludesPlatformFee ? 0 : platformFee;
+    const adminOperatingCosts = adminFee + adminMonthlyFee + adminPlatformFee + adminStayCosts + adminFixedAirbnb + adminPctCosts;
+    const adminPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? adminPlatformFee : 0;
+    const adminManagementTaxDeductions = (currentState.airbnb.adminFeeDeductibleIR ? adminFee : 0)
+      + (currentState.airbnb.adminMonthlyFeeDeductibleIR ? adminMonthlyFee : 0);
+    const adminTaxDeductions = adminPlatformTaxDeduction + adminManagementTaxDeductions + adminStayTaxDeductions + adminMonthlyTaxDeductions + adminPctTaxDeductions;
+    const adminTaxBase = Math.max(0, airbnbRevenue - adminTaxDeductions);
+    const adminTax = adminTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
+    const adminOperatingCash = airbnbRevenue - adminOperatingCosts - adminTax;
+
+    const setupFor = (predicate) => currentState.setupCosts.reduce((acc, x) => {
+      if (!predicate(x)) return acc;
+      const amount = Math.max(0, n(x.amount));
+      const residualValue = amount * clamp(n(x.residualPct), 0, 100) / 100;
+      acc.capex += amount;
+      acc.residual += residualValue;
+      return acc;
+    }, { capex: 0, residual: 0 });
+
+    const selfSetupData = setupFor((x) => x.airbnb);
+    const adminSetupData = setupFor((x) => x.airbnb && !x.adminIncluded);
+    const rentedSetupData = setupFor((x) => x.rentedAirbnb);
+    const traditionalSetupData = setupFor((x) => x.traditional);
+    const selfSetup = selfSetupData.capex;
+    const adminOnboarding = Math.max(0, n(currentState.airbnb.adminOnboardingFee));
+    const adminSetup = adminSetupData.capex + adminOnboarding;
+    const rentedInitialLeaseCosts = Math.max(0, n(currentState.rentedAirbnb.initialLeaseCosts));
+    const rentedSetupAssets = rentedSetupData.capex;
+    const rentedSetup = rentedSetupAssets + rentedInitialLeaseCosts;
+    const traditionalSetup = traditionalSetupData.capex;
+    const selfSetupResidual = selfSetupData.residual;
+    const adminSetupResidual = adminSetupData.residual;
+    const rentedSetupResidual = rentedSetupData.residual;
+    const traditionalSetupResidual = traditionalSetupData.residual;
+    const selfSetupDepreciation = selfSetup - selfSetupResidual;
+    const adminSetupDepreciation = adminSetup - adminSetupResidual;
+    const rentedSetupDepreciation = rentedSetup - rentedSetupResidual;
+    const traditionalSetupDepreciation = traditionalSetup - traditionalSetupResidual;
+
+    const tradRevenue = Math.max(0, n(currentState.traditional.monthlyRent)) * 12 * clamp(n(currentState.traditional.occupancyPct), 0, 100) / 100;
+    const tradManagement = tradRevenue * Math.max(0, n(currentState.traditional.managementFeePct)) / 100;
+    const tradMaintenance = tradRevenue * Math.max(0, n(currentState.traditional.maintenancePct)) / 100;
+    const tradLosses = tradRevenue * Math.max(0, n(currentState.traditional.lossPct)) / 100;
+    const avgContractMonths = Math.max(0, n(currentState.traditional.avgContractMonths));
+    const leaseCommission = avgContractMonths > 0
+      ? Math.max(0, n(currentState.traditional.monthlyRent)) * Math.max(0, n(currentState.traditional.newLeaseCommissionMonths)) * 12 / avgContractMonths
+      : 0;
+    const tradOther = Math.max(0, n(currentState.traditional.annualOtherCosts));
+    const tradOperatingCosts = tradManagement + fixedTraditional + tradMaintenance + tradLosses + leaseCommission + tradOther;
+    const tradTaxDeductions = traditionalMonthlyTaxDeductions
+      + (currentState.traditional.managementFeeDeductibleIR ? tradManagement : 0)
+      + (currentState.traditional.maintenanceDeductibleIR ? tradMaintenance : 0)
+      + (currentState.traditional.lossDeductibleIR ? tradLosses : 0)
+      + (currentState.traditional.newLeaseCommissionDeductibleIR ? leaseCommission : 0)
+      + (currentState.traditional.annualOtherCostsDeductibleIR ? tradOther : 0);
+    const tradTaxBase = Math.max(0, tradRevenue - tradTaxDeductions);
+    const tradTax = tradTaxBase * Math.max(0, n(currentState.traditional.taxPct)) / 100;
+    const tradOperatingCash = tradRevenue - tradOperatingCosts - tradTax;
+
+    // Airbnb em imóvel alugado: mesma máquina de receita/turnover do Airbnb,
+    // mas sem propriedade imobiliária. O aluguel ao proprietário é OPEX e a
+    // caução permanece como capital vinculado/reembolsável.
+    const rentedLeaseRent = Math.max(0, n(currentState.rentedAirbnb.monthlyLeaseRent)) * 12;
+    const rentedAnnualLeaseCosts = Math.max(0, n(currentState.rentedAirbnb.annualLeaseCosts));
+    const rentedSecurityDeposit = Math.max(0, n(currentState.rentedAirbnb.securityDeposit));
+    const rentedOperatingCosts = platformFee + selfStayCosts + fixedRentedAirbnb + selfPctCosts + rentedLeaseRent + rentedAnnualLeaseCosts;
+    const rentedTaxDeductions = selfPlatformTaxDeduction + rentedStayTaxDeductions + rentedMonthlyTaxDeductions + rentedPctTaxDeductions
+      + rentedLeaseRent
+      + (currentState.rentedAirbnb.annualLeaseCostsDeductibleIR ? rentedAnnualLeaseCosts : 0);
+    const rentedTaxBase = Math.max(0, airbnbRevenue - rentedTaxDeductions);
+    const rentedTax = rentedTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
+    const rentedOperatingCash = airbnbRevenue - rentedOperatingCosts - rentedTax;
+
+    let investmentGrossRate;
+    if (currentState.investment.mode === 'ipcaPlus') {
+      const realRate = n(currentState.investment.realRatePct) / 100;
+      investmentGrossRate = (1 + inflation) * (1 + realRate) - 1;
+    } else investmentGrossRate = n(currentState.investment.nominalRatePct) / 100;
+
+    const investmentForCapital = (capital) => {
+      const initialCapital = Math.max(0, n(capital));
+      const grossIncome = initialCapital * investmentGrossRate;
+      const fees = initialCapital * Math.max(0, n(currentState.investment.feesPct)) / 100;
+      const taxBase = Math.max(0, grossIncome - fees);
+      const tax = taxBase * Math.max(0, n(currentState.investment.taxPct)) / 100;
+      const operatingCash = grossIncome - fees - tax;
+      const capitalPreservationAmount = initialCapital * inflation;
+      const sustainableCash = operatingCash - capitalPreservationAmount;
+      const endNetWorth = initialCapital + operatingCash;
+      const inflationFactor = 1 + inflation;
+      const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
+      const realWealthCreation = realEndNetWorth - initialCapital;
+      return {
+        initialCapital, grossIncome, fees, tax, operatingCash, sustainableCash, endNetWorth, realEndNetWorth, realWealthCreation,
+        capitalPreservationAmount,
+        nominalExcessOverPreservation: sustainableCash,
+        nominalReturn: initialCapital > 0 ? operatingCash / initialCapital : 0,
+        sustainableCashYield: initialCapital > 0 ? sustainableCash / initialCapital : 0,
+        realReturn: initialCapital > 0 ? realWealthCreation / initialCapital : 0
+      };
+    };
+
+    const workHours = {
+      self: Math.max(0, n(currentState.work.selfHoursMonthly)) * 12 + stayOwnerHoursAnnual + monthlyOwnerHoursAnnual,
+      admin: Math.max(0, n(currentState.work.supervisionAdminHoursMonthly)) * 12 + adminStayOwnerHoursAnnual + adminMonthlyOwnerHoursAnnual,
+      rented: Math.max(0, n(currentState.work.rentedAirbnbHoursMonthly)) * 12 + stayOwnerHoursAnnual + rentedMonthlyOwnerHoursAnnual,
+      traditional: Math.max(0, n(currentState.work.traditionalHoursMonthly)) * 12,
+      investment: Math.max(0, n(currentState.work.investmentHoursMonthly)) * 12
+    };
+    const workCost = Object.fromEntries(Object.entries(workHours).map(([key, hours]) => [key, hours * hourlyValue]));
+
+    const propertyEndValue = propertyValue * (1 + nominalPropertyAppreciation);
+    const propertyInflationPreservation = propertyValue * inflation;
+    const propertyNominalGain = propertyEndValue - propertyValue;
+    const propertyNominalGainBeyondInflation = propertyNominalGain - propertyInflationPreservation;
+
+    const enrichScenarioWithBenchmark = (scenario) => {
+      const benchmark = investmentForCapital(scenario.opportunityCapital);
+      return {
+        ...scenario,
+        benchmarkRealGain: benchmark.realWealthCreation,
+        benchmarkNominalGain: benchmark.operatingCash,
+        benchmarkRealReturn: benchmark.realReturn,
+        benchmarkEndNetWorth: benchmark.endNetWorth,
+        benchmarkRealEndNetWorth: benchmark.realEndNetWorth,
+        realGapVsBenchmark: scenario.realWealthCreation - benchmark.realWealthCreation
+      };
+    };
+
+    const makePropertyScenario = ({ id, label, grossRevenue, opCosts, tax, operatingCash, reserveContribution = 0, reserveOpening = 0, linkedReserve = 0, capex = 0, setupResidual = 0, setupDepreciation = 0, laborCost = 0, workHoursAnnual = 0, details = {} }) => {
+      const freeCash = operatingCash - reserveContribution;
+      const externalFundingRequired = Math.max(0, -freeCash);
+      const distributableCash = Math.max(0, freeCash);
+      const baseInitialCapital = propertyValue + capex + reserveOpening;
+      const initialCapital = baseInitialCapital + externalFundingRequired;
+      const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve;
+      const wealthCreation = endNetWorth - initialCapital;
+      const inflationFactor = 1 + inflation;
+      const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
+      const realWealthCreation = realEndNetWorth - initialCapital;
+      const capitalPreservationAmount = initialCapital * inflation;
+      const nominalExcessOverPreservation = endNetWorth - initialCapital * inflationFactor;
+      const realFreeCash = inflationFactor > 0 ? freeCash / inflationFactor : freeCash;
+      const cashYield = initialCapital > 0 ? freeCash / initialCapital : 0;
+      const nominalTotalReturn = initialCapital > 0 ? wealthCreation / initialCapital : 0;
+      const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
+      return enrichScenarioWithBenchmark({
+        id, label, grossRevenue, opCosts, tax, operatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve,
+        tiedCapital: linkedReserve, freeCash, netCash: freeCash, distributableCash, externalFundingRequired,
+        monthlyNet: freeCash / 12, capex, setupResidual, setupDepreciation, firstYearCash: freeCash - capex,
+        laborCost, workHoursAnnual, economicResult: freeCash - laborCost, firstYearEconomic: freeCash - capex - laborCost,
+        baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
+        wealthCreation, realWealthCreation, capitalPreservationAmount, nominalExcessOverPreservation,
+        realFreeCash, cashYield, nominalTotalReturn, realTotalReturn, details
+      });
+    };
+
+    const makeRentedScenario = () => {
+      const reserveContribution = selfReserveContribution;
+      const linkedReserve = selfLinkedReserveEnd;
+      const freeCash = rentedOperatingCash - reserveContribution;
+      const externalFundingRequired = Math.max(0, -freeCash);
+      const distributableCash = Math.max(0, freeCash);
+      const baseInitialCapital = rentedSetup + reserveOpening + rentedSecurityDeposit;
+      const initialCapital = baseInitialCapital + externalFundingRequired;
+      const tiedCapital = linkedReserve + rentedSecurityDeposit;
+      const endNetWorth = rentedSetupResidual + distributableCash + linkedReserve + rentedSecurityDeposit;
+      const wealthCreation = endNetWorth - initialCapital;
+      const inflationFactor = 1 + inflation;
+      const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
+      const realWealthCreation = realEndNetWorth - initialCapital;
+      const capitalPreservationAmount = initialCapital * inflation;
+      const nominalExcessOverPreservation = endNetWorth - initialCapital * inflationFactor;
+      const cashYield = initialCapital > 0 ? freeCash / initialCapital : 0;
+      const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
+      return enrichScenarioWithBenchmark({
+        id: 'airbnb-rented', label: 'Airbnb em imóvel alugado', grossRevenue: airbnbRevenue, opCosts: rentedOperatingCosts, tax: rentedTax,
+        operatingCash: rentedOperatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve, tiedCapital,
+        freeCash, netCash: freeCash, distributableCash, externalFundingRequired, monthlyNet: freeCash / 12,
+        capex: rentedSetup, setupResidual: rentedSetupResidual, setupDepreciation: rentedSetupDepreciation,
+        firstYearCash: freeCash - rentedSetup, laborCost: workCost.rented, workHoursAnnual: workHours.rented,
+        economicResult: freeCash - workCost.rented, firstYearEconomic: freeCash - rentedSetup - workCost.rented,
+        baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
+        wealthCreation, realWealthCreation, capitalPreservationAmount, nominalExcessOverPreservation,
+        realFreeCash: inflationFactor > 0 ? freeCash / inflationFactor : freeCash,
+        cashYield, nominalTotalReturn: initialCapital > 0 ? wealthCreation / initialCapital : 0, realTotalReturn,
+        details: {
+          'Receita de diárias': accommodationRevenue,
+          'Taxas cobradas do hóspede': guestFeeRevenue,
+          'Aluguel pago ao proprietário': rentedLeaseRent,
+          'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts,
+          'Taxa da plataforma': platformFee,
+          'Custos por reservas': selfStayCosts,
+          'Custos mensais da operação': fixedRentedAirbnb,
+          'OPEX percentual': selfPctCosts,
+          'Deduções consideradas na base de IR': rentedTaxDeductions,
+          'Base tributável estimada': rentedTaxBase,
+          'IR estimado': rentedTax,
+          'Caixa antes das reservas': rentedOperatingCash,
+          'Aporte às reservas vinculadas': reserveContribution,
+          'Caução/garantia reembolsável': rentedSecurityDeposit,
+          'Capital vinculado final': tiedCapital,
+          'CAPEX + custos iniciais do contrato': rentedSetup,
+          'Valor residual do CAPEX': rentedSetupResidual,
+          'Depreciação econômica do CAPEX': rentedSetupDepreciation,
+          'Aporte externo para cobrir déficit': externalFundingRequired,
+          'Capital de oportunidade': initialCapital,
+          'Ganho real do benchmark financeiro': investmentForCapital(initialCapital).realWealthCreation,
+          'Horas próprias no ano': workHours.rented,
+          'Valor do seu tempo': workCost.rented
+        }
+      });
+    };
+
+    const self = makePropertyScenario({
+      id: 'airbnb-self', label: 'Airbnb autogerido', grossRevenue: airbnbRevenue, opCosts: selfOperatingCosts, tax: selfTax,
+      operatingCash: selfOperatingCash, reserveContribution: selfReserveContribution, reserveOpening, linkedReserve: selfLinkedReserveEnd,
+      capex: selfSetup, setupResidual: selfSetupResidual, setupDepreciation: selfSetupDepreciation, laborCost: workCost.self, workHoursAnnual: workHours.self,
+      details: {
+        'Receita de diárias': accommodationRevenue, 'Taxas cobradas do hóspede': guestFeeRevenue,
+        'Taxa da plataforma': platformFee, 'Custos por reservas': selfStayCosts, 'Custos mensais': fixedAirbnb,
+        'OPEX percentual': selfPctCosts, 'Deduções consideradas na base de IR': selfTaxDeductions,
+        'Base tributável estimada': selfTaxBase, 'IR estimado': selfTax, 'Caixa antes das reservas': selfOperatingCash,
+        'Aporte às reservas vinculadas': selfReserveContribution, 'Reserva vinculada final': selfLinkedReserveEnd,
+        'CAPEX inicial': selfSetup, 'Valor residual do CAPEX': selfSetupResidual, 'Depreciação econômica do CAPEX': selfSetupDepreciation,
+        'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
+        'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
+        'Horas próprias no ano': workHours.self, 'Valor do seu tempo': workCost.self
+      }
+    });
+
+    const admin = makePropertyScenario({
+      id: 'airbnb-admin', label: 'Airbnb com administradora', grossRevenue: airbnbRevenue, opCosts: adminOperatingCosts, tax: adminTax,
+      operatingCash: adminOperatingCash, reserveContribution: adminReserveContribution, reserveOpening: adminReserveOpening, linkedReserve: adminLinkedReserveEnd,
+      capex: adminSetup, setupResidual: adminSetupResidual, setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
+      details: {
+        'Receita de diárias': accommodationRevenue, 'Taxas cobradas do hóspede': guestFeeRevenue,
+        'Comissão da administradora': adminFee, 'Mensalidade da administradora': adminMonthlyFee,
+        'Taxa da plataforma não incluída': adminPlatformFee, 'Custos por reservas não incluídos': adminStayCosts,
+        'Custos mensais não incluídos': adminFixedAirbnb, 'OPEX % não incluído': adminPctCosts,
+        'Deduções consideradas na base de IR': adminTaxDeductions, 'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax,
+        'Caixa antes das reservas': adminOperatingCash, 'Aporte às reservas vinculadas': adminReserveContribution,
+        'Reserva vinculada final': adminLinkedReserveEnd, 'CAPEX + onboarding': adminSetup,
+        'Valor residual do CAPEX': adminSetupResidual, 'Depreciação econômica do CAPEX': adminSetupDepreciation,
+        'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
+        'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
+        'Horas próprias no ano': workHours.admin, 'Valor do seu tempo': workCost.admin
+      }
+    });
+
+    const rented = makeRentedScenario();
+
+    const traditional = makePropertyScenario({
+      id: 'traditional', label: 'Aluguel tradicional', grossRevenue: tradRevenue, opCosts: tradOperatingCosts, tax: tradTax,
+      operatingCash: tradOperatingCash, reserveContribution: 0, reserveOpening: 0, linkedReserve: 0,
+      capex: traditionalSetup, setupResidual: traditionalSetupResidual, setupDepreciation: traditionalSetupDepreciation, laborCost: workCost.traditional, workHoursAnnual: workHours.traditional,
+      details: {
+        'Imobiliária / administração': tradManagement, 'Custos mensais do proprietário': fixedTraditional,
+        'Manutenção e reparos': tradMaintenance, 'Inadimplência / perdas': tradLosses,
+        'Comissão esperada de nova locação': leaseCommission, 'Outros custos anuais': tradOther,
+        'Deduções consideradas na base de IR': tradTaxDeductions, 'Base tributável estimada': tradTaxBase,
+        'IR estimado': tradTax, 'CAPEX inicial': traditionalSetup, 'Valor residual do CAPEX': traditionalSetupResidual,
+        'Depreciação econômica do CAPEX': traditionalSetupDepreciation, 'Valorização nominal do imóvel': propertyNominalGain,
+        'Parcela da valorização que cobre inflação': propertyInflationPreservation, 'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
+        'Horas próprias no ano': workHours.traditional, 'Valor do seu tempo': workCost.traditional
+      }
+    });
+
+    // O cenário financeiro isolado continua usando o valor do imóvel como base simples.
+    // Para cada alternativa, o campo benchmarkRealGain usa o capital de oportunidade específico daquela estratégia.
+    const invCalc = investmentForCapital(propertyValue);
+    const investment = {
+      id: 'investment', label: 'Investimento financeiro', grossRevenue: invCalc.grossIncome, opCosts: invCalc.fees,
+      tax: invCalc.tax, operatingCash: invCalc.operatingCash, cashPreservationRequirement: invCalc.capitalPreservationAmount, preservationShortfall: Math.max(0, -invCalc.sustainableCash),
+      reserveContribution: 0, reserveOpening: 0, linkedReserve: 0, tiedCapital: 0,
+      freeCash: invCalc.sustainableCash, netCash: invCalc.sustainableCash, distributableCash: Math.max(0, invCalc.sustainableCash), externalFundingRequired: 0,
+      monthlyNet: invCalc.sustainableCash / 12, capex: 0, setupResidual: 0, setupDepreciation: 0, firstYearCash: invCalc.sustainableCash,
+      laborCost: workCost.investment, workHoursAnnual: workHours.investment, economicResult: invCalc.sustainableCash - workCost.investment,
+      firstYearEconomic: invCalc.sustainableCash - workCost.investment,
+      baseInitialCapital: propertyValue, initialCapital: propertyValue, opportunityCapital: propertyValue,
+      endNetWorth: invCalc.endNetWorth, realEndNetWorth: invCalc.realEndNetWorth,
+      wealthCreation: invCalc.operatingCash, realWealthCreation: invCalc.realWealthCreation,
+      capitalPreservationAmount: invCalc.capitalPreservationAmount, nominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
+      realFreeCash: (1 + inflation) > 0 ? invCalc.sustainableCash / (1 + inflation) : invCalc.sustainableCash,
+      cashYield: propertyValue > 0 ? invCalc.sustainableCash / propertyValue : 0,
+      nominalTotalReturn: invCalc.nominalReturn, realTotalReturn: invCalc.realReturn,
+      benchmarkRealGain: invCalc.realWealthCreation, benchmarkNominalGain: invCalc.operatingCash,
+      benchmarkRealReturn: invCalc.realReturn, benchmarkEndNetWorth: invCalc.endNetWorth,
+      benchmarkRealEndNetWorth: invCalc.realEndNetWorth, realGapVsBenchmark: 0,
+      details: {
+        'Taxa bruta nominal': investmentGrossRate, 'Custos / taxas': invCalc.fees, 'IR sobre rendimento': invCalc.tax,
+        'Capital investido': propertyValue, 'Rendimento líquido nominal': invCalc.operatingCash,
+        'Parcela retida para preservar poder de compra': invCalc.capitalPreservationAmount,
+        'Caixa distribuível preservando o principal real': invCalc.sustainableCash,
+        'Aporte adicional necessário se rendimento não cobrir inflação': Math.max(0, -invCalc.sustainableCash),
+        'Ganho patrimonial real': invCalc.realWealthCreation, 'Patrimônio nominal final': invCalc.endNetWorth,
+        'Patrimônio real final': invCalc.realEndNetWorth, 'Horas próprias no ano': workHours.investment, 'Valor do seu tempo': workCost.investment
+      }
+    };
+
+    // Complementa detalhes de oportunidade depois que os cenários já foram enriquecidos.
+    [self, admin, traditional].forEach((scenario) => {
+      scenario.details['Aporte externo para cobrir déficit'] = scenario.externalFundingRequired;
+      scenario.details['Capital de oportunidade'] = scenario.opportunityCapital;
+      scenario.details['Ganho real do benchmark financeiro'] = scenario.benchmarkRealGain;
+      scenario.details['Diferença real vs. benchmark'] = scenario.realGapVsBenchmark;
+    });
+    rented.details['Diferença real vs. benchmark'] = rented.realGapVsBenchmark;
+
+    const scenarios = [self, admin, rented, traditional, investment];
+    const bestCash = [...scenarios].sort((a, b) => b.freeCash - a.freeCash)[0];
+    const bestFirstYear = [...scenarios].sort((a, b) => b.firstYearCash - a.firstYearCash)[0];
+    const bestEconomic = [...scenarios].sort((a, b) => b.economicResult - a.economicResult)[0];
+    const bestWealth = [...scenarios].sort((a, b) => b.wealthCreation - a.wealthCreation)[0];
+    const bestRealWealth = [...scenarios].sort((a, b) => b.realWealthCreation - a.realWealthCreation)[0];
+    const bestReal = [...scenarios].sort((a, b) => b.realTotalReturn - a.realTotalReturn)[0];
+
+    const includedAdminItems = [];
+    const managedAdminItems = [];
+    if (currentState.airbnb.adminIncludesPlatformFee) includedAdminItems.push('Taxa da plataforma');
+    currentState.stayCosts.filter((x) => x.adminManages).forEach((x) => managedAdminItems.push(x.name));
+    currentState.monthlyCosts.filter((x) => x.airbnb && x.adminManages).forEach((x) => managedAdminItems.push(x.name));
+    currentState.stayCosts.filter((x) => x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
+    currentState.monthlyCosts.filter((x) => x.airbnb && x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
+    currentState.percentageCosts.filter((x) => x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
+    currentState.reserveFunds.filter((x) => x.adminIncluded).forEach((x) => includedAdminItems.push(`${x.name} (novos aportes)`));
+    currentState.setupCosts.filter((x) => x.airbnb && x.adminIncluded).forEach((x) => includedAdminItems.push(`${x.name} (implantação)`));
+
+    return {
+      seasonDetails, totalDays, blockedDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy, adr, revPar,
+      accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
+      fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, fixedTraditional, pctCostRate, adminPctCostRate,
+      reserveRate, adminReserveRate, reserveOpening, adminReserveOpening, selfReserveContribution, adminReserveContribution,
+      selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets, traditionalSetup,
+      selfSetupResidual, adminSetupResidual, rentedSetupResidual, traditionalSetupResidual,
+      selfSetupDepreciation, adminSetupDepreciation, rentedSetupDepreciation, traditionalSetupDepreciation,
+      rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit,
+      scenarios, bestCash, bestFirstYear, bestEconomic, bestWealth, bestRealWealth, bestReal,
+      propertyValue, inflation, realAppreciation, nominalPropertyAppreciation, propertyEndValue,
+      propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation, investmentGrossRate,
+      investmentCapitalPreservationAmount: invCalc.capitalPreservationAmount,
+      investmentNominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
+      investmentRealWealthCreation: invCalc.realWealthCreation, investmentSustainableCash: invCalc.sustainableCash, workHours, includedAdminItems, managedAdminItems
+    };
+  }
+
+  function calculateAndRender() {
+    const calc = calculateModel(state);
+    lastCalculation = calc;
+
+    calc.seasonDetails.forEach((item) => {
+      const revenueCell = document.querySelector(`[data-season-revenue="${cssEscape(item.id)}"]`);
+      const availableCell = document.querySelector(`[data-season-available="${cssEscape(item.id)}"]`);
+      if (revenueCell) revenueCell.textContent = money2.format(item.revenue);
+      if (availableCell) availableCell.textContent = number1.format(item.availableDays);
+    });
+
+    $('#totalDays').textContent = `${number1.format(calc.totalDays)} dias`;
+    $('#blockedDays').textContent = `${number1.format(calc.blockedDays)} dias`;
+    $('#availableDays').textContent = `${number1.format(calc.availableDays)} dias`;
+    $('#weightedAdr').textContent = money2.format(calc.adr);
+    $('#weightedOccupancy').textContent = percent.format(calc.weightedOccupancy);
+    $('#seasonRevenue').textContent = money2.format(calc.accommodationRevenue);
+    $('#stayCostTotal').textContent = money2.format(calc.stayCostPerReservation);
+    $('#monthlyAirbnbTotal').textContent = money.format(calc.fixedAirbnb);
+    $('#monthlyRentedAirbnbTotal').textContent = money.format(calc.fixedRentedAirbnb);
+    $('#monthlyTraditionalTotal').textContent = money.format(calc.fixedTraditional);
+    $('#monthlyAdminExcludedTotal').textContent = money.format(calc.adminFixedAirbnb);
+    $('#percentageCostTotal').textContent = percent.format(calc.pctCostRate);
+    $('#reserveFundTotal').textContent = percent.format(calc.reserveRate);
+    $('#reserveFundOpeningTotal').textContent = money.format(calc.reserveOpening);
+    $('#reserveAdminContributionTotal').textContent = money.format(calc.adminReserveContribution);
+    $('#setupAirbnbTotal').textContent = money.format(calc.selfSetup);
+    $('#setupRentedAirbnbTotal').textContent = money.format(calc.rentedSetupAssets);
+    $('#setupTraditionalTotal').textContent = money.format(calc.traditionalSetup);
+    $('#setupAdminExcludedTotal').textContent = money.format(calc.adminSetup);
+    $('#setupAirbnbResidualTotal').textContent = money.format(calc.selfSetupResidual);
+    $('#setupRentedAirbnbResidualTotal').textContent = money.format(calc.rentedSetupResidual);
+    $('#setupTraditionalResidualTotal').textContent = money.format(calc.traditionalSetupResidual);
+    $('#setupAdminResidualTotal').textContent = money.format(calc.adminSetupResidual);
+
+    const propertyPreview = $('#propertyAppreciationPreview');
+    if (propertyPreview) propertyPreview.textContent = `Com inflação de ${percent.format(calc.inflation)}, isso equivale a ${percent.format(calc.nominalPropertyAppreciation)} de valorização nominal.`;
+    const investmentScenario = calc.scenarios.find((scenario) => scenario.id === 'investment');
+    const investmentPreview = $('#investmentNormalizationPreview');
+    if (investmentPreview && investmentScenario) {
+      const netNominalRate = investmentScenario.initialCapital > 0 ? investmentScenario.wealthCreation / investmentScenario.initialCapital : 0;
+      investmentPreview.innerHTML = `
+        <article><span>Rendimento líquido nominal</span><strong>${percent.format(netNominalRate)}</strong><small>${money.format(investmentScenario.wealthCreation)} no ano</small></article>
+        <article><span>Preservação do poder de compra</span><strong>${money.format(investmentScenario.capitalPreservationAmount)}</strong><small>parcela que precisa permanecer aplicada para manter o principal real</small></article>
+        <article><span>Caixa sustentável distribuível</span><strong>${money.format(investmentScenario.freeCash)}</strong><small>pode ser retirado sem reduzir o principal em poder de compra</small></article>
+        <article><span>Ganho patrimonial real</span><strong>${money.format(investmentScenario.realWealthCreation)}</strong><small>${percent.format(investmentScenario.realTotalReturn)} em reais de hoje</small></article>`;
+    }
+
+    renderAdminPackage(calc);
+    renderDayStatus(calc.totalDays);
+    renderKpis(calc);
+    renderResultsTable(calc);
+    renderBreakdowns(calc);
+    renderDiagnostics(calc);
+    renderFinalSummary(calc);
+  }
+  function renderAdminPackage(calc) {
+    const root = $('#adminIncludedSummary');
+    const managed = calc.managedAdminItems || [];
+    const included = calc.includedAdminItems || [];
+    if (!managed.length && !included.length) {
+      root.innerHTML = '<span class="admin-empty">Nenhuma atividade delegada e nenhum custo marcado como incluído.</span>';
+      return;
+    }
+    const managedHtml = managed.length
+      ? `<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong>${managed.map((name) => `<span class="admin-tag">↳ ${escapeHtml(name)}</span>`).join('')}</div>`
+      : '<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong><span class="admin-empty">Nenhuma atividade</span></div>';
+    const includedHtml = included.length
+      ? `<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong>${included.map((name) => `<span class="admin-tag">✓ ${escapeHtml(name)}</span>`).join('')}</div>`
+      : '<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong><span class="admin-empty">Nenhum custo</span></div>';
+    root.innerHTML = managedHtml + includedHtml;
+  }
+
+  function renderDayStatus(totalDays) {
+    const diff = totalDays - 365;
+    const el = $('#daysStatus');
+    if (Math.abs(diff) < 0.001) {
+      el.textContent = '365 dias configurados';
+      el.classList.remove('warning');
+    } else {
+      el.textContent = `${number1.format(totalDays)} dias · ${diff > 0 ? '+' : ''}${number1.format(diff)} vs. ano`;
+      el.classList.add('warning');
+    }
+  }
+
+  function renderKpis(calc) {
+    const cards = [
+      { label: 'Receita Airbnb total', value: money.format(calc.airbnbRevenue), sub: `${money.format(calc.guestFeeRevenue)} em taxas do hóspede` },
+      { label: 'Ocupação dos dias disponíveis', value: percent.format(calc.weightedOccupancy), sub: `${percent.format(calc.calendarOccupancy)} do calendário total` },
+      { label: 'Melhor caixa livre', value: money.format(calc.bestCash.freeCash), sub: calc.bestCash.label, best: true },
+      { label: 'Maior ganho patrimonial real', value: money.format(calc.bestRealWealth.realWealthCreation), sub: `${calc.bestRealWealth.label} · em R$ de hoje` }
+    ];
+    $('#kpiGrid').innerHTML = cards.map((x) => `<article class="kpi ${x.best ? 'best' : ''}"><span class="label">${escapeHtml(x.label)}</span><span class="value">${escapeHtml(x.value)}</span><span class="sub">${escapeHtml(x.sub)}</span></article>`).join('');
+  }
+
+  function renderResultsTable(calc) {
+    $('#resultRows').innerHTML = calc.scenarios.map((scenario) => `
+      <tr class="${scenario.id === calc.bestCash.id ? 'best-row' : ''}">
+        <td>${escapeHtml(scenario.label)}</td>
+        <td class="money-cell">${money.format(scenario.grossRevenue)}</td>
+        <td class="money-cell">${money.format(scenario.opCosts)}</td>
+        <td class="money-cell">${money.format(scenario.tax)}</td>
+        <td class="money-cell">${money.format(scenario.operatingCash)}</td>
+        <td class="money-cell">${money.format(scenario.cashPreservationRequirement || 0)}</td>
+        <td class="money-cell">${money.format(scenario.reserveContribution)}</td>
+        <td class="money-cell"><strong>${money.format(scenario.freeCash)}</strong></td>
+        <td class="money-cell ${scenario.externalFundingRequired > 0 ? 'negative' : ''}">${money.format(scenario.externalFundingRequired)}</td>
+        <td class="money-cell">${money.format(scenario.capex)}</td>
+        <td class="money-cell">${money.format(scenario.setupResidual)}</td>
+        <td class="money-cell">${money.format(scenario.tiedCapital)}</td>
+        <td class="money-cell"><strong>${money.format(scenario.opportunityCapital)}</strong></td>
+        <td class="money-cell"><strong>${money.format(scenario.realWealthCreation)}</strong></td>
+        <td class="money-cell">${money.format(scenario.benchmarkRealGain)}</td>
+        <td class="money-cell ${scenario.realGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}"><strong>${money.format(scenario.realGapVsBenchmark)}</strong></td>
+        <td class="money-cell">${money.format(scenario.endNetWorth)}</td>
+        <td class="money-cell"><strong>${money.format(scenario.realEndNetWorth)}</strong></td>
+        <td class="money-cell">${number1.format(scenario.workHoursAnnual || 0)} h · ${money.format(scenario.laborCost)}</td>
+        <td class="percent-cell">${percent.format(scenario.cashYield)}</td>
+        <td class="percent-cell"><strong>${percent.format(scenario.realTotalReturn)}</strong></td>
+      </tr>`).join('');
+  }
+
+  function renderBreakdowns(calc) {
+    $('#breakdownGrid').innerHTML = calc.scenarios.map((scenario) => {
+      const lines = Object.entries(scenario.details).map(([key, value]) => {
+        const isRate = key.toLowerCase().includes('taxa bruta nominal');
+        return `<div><dt>${escapeHtml(key)}</dt><dd>${isRate ? percent.format(value) : money.format(value)}</dd></div>`;
+      }).join('');
+      return `<article class="breakdown"><h3>${escapeHtml(scenario.label)}</h3><dl>${lines}</dl></article>`;
+    }).join('');
+  }
+
+  function renderDiagnostics(calc) {
+    const messages = [];
+    if (Math.abs(calc.totalDays - 365) > 0.001) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
+    if (n(state.airbnb.taxPct) === 0) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
+    if (calc.blockedDays > 0) messages.push({ text: `${number1.format(calc.blockedDays)} dias estão indisponíveis. A ocupação de ${percent.format(calc.weightedOccupancy)} é calculada apenas sobre os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
+    if (calc.reservations > 0) messages.push({ text: `O modelo estima ${number1.format(calc.reservations)} reservas/ano. Cada R$ 10 adicionados ao custo por reserva reduzem o Airbnb autogerido em aproximadamente ${money.format(calc.reservations * 10)} ao ano.` });
+    if (calc.selfReserveContribution > 0) messages.push({ text: `${money.format(calc.selfReserveContribution)} são transferidos para reservas vinculadas no Airbnb autogerido. Esse valor reduz o caixa livre, mas continua dentro do patrimônio.` });
+    if (calc.selfSetup > 0) messages.push({ text: `Dos ${money.format(calc.selfSetup)} de CAPEX do Airbnb autogerido, ${money.format(calc.selfSetupResidual)} permanecem como valor residual estimado ao fim do 1º ano; a perda econômica estimada é ${money.format(calc.selfSetupDepreciation)}.` });
+    const deficitScenarios = calc.scenarios.filter((scenario) => scenario.externalFundingRequired > 0);
+    deficitScenarios.forEach((scenario) => messages.push({ warning: true, text: `${scenario.label} exige ${money.format(scenario.externalFundingRequired)} de aporte externo para cobrir o caixa negativo. Esse valor também foi somado ao capital do benchmark financeiro equivalente.` }));
+    const rentedScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-rented');
+    if (rentedScenario) messages.push({ text: `No Airbnb em imóvel alugado, o capital de oportunidade é ${money.format(rentedScenario.opportunityCapital)} — montagem/custos iniciais, capital vinculado e eventual aporte para déficit, sem incluir o valor do imóvel.` });
+    const adminScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-admin');
+    if (adminScenario) messages.push({ text: `No Airbnb administrado, o modelo estima ${number1.format(calc.workHours.admin)} horas suas por ano: tarefas não delegadas + supervisão residual da administradora.` });
+    if (n(state.globals.ownerHourlyValue) > 0) messages.push({ text: `Com sua hora avaliada em ${money.format(state.globals.ownerHourlyValue)}, o melhor resultado econômico de caixa é ${calc.bestEconomic.label}: ${money.format(calc.bestEconomic.economicResult)} ao ano.` });
+    messages.push({ text: `A diária média vendida é ${money2.format(calc.adr)} e a receita por dia disponível (RevPAR) é ${money2.format(calc.revPar)}.` });
+    messages.push({ text: `O imóvel está projetado para valorizar ${percent.format(calc.nominalPropertyAppreciation)} nominalmente: ${percent.format(calc.inflation)} recompõem a inflação e ${percent.format(calc.realAppreciation)} representam valorização real acima dela.` });
+    messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
+    messages.push({ text: `Na aplicação financeira, ${money.format(calc.investmentCapitalPreservationAmount)} do rendimento líquido nominal precisam permanecer aplicados para preservar o principal real. O caixa sustentável distribuível é ${money.format(calc.investmentSustainableCash)}.` });
+    $('#diagnostics').innerHTML = messages.map((m) => `<div class="diagnostic ${m.warning ? 'warning' : ''}">${escapeHtml(m.text)}</div>`).join('');
+  }
+
+  function renderFinalSummary(calc) {
+    const sorted = [...calc.scenarios].sort((a, b) => b.freeCash - a.freeCash);
+    const best = sorted[0];
+    const second = sorted[1];
+    const lead = best.freeCash - second.freeCash;
+    const maxAbsCash = Math.max(...calc.scenarios.map((s) => Math.abs(s.freeCash)), 1);
+
+    $('#finalWinner').innerHTML = `<span class="final-winner-label">Melhor caixa livre</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.freeCash)} / ano</span><small>${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'Empate no maior resultado'}</small>`;
+
+    $('#finalScenarioGrid').innerHTML = calc.scenarios.map((scenario) => {
+      const isBest = scenario.id === best.id;
+      const diff = scenario.freeCash - best.freeCash;
+      const barWidth = Math.max(4, Math.abs(scenario.freeCash) / maxAbsCash * 100);
+      const freeCashCaption = scenario.id === 'investment' ? 'caixa sustentável distribuível / ano' : 'caixa livre gerado / ano';
+      const freeCashLens = scenario.id === 'investment' ? 'Caixa sustentável' : 'Caixa livre';
+      return `
+        <article class="final-scenario-card ${isBest ? 'best' : ''}">
+          <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Melhor caixa</span>' : ''}</div>
+          <div class="final-annual ${scenario.freeCash < 0 ? 'negative' : ''}">${money.format(scenario.freeCash)}</div>
+          <div class="final-annual-label">${freeCashCaption}</div>
+          <div class="final-bar-track" aria-hidden="true"><span style="width:${barWidth.toFixed(1)}%"></span></div>
+          <div class="money-lenses">
+            <div class="money-lens"><span>${freeCashLens}</span><strong>${money.format(scenario.freeCash)}</strong><small>disponível preservando as premissas do cenário</small></div>
+            <div class="money-lens"><span>Ganho patrimonial real</span><strong>${money.format(scenario.realWealthCreation)}</strong><small>em poder de compra de hoje</small></div>
+            <div class="money-lens"><span>Capital vinculado</span><strong>${money.format(scenario.tiedCapital)}</strong><small>reservas, cauções e garantias</small></div>
+          </div>
+          <div class="final-scenario-metrics final-scenario-metrics-v3">
+            <div><span>Caixa antes das reservas / preservação</span><strong>${money.format(scenario.operatingCash)}</strong></div>
+            <div><span>Necessário p/ preservar principal real</span><strong>${money.format(scenario.cashPreservationRequirement || 0)}</strong></div>
+            <div><span>Aporte às reservas</span><strong>${money.format(scenario.reserveContribution)}</strong></div>
+            <div><span>Aporte externo p/ déficit</span><strong>${money.format(scenario.externalFundingRequired)}</strong></div>
+            <div><span>CAPEX inicial</span><strong>${money.format(scenario.capex)}</strong></div>
+            <div><span>Valor residual CAPEX</span><strong>${money.format(scenario.setupResidual)}</strong></div>
+            <div><span>Capital de oportunidade</span><strong>${money.format(scenario.opportunityCapital)}</strong></div>
+            <div><span>Ganho real do benchmark</span><strong>${money.format(scenario.benchmarkRealGain)}</strong></div>
+            <div><span>Δ real vs. benchmark</span><strong class="${scenario.realGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.realGapVsBenchmark)}</strong></div>
+            <div><span>Patrimônio nominal final</span><strong>${money.format(scenario.endNetWorth)}</strong></div>
+            <div><span>Patrimônio real final</span><strong>${money.format(scenario.realEndNetWorth)}</strong></div>
+            <div><span>Preservação do poder de compra</span><strong>${money.format(scenario.capitalPreservationAmount)}</strong></div>
+            <div><span>Excedente nominal sobre preservação</span><strong>${money.format(scenario.nominalExcessOverPreservation)}</strong></div>
+            <div><span>Horas próprias / ano</span><strong>${number1.format(scenario.workHoursAnnual || 0)} h</strong></div>
+            <div><span>Custo do seu tempo</span><strong>${money.format(scenario.laborCost)}</strong></div>
+            <div><span>Yield de caixa livre</span><strong>${percent.format(scenario.cashYield)}</strong></div>
+            <div><span>Retorno patrimonial real</span><strong>${percent.format(scenario.realTotalReturn)}</strong></div>
+          </div>
+          <div class="final-difference ${isBest ? 'best-difference' : ''}">${isBest ? 'Maior geração de caixa livre' : `${money.format(Math.abs(diff))} a menos de caixa livre por ano que o melhor cenário`}</div>
+        </article>`;
+    }).join('');
+  }
+
+  function exportSimulation() {
+    const payload = { app: 'simulador-airbnb', version: APP_VERSION, exportedAt: new Date().toISOString(), simulation: state };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slugify(state.name || 'simulacao-airbnb')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importSimulation(file) {
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw);
+      const incoming = parsed.simulation ?? parsed;
+      if (!incoming || typeof incoming !== 'object') throw new Error('Formato inválido');
+      state = normalizeState(incoming);
+      autosave();
+      renderAll();
+      showNotice(`Simulação “${state.name || file.name}” carregada com sucesso.`);
+    } catch (error) { showNotice(`Não foi possível carregar o arquivo: ${error.message}`, true); }
+  }
+
+  function showNotice(text, isError = false) {
+    const el = $('#loadNotice');
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.style.borderLeftColor = isError ? 'var(--danger)' : 'var(--accent)';
+    clearTimeout(showNotice.timer);
+    showNotice.timer = setTimeout(() => el.classList.add('hidden'), 5000);
+  }
+
+  async function copySummary() {
+    if (!lastCalculation) return;
+    const calc = lastCalculation;
+    const lines = [
+      `${state.name}`,
+      `Valor do imóvel: ${money.format(calc.propertyValue)}`,
+      `Inflação: ${percent.format(calc.inflation)}`,
+      `Valorização real esperada do imóvel: ${percent.format(calc.realAppreciation)}`,
+      `Valorização nominal projetada do imóvel: ${percent.format(calc.nominalPropertyAppreciation)}`,
+      '',
+      ...calc.scenarios.map((s) => `${s.label}: caixa livre ${money.format(s.freeCash)}/ano · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ real vs benchmark ${money.format(s.realGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
+      '',
+      `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · ADR ${money2.format(calc.adr)} · ${number1.format(calc.reservations)} reservas/ano`
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      showNotice('Resumo copiado para a área de transferência.');
+    } catch { showNotice('Seu navegador não permitiu copiar automaticamente. Use o botão de baixar JSON.', true); }
+  }
+
+  function slugify(text) {
+    return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'simulacao-airbnb';
+  }
+  function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
+  function escapeAttr(value) { return escapeHtml(value); }
+  function cssEscape(value) { return (typeof window !== 'undefined' && window.CSS && CSS.escape) ? CSS.escape(String(value)) : String(value).replace(/([ #;?%&,.+*~\\':"!^$\[\]()=>|/@])/g, '\\$1'); }
+
+  function loadAccordionState() { try { const raw = localStorage.getItem(UI_STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+  function saveAccordionState() { try { localStorage.setItem(UI_STORAGE_KEY, JSON.stringify($$('.accordion').filter((s) => s.open).map((s) => s.id))); } catch {} }
+  function setAllAccordions(open) { $$('.accordion').forEach((section) => { section.open = open; }); saveAccordionState(); }
+  function bindAccordions() {
+    const saved = loadAccordionState();
+    if (Array.isArray(saved)) $$('.accordion').forEach((section) => { section.open = saved.includes(section.id); });
+    $$('.accordion').forEach((section) => section.addEventListener('toggle', saveAccordionState));
+    $('#expandAllSections')?.addEventListener('click', () => setAllAccordions(true));
+    $('#collapseAllSections')?.addEventListener('click', () => setAllAccordions(false));
+  }
+
+  function renderAll() { hydrateStaticInputs(); renderDynamicTables(); calculateAndRender(); }
+
+  function init() {
+    bindStaticInputs();
+    bindDynamicTables();
+    bindAccordions();
+    $('#addSeasonButton').addEventListener('click', addSeason);
+    $('#addStayCostButton').addEventListener('click', addStayCost);
+    $('#addMonthlyCostButton').addEventListener('click', addMonthlyCost);
+    $('#addPercentageCostButton').addEventListener('click', addPercentageCost);
+    $('#addReserveFundButton').addEventListener('click', addReserveFund);
+    $('#addSetupCostButton').addEventListener('click', addSetupCost);
+    ['#saveButton', '#saveButtonBottom'].forEach((selector) => $(selector).addEventListener('click', exportSimulation));
+    ['#loadButton', '#loadButtonBottom'].forEach((selector) => $(selector).addEventListener('click', () => $('#fileInput').click()));
+    $('#fileInput').addEventListener('change', (event) => { const [file] = event.target.files || []; if (file) importSimulation(file); event.target.value = ''; });
+    $('#copySummaryButton').addEventListener('click', copySummary);
+    renderAll();
+  }
+
+  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, defaultState: structuredCloneSafe(defaultState), normalizeState };
+  if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
+})();

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Simulador local para comparar Airbnb próprio, Airbnb administrado, Airbnb em imóvel alugado, aluguel tradicional e investimento financeiro." />
+  <title>Simulador de renda do imóvel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-copy-wrap">
+      <p class="eyebrow">Simulador patrimonial</p>
+      <h1>Airbnb × aluguel × investimento</h1>
+      <p class="header-copy">Compare cinco estratégias, separando caixa livre, capital vinculado, patrimônio, OPEX, CAPEX, trabalho próprio e custo de oportunidade.</p>
+    </div>
+    <div class="header-actions">
+      <button class="button secondary" id="loadButton" type="button">Carregar JSON</button>
+      <button class="button primary" id="saveButton" type="button">Baixar simulação</button>
+      <input id="fileInput" type="file" accept="application/json,.json" hidden />
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="simulation-bar" aria-labelledby="simulation-title-heading">
+      <div class="simulation-name-wrap">
+        <label class="field-label" id="simulation-title-heading" for="simulationName">Simulação</label>
+        <input id="simulationName" data-path="name" type="text" maxlength="120" />
+      </div>
+      <div class="status-stack">
+        <span class="status-pill" id="daysStatus">365 dias configurados</span>
+        <span class="status-pill neutral" id="autosaveStatus">salvo localmente</span>
+      </div>
+    </section>
+
+    <div id="loadNotice" class="notice hidden" role="status"></div>
+
+    <div class="accordion-toolbar" aria-label="Controles das seções">
+      <div>
+        <strong>Premissas da simulação</strong>
+        <span>Abra apenas o bloco que deseja editar.</span>
+      </div>
+      <div class="toolbar-actions">
+        <button class="button tiny secondary" id="expandAllSections" type="button">Expandir tudo</button>
+        <button class="button tiny secondary" id="collapseAllSections" type="button">Recolher tudo</button>
+      </div>
+    </div>
+
+    <div class="accordion-stack">
+      <details class="accordion" id="section-globals" open>
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">01 · Dados gerais</span>
+            <span class="accordion-title">Imóvel, macroeconomia e valor do seu tempo</span>
+            <span class="accordion-description">Premissas globais usadas na comparação dos cinco cenários.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="premise-grid">
+            <article class="input-card wide-value">
+              <label class="field-label" for="propertyValue">Valor de mercado do imóvel</label>
+              <div class="input-prefix"><span>R$</span><input id="propertyValue" data-path="globals.propertyValue" type="number" min="0" step="1000" /></div>
+              <p class="helper">É a base patrimonial dos cenários em que você possui o imóvel e do investimento financeiro isolado. Cada estratégia também ganha um benchmark financeiro equivalente ao capital que ela efetivamente compromete.</p>
+            </article>
+            <article class="input-card">
+              <label class="field-label" for="inflation">Inflação projetada</label>
+              <div class="input-suffix compact-control"><input id="inflation" data-path="globals.inflationPct" type="number" step="0.1" /><span>% a.a.</span></div>
+              <p class="helper">Converte retornos nominais em retorno real.</p>
+            </article>
+            <article class="input-card">
+              <label class="field-label" for="appreciation">Valorização real esperada do imóvel</label>
+              <div class="input-suffix compact-control"><input id="appreciation" data-path="globals.propertyRealAppreciationPct" type="number" step="0.1" /><span>% acima da inflação</span></div>
+              <p class="helper">0% significa que o imóvel apenas acompanha a inflação. A valorização nominal é calculada automaticamente por composição. <strong id="propertyAppreciationPreview"></strong></p>
+            </article>
+            <article class="input-card">
+              <label class="field-label" for="ownerHourlyValue">Valor econômico da sua hora</label>
+              <div class="input-prefix money-control"><span>R$</span><input id="ownerHourlyValue" data-path="globals.ownerHourlyValue" type="number" min="0" step="10" /></div>
+              <p class="helper">Não sai do caixa; serve para calcular o resultado econômico do seu trabalho.</p>
+            </article>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-heading"><div><h3>Tempo próprio</h3><p>As horas ligadas às tarefas do Airbnb são informadas nas tabelas operacionais. No cenário administrado, tarefas marcadas como “admin gerencia” deixam automaticamente de consumir seu tempo.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Outras horas gerais · Airbnb próprio</span><div class="input-suffix compact-control"><input data-path="work.selfHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
+              <label class="field-group"><span class="field-label">Supervisão da administradora</span><div class="input-suffix compact-control"><input data-path="work.supervisionAdminHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div><small class="field-help">Tempo residual para acompanhar a empresa, mesmo quando as tarefas estão delegadas.</small></label>
+              <label class="field-group"><span class="field-label">Outras horas gerais · Airbnb alugado</span><div class="input-suffix compact-control"><input data-path="work.rentedAirbnbHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
+              <label class="field-group"><span class="field-label">Aluguel tradicional</span><div class="input-suffix compact-control"><input data-path="work.traditionalHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
+              <label class="field-group"><span class="field-label">Investimento financeiro</span><div class="input-suffix compact-control"><input data-path="work.investmentHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-airbnb-revenue" open>
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">02 · Airbnb</span>
+            <span class="accordion-title">Receita e sazonalidade</span>
+            <span class="accordion-description">Disponibilidade, diária, ocupação e taxas cobradas do hóspede.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="subsection">
+            <div class="subsection-heading"><div><h3>Receitas adicionais por reserva</h3><p>São receitas cobradas do hóspede além das diárias.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Taxa de limpeza cobrada</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.cleaningFeeRevenue" type="number" min="0" step="10" /></div></label>
+              <label class="field-group"><span class="field-label">Outras taxas por reserva</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.otherGuestFeeRevenue" type="number" min="0" step="10" /></div></label>
+              <label class="field-group"><span class="field-label">Estadia média</span><div class="input-suffix compact-control"><input data-path="airbnb.avgStayNights" type="number" min="0.1" step="0.1" /><span>noites</span></div></label>
+            </div>
+            <p class="helper">O número estimado de reservas nasce das noites ocupadas ÷ estadia média.</p>
+          </div>
+
+          <div class="section-actions-line">
+            <p class="helper">“Dias indisponíveis” são dias que nem entram na oferta: uso próprio, obra, bloqueio de calendário etc.</p>
+            <button class="button ghost small-button" id="addSeasonButton" type="button">+ Adicionar período</button>
+          </div>
+          <div class="table-card compact-table-card">
+            <div class="table-scroll">
+              <table class="season-table season-table-v2">
+                <thead>
+                  <tr><th>Período</th><th>Dias</th><th>Indisponíveis</th><th>Disponíveis</th><th>Diária</th><th>Ocupação</th><th>Receita diárias</th><th></th></tr>
+                </thead>
+                <tbody id="seasonRows"></tbody>
+                <tfoot>
+                  <tr><th>Total / média</th><th id="totalDays">—</th><th id="blockedDays">—</th><th id="availableDays">—</th><th id="weightedAdr">—</th><th id="weightedOccupancy">—</th><th id="seasonRevenue">—</th><th></th></tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-airbnb-costs" open>
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">03 · Airbnb</span>
+            <span class="accordion-title">Operação, custos e administradora</span>
+            <span class="accordion-description">O Airbnb administrado reaproveita os mesmos custos; marque o que já está incluído no pacote.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="subsection">
+            <div class="subsection-heading"><div><h3>Taxas e administração</h3><p>Custos gerais que não pertencem a uma linha operacional específica.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Taxa da plataforma</span><div class="input-suffix compact-control"><input data-path="airbnb.platformFeePct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
+              <label class="field-group"><span class="field-label">Alíquota efetiva estimada de IR</span><div class="input-suffix compact-control"><input data-path="airbnb.taxPct" type="number" min="0" step="0.1" /><span>% base tributável</span></div></label>
+              <label class="field-group"><span class="field-label">Comissão administradora</span><div class="input-suffix compact-control"><input data-path="airbnb.adminFeePct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
+              <label class="field-group"><span class="field-label">Mensalidade fixa admin.</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.adminMonthlyFee" type="number" min="0" step="10" /></div></label>
+              <label class="field-group"><span class="field-label">Onboarding admin. (único)</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.adminOnboardingFee" type="number" min="0" step="50" /></div></label>
+            </div>
+            <div class="check-row inline-checks">
+              <label><input data-path="airbnb.adminIncludesPlatformFee" type="checkbox" /> A comissão da administradora já absorve a taxa da plataforma</label>
+              <label><input data-path="airbnb.platformFeeDeductibleIR" type="checkbox" /> Taxa da plataforma dedutível da base de IR</label>
+              <label><input data-path="airbnb.adminFeeDeductibleIR" type="checkbox" /> Comissão da administradora dedutível da base de IR</label>
+              <label><input data-path="airbnb.adminMonthlyFeeDeductibleIR" type="checkbox" /> Mensalidade da administradora dedutível da base de IR</label>
+            </div>
+            <p class="helper">“Admin gerencia” controla seu tempo; “custo incluído” controla quem paga. A dedutibilidade tributária é configurável e usa defaults conservadores — confirme a situação concreta com as regras fiscais aplicáveis.</p>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-heading with-action">
+              <div><h3>Custos por reserva</h3><p>Limpeza, lavanderia, check-in presencial e outros custos de turnover.</p></div>
+              <button class="button ghost small-button" id="addStayCostButton" type="button">+ Adicionar custo</button>
+            </div>
+            <div class="table-card compact-table-card">
+              <div class="table-scroll">
+                <table class="cost-table admin-table">
+                  <thead><tr><th>Item</th><th>Custo por reserva</th><th>Seu tempo</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <tbody id="stayCostRows"></tbody>
+                  <tfoot><tr><th>Total por reserva</th><th id="stayCostTotal">—</th><th colspan="5"></th></tr></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-heading with-action">
+              <div><h3>Custos mensais e operação contínua</h3><p>Inclui imóvel, comercial, atendimento, plantão, software e operação.</p></div>
+              <button class="button ghost small-button" id="addMonthlyCostButton" type="button">+ Adicionar custo</button>
+            </div>
+            <div class="table-card compact-table-card">
+              <div class="table-scroll">
+                <table class="monthly-cost-table admin-table">
+                  <thead><tr><th>Item</th><th>Valor mensal</th><th>Seu tempo/mês</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <tbody id="monthlyCostRows"></tbody>
+                  <tfoot><tr><th>Total anual</th><th></th><th></th><th id="monthlyAirbnbTotal">—</th><th id="monthlyRentedAirbnbTotal">—</th><th id="monthlyTraditionalTotal">—</th><th></th><th><span id="monthlyAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th><th></th></tr></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-heading with-action">
+              <div><h3>Custos percentuais sobre a receita</h3><p>Somente despesas efetivamente consumidas, como manutenção, reparos e perdas. Reservas ficam em um bloco separado.</p></div>
+              <button class="button ghost small-button" id="addPercentageCostButton" type="button">+ Adicionar percentual</button>
+            </div>
+            <div class="table-card compact-table-card narrow-table">
+              <div class="table-scroll">
+                <table class="percentage-cost-table admin-table">
+                  <thead><tr><th>Item</th><th>% da receita</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <tbody id="percentageCostRows"></tbody>
+                  <tfoot><tr><th>Total</th><th id="percentageCostTotal">—</th><th colspan="3"></th></tr></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection reserve-subsection">
+            <div class="subsection-heading with-action">
+              <div><h3>Reservas vinculadas</h3><p>Dinheiro separado para despesas futuras previsíveis. Reduz o caixa livre, mas continua sendo seu patrimônio.</p></div>
+              <button class="button ghost small-button" id="addReserveFundButton" type="button">+ Adicionar reserva</button>
+            </div>
+            <div class="concept-note">
+              <strong>Importante:</strong> aporte ao fundo não é OPEX. O desgaste econômico de móveis/equipamentos aparece como depreciação no bloco de CAPEX; o dinheiro reservado continua compondo o patrimônio líquido.
+            </div>
+            <div class="table-card compact-table-card reserve-table-card">
+              <div class="table-scroll">
+                <table class="reserve-fund-table admin-table">
+                  <thead><tr><th>Reserva</th><th>Aporte anual</th><th>Saldo inicial</th><th>Novos aportes cobertos pela admin.</th><th></th></tr></thead>
+                  <tbody id="reserveFundRows"></tbody>
+                  <tfoot><tr><th>Total</th><th id="reserveFundTotal">—</th><th id="reserveFundOpeningTotal">—</th><th><span id="reserveAdminContributionTotal">—</span><small class="footer-hint">aporte anual no cenário admin.</small></th><th></th></tr></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-package-box">
+            <div><span class="eyebrow">Pacote configurado</span><h3>Delegação e custos da administradora</h3><p>Resumo automático do que ela gerencia e do que está efetivamente incluído na comissão.</p></div>
+            <div class="admin-tags" id="adminIncludedSummary"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-rented-airbnb">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">04 · Airbnb sem comprar imóvel</span>
+            <span class="accordion-title">Airbnb em imóvel alugado</span>
+            <span class="accordion-description">Arbitragem de locação: você aluga o imóvel, monta a operação e fica com o risco operacional.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="form-grid compact-fields">
+            <label class="field-group"><span class="field-label">Aluguel mensal pago ao proprietário</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.monthlyLeaseRent" type="number" min="0" step="50" /></div></label>
+            <label class="field-group"><span class="field-label">Caução / garantia reembolsável</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.securityDeposit" type="number" min="0" step="100" /></div></label>
+            <label class="field-group"><span class="field-label">Custos iniciais não recuperáveis do contrato</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.initialLeaseCosts" type="number" min="0" step="100" /></div></label>
+            <label class="field-group"><span class="field-label">Custos anuais do contrato / garantia</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.annualLeaseCosts" type="number" min="0" step="50" /></div></label>
+            <label class="field-group checkbox-field"><span class="field-label">Tributação</span><span class="check-row"><label><input data-path="rentedAirbnb.annualLeaseCostsDeductibleIR" type="checkbox" /> Custos anuais do contrato dedutíveis IR</label></span></label>
+          </div>
+          <div class="concept-note">
+            <strong>Como o cenário funciona:</strong> usa as mesmas diárias, ocupação, custos por reserva, OPEX percentual e reservas do Airbnb autogerido. Na tabela de custos mensais e no CAPEX, a coluna “Airbnb alugado” permite ajustar o que realmente cabe ao locatário. A caução não é despesa: continua sendo patrimônio, mas fica vinculada ao contrato.
+          </div>
+          <div class="real-return-note">
+            <strong>Custo de oportunidade:</strong> o benchmark financeiro equivalente usa o capital realmente comprometido nesta estratégia — CAPEX de montagem + caução + reservas iniciais + qualquer aporte necessário para cobrir um caixa anual negativo. O valor do imóvel não entra, porque ele pertence ao locador.
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-capex">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">05 · Implantação</span>
+            <span class="accordion-title">CAPEX e preparação do imóvel</span>
+            <span class="accordion-description">Mobília, reforma, equipamentos e outros custos que ocorrem no início, não todo ano.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="section-actions-line">
+            <p class="helper">Informe também quanto cada item ainda deve valer ao fim do 1º ano. O desembolso afeta caixa; apenas a depreciação estimada afeta patrimônio.</p>
+            <button class="button ghost small-button" id="addSetupCostButton" type="button">+ Adicionar item</button>
+          </div>
+          <div class="table-card compact-table-card">
+            <div class="table-scroll">
+              <table class="setup-cost-table admin-table">
+                <thead><tr><th>Item</th><th>Valor inicial</th><th>Residual após 1 ano</th><th>Valor residual</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Incluído na admin.</th><th></th></tr></thead>
+                <tbody id="setupCostRows"></tbody>
+                <tfoot>
+                  <tr><th>Total inicial</th><th></th><th></th><th></th><th id="setupAirbnbTotal">—</th><th id="setupRentedAirbnbTotal">—</th><th id="setupTraditionalTotal">—</th><th><span id="setupAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th></tr>
+                  <tr><th>Valor residual estimado</th><th></th><th></th><th></th><th id="setupAirbnbResidualTotal">—</th><th id="setupRentedAirbnbResidualTotal">—</th><th id="setupTraditionalResidualTotal">—</th><th id="setupAdminResidualTotal">—</th><th></th></tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-traditional">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">06 · Aluguel tradicional</span>
+            <span class="accordion-title">Receita, vacância e custos do contrato</span>
+            <span class="accordion-description">Administração imobiliária, manutenção, troca de inquilino e perdas.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="form-grid compact-fields">
+            <label class="field-group"><span class="field-label">Aluguel mensal</span><div class="input-prefix money-control"><span>R$</span><input data-path="traditional.monthlyRent" type="number" min="0" step="50" /></div></label>
+            <label class="field-group"><span class="field-label">Ocupação anual</span><div class="input-suffix compact-control"><input data-path="traditional.occupancyPct" type="number" min="0" max="100" step="0.1" /><span>%</span></div></label>
+            <label class="field-group"><span class="field-label">Imobiliária / administração</span><div class="input-suffix compact-control"><input data-path="traditional.managementFeePct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
+            <label class="field-group"><span class="field-label">Alíquota efetiva estimada de IR</span><div class="input-suffix compact-control"><input data-path="traditional.taxPct" type="number" min="0" step="0.1" /><span>% base tributável</span></div></label>
+            <label class="field-group"><span class="field-label">Manutenção e reparos</span><div class="input-suffix compact-control"><input data-path="traditional.maintenancePct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
+            <label class="field-group"><span class="field-label">Inadimplência / perdas</span><div class="input-suffix compact-control"><input data-path="traditional.lossPct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
+            <label class="field-group"><span class="field-label">Comissão por nova locação</span><div class="input-suffix compact-control"><input data-path="traditional.newLeaseCommissionMonths" type="number" min="0" step="0.1" /><span>aluguéis</span></div></label>
+            <label class="field-group"><span class="field-label">Duração média do contrato</span><div class="input-suffix compact-control"><input data-path="traditional.avgContractMonths" type="number" min="0" step="1" /><span>meses</span></div></label>
+            <label class="field-group"><span class="field-label">Custos jurídicos/admin. anuais</span><div class="input-prefix money-control"><span>R$</span><input data-path="traditional.annualOtherCosts" type="number" min="0" step="50" /></div></label>
+          </div>
+          <div class="check-row inline-checks tax-checks">
+            <label><input data-path="traditional.managementFeeDeductibleIR" type="checkbox" /> Administração/imobiliária dedutível IR</label>
+            <label><input data-path="traditional.maintenanceDeductibleIR" type="checkbox" /> Manutenção dedutível IR</label>
+            <label><input data-path="traditional.lossDeductibleIR" type="checkbox" /> Perdas/inadimplência dedutíveis IR</label>
+            <label><input data-path="traditional.newLeaseCommissionDeductibleIR" type="checkbox" /> Comissão de nova locação dedutível IR</label>
+            <label><input data-path="traditional.annualOtherCostsDeductibleIR" type="checkbox" /> Outros custos anuais dedutíveis IR</label>
+          </div>
+          <p class="helper">Condomínio, IPTU, seguro e outros custos compartilháveis continuam na tabela de custos mensais acima, marcados na coluna “Aluguel tradicional”. Apenas despesas marcadas como dedutíveis reduzem a base tributável.</p>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-investment">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">07 · Custo de oportunidade</span>
+            <span class="accordion-title">Investimento financeiro</span>
+            <span class="accordion-description">O card isolado usa o valor do imóvel; cada estratégia também calcula um benchmark financeiro com seu próprio capital de oportunidade.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="mode-switch" role="radiogroup" aria-label="Tipo de retorno financeiro">
+            <label><input type="radio" name="investmentMode" value="nominal" /> Taxa nominal</label>
+            <label><input type="radio" name="investmentMode" value="ipcaPlus" /> Inflação + taxa real</label>
+          </div>
+          <div class="form-grid compact-fields">
+            <label class="field-group" id="nominalRateGroup"><span class="field-label">Retorno bruto nominal</span><div class="input-suffix compact-control"><input data-path="investment.nominalRatePct" type="number" step="0.1" /><span>% a.a.</span></div></label>
+            <label class="field-group" id="realRateGroup"><span class="field-label">Taxa real acima da inflação</span><div class="input-suffix compact-control"><input data-path="investment.realRatePct" type="number" step="0.1" /><span>% a.a.</span></div></label>
+            <label class="field-group"><span class="field-label">IR sobre rendimentos</span><div class="input-suffix compact-control"><input data-path="investment.taxPct" type="number" min="0" step="0.1" /><span>%</span></div></label>
+            <label class="field-group"><span class="field-label">Taxas / custos anuais</span><div class="input-suffix compact-control"><input data-path="investment.feesPct" type="number" min="0" step="0.01" /><span>% capital</span></div></label>
+          </div>
+          <div class="real-return-note">
+            <strong>Mesma régua econômica:</strong> no modo “Inflação + taxa real”, a taxa nominal é calculada por composição: (1 + inflação) × (1 + taxa real) − 1. Nos resultados, a aplicação também mostra quanto do rendimento nominal precisa permanecer no patrimônio apenas para preservar o poder de compra do principal.
+          </div>
+          <div class="normalization-preview" id="investmentNormalizationPreview" aria-label="Normalização do investimento pela inflação"></div>
+        </div>
+      </details>
+
+      <details class="accordion results-accordion" id="section-results-detail">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">08 · Análise</span>
+            <span class="accordion-title">Resultados detalhados</span>
+            <span class="accordion-description">Caixa, patrimônio e reservas, com patrimônio nominal e real em uma mesma régua.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="section-actions-line result-actions">
+            <p class="helper">Caixa livre é dinheiro disponível; reserva vinculada continua sendo patrimônio; depreciação reduz patrimônio sem necessariamente sair do caixa naquele momento.</p>
+            <button class="button secondary small-button" id="copySummaryButton" type="button">Copiar resumo</button>
+          </div>
+          <div class="lens-explainer" aria-label="Três lentes do dinheiro">
+            <article><span>1</span><div><strong>Caixa livre</strong><small>O que sobrou disponível depois das despesas, impostos e aportes às reservas.</small></div></article>
+            <article><span>2</span><div><strong>Patrimônio real</strong><small>Quanto sua riqueza cresceu em poder de compra de hoje, descontando o efeito da inflação de todos os cenários.</small></div></article>
+            <article><span>3</span><div><strong>Capital vinculado</strong><small>Patrimônio que continua sendo seu, mas não está livre: reservas, cauções e garantias.</small></div></article>
+          </div>
+          <div class="kpi-grid" id="kpiGrid"></div>
+          <div class="table-card results-table-card">
+            <div class="table-scroll">
+              <table class="results-v2">
+                <thead>
+                  <tr><th>Cenário</th><th>Receita bruta</th><th>OPEX + taxas</th><th>Imposto</th><th>Caixa antes reserva/preservação</th><th>Necessário p/ preservar principal</th><th>Aporte reserva</th><th>Caixa livre</th><th>Aporte externo</th><th>CAPEX</th><th>Residual CAPEX</th><th>Capital vinculado</th><th>Capital de oportunidade</th><th>Ganho real</th><th>Benchmark financeiro real</th><th>Δ real vs benchmark</th><th>Patrimônio nominal final</th><th>Patrimônio real final</th><th>Horas / custo do seu tempo</th><th>Yield caixa</th><th>Retorno patrimonial real</th></tr>
+                </thead>
+                <tbody id="resultRows"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="breakdown-grid" id="breakdownGrid"></div>
+          <div class="diagnostics" id="diagnostics"></div>
+          <p class="results-note">* O patrimônio nominal mostra os valores em reais do fim do período; o patrimônio real traz tudo de volta ao poder de compra do início da simulação. A inflação não é tratada como OPEX: ela determina quanto do crescimento nominal foi apenas preservação do poder de compra. Transferir dinheiro para uma reserva vinculada não reduz patrimônio; apenas reduz a parcela livre.</p>
+        </div>
+      </details>
+
+      <details class="accordion" id="section-share">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">09 · Portabilidade</span>
+            <span class="accordion-title">Salvar e compartilhar</span>
+            <span class="accordion-description">Baixe ou carregue todas as premissas em JSON.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="card-grid two share-grid">
+            <article class="share-card"><div><h3>Baixar simulação</h3><p>Gera um JSON portátil para guardar versões ou enviar junto com o endereço do aplicativo.</p></div><button class="button primary" id="saveButtonBottom" type="button">Baixar JSON</button></article>
+            <article class="share-card"><div><h3>Carregar simulação</h3><p>Arquivos da versão anterior continuam sendo migrados automaticamente.</p></div><button class="button secondary" id="loadButtonBottom" type="button">Escolher JSON</button></article>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <section class="final-summary-section" aria-labelledby="final-summary-heading">
+      <div class="final-summary-heading">
+        <div>
+          <p class="eyebrow">Resumo final</p>
+          <h2 id="final-summary-heading">Quanto você ganha em cada cenário</h2>
+          <p>Cada cenário é mostrado por três lentes: caixa livre, ganho patrimonial real e capital vinculado. Além disso, cada estratégia é comparada com uma aplicação financeira usando exatamente o capital que ela exige.</p>
+        </div>
+        <div class="final-winner" id="finalWinner"></div>
+      </div>
+      <div class="final-scenario-grid" id="finalScenarioGrid"></div>
+      <p class="final-summary-note">Caixa, patrimônio e capital vinculado são deliberadamente separados para evitar dupla contagem. Patrimônio nominal e patrimônio real também são separados: o segundo desconta a inflação e permite comparar, pela mesma régua, um imóvel que se valoriza com uma aplicação que rende juros.</p>
+    </section>
+  </main>
+
+  <footer><p>Aplicação estática · HTML + CSS + JavaScript · sem dependências externas.</p></footer>
+  <script src="app.js" defer></script>
+</body>
+</html>
