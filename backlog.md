@@ -637,6 +637,30 @@ Preservar comportamento responsivo:
 
 ---
 
+
+### 13.5 Mostrar equivalente mensal dos resultados anuais
+
+**Prioridade:** baixa / ajuste de apresentação  
+**Motivo:** os resultados anuais são corretos para o motor econômico, mas a leitura de um valor mensal facilita a comparação com aluguel, renda recorrente e orçamento pessoal.
+
+No resumo final, mostrar também o **equivalente mensal** das principais métricas monetárias anuais, calculado simplesmente como:
+
+- `valor mensal equivalente = valor anual ÷ 12`.
+
+Aplicar pelo menos ao valor principal destacado no card final — atualmente **Excedente nominal sobre preservação do poder de compra** — e avaliar se vale repetir o equivalente mensal para caixa livre e outras métricas de fluxo.
+
+Regras de apresentação:
+
+- manter o valor anual como referência principal do modelo;
+- mostrar o equivalente mensal logo abaixo ou ao lado, sem substituir o anual;
+- usar rótulo como **“equivalente mensal”** ou **“média mensal equivalente”**;
+- não chamar o valor em reais de “taxa mensal”;
+- se futuramente houver exibição de percentuais mensais, não dividir uma taxa anual composta por 12: usar conversão financeira apropriada.
+
+**Critério de conclusão:** cada card do resumo final permite enxergar imediatamente o valor anual e sua média mensal equivalente, sem alterar nenhum cálculo econômico do cenário.
+
+---
+
 ## Registro de execução da Rodada B0 — 23/10/2026
 
 Implementado:
