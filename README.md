@@ -62,6 +62,16 @@ O imposto não é mais calculado presumindo que todo OPEX seja dedutível. Custo
 
 Os defaults são conservadores. Por padrão, taxa da plataforma, IPTU/tributos incidentes sobre o imóvel e condomínio são tratados como dedutíveis quando efetivamente suportados pelo locador; outras despesas ficam desmarcadas, salvo configuração explícita. No Airbnb em imóvel alugado, o aluguel pago ao proprietário é tratado separadamente como dedução da sublocação. A alíquota informada continua sendo uma simplificação efetiva aplicada à base tributável configurada.
 
+## Rodada B — cenário administrado
+
+A versão 8 torna três dimensões explícitas:
+
+- **Performance da administradora:** impactos opcionais e independentes sobre diária (%) e ocupação (pontos percentuais). Defaults são zero; quando alterados, o cenário administrado recalcula noites, reservas, taxas cobradas do hóspede, plataforma, comissão, OPEX percentual, reservas, tributação e horas por reserva.
+- **CAPEX no cenário administrado:** cada item distingue **Admin paga** de **Ativo fica com você**. Quem desembolsa e quem mantém o valor residual são decisões independentes.
+- **Benchmark econômico:** cada cenário mostra separadamente **Δ financeiro vs benchmark** e **Δ econômico vs benchmark**. O segundo desconta o custo do tempo do proprietário e compara também com o tempo configurado para gerir o investimento financeiro.
+
+JSONs anteriores são migrados automaticamente. No CAPEX legado, `adminIncluded=true` é interpretado como “admin paga / ativo não fica com o proprietário”, preservando o comportamento econômico anterior.
+
 ## Airbnb em imóvel alugado
 
 O cenário usa a mesma receita, sazonalidade, custos por reserva, OPEX percentual e reservas do Airbnb autogerido. Possui campos próprios para:
@@ -139,6 +149,7 @@ As Rodadas A e B0 incluem testes sem dependências externas para as correções 
 ```bash
 node tests/round-a.test.js
 node tests/round-b0.test.js
+node tests/round-b.test.js
 ```
 
 Os testes cobrem delegação de horas, separação entre gestão e custo incluído, caixa sustentável da aplicação, preservação do saldo inicial das reservas e base tributável configurável, incluindo sublocação.

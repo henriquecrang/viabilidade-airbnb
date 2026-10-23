@@ -151,6 +151,8 @@
               <label class="field-group"><span class="field-label">Comissão administradora</span><div class="input-suffix compact-control"><input data-path="airbnb.adminFeePct" type="number" min="0" step="0.1" /><span>% receita</span></div></label>
               <label class="field-group"><span class="field-label">Mensalidade fixa admin.</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.adminMonthlyFee" type="number" min="0" step="10" /></div></label>
               <label class="field-group"><span class="field-label">Onboarding admin. (único)</span><div class="input-prefix money-control"><span>R$</span><input data-path="airbnb.adminOnboardingFee" type="number" min="0" step="50" /></div></label>
+              <label class="field-group"><span class="field-label">Impacto admin. na diária</span><div class="input-suffix compact-control"><input data-path="airbnb.adminNightlyRateImpactPct" type="number" step="0.1" /><span>%</span></div><small class="field-help">Variação relativa aplicada somente ao cenário administrado. Default: 0%.</small></label>
+              <label class="field-group"><span class="field-label">Impacto admin. na ocupação</span><div class="input-suffix compact-control"><input data-path="airbnb.adminOccupancyImpactPp" type="number" step="0.1" /><span>p.p.</span></div><small class="field-help">Soma pontos percentuais à ocupação de cada período, limitada entre 0% e 100%.</small></label>
             </div>
             <div class="check-row inline-checks">
               <label><input data-path="airbnb.adminIncludesPlatformFee" type="checkbox" /> A comissão da administradora já absorve a taxa da plataforma</label>
@@ -272,17 +274,17 @@
         </summary>
         <div class="accordion-body">
           <div class="section-actions-line">
-            <p class="helper">Informe também quanto cada item ainda deve valer ao fim do 1º ano. O desembolso afeta caixa; apenas a depreciação estimada afeta patrimônio.</p>
+            <p class="helper">Informe também quanto cada item ainda deve valer ao fim do 1º ano. No cenário administrado, separe quem paga do destino do ativo: a administradora pode pagar um item que continua pertencendo a você, ou o inverso. O valor residual só entra no seu patrimônio quando o ativo fica com você.</p>
             <button class="button ghost small-button" id="addSetupCostButton" type="button">+ Adicionar item</button>
           </div>
           <div class="table-card compact-table-card">
             <div class="table-scroll">
               <table class="setup-cost-table admin-table">
-                <thead><tr><th>Item</th><th>Valor inicial</th><th>Residual após 1 ano</th><th>Valor residual</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Incluído na admin.</th><th></th></tr></thead>
+                <thead><tr><th>Item</th><th>Valor inicial</th><th>Residual após 1 ano</th><th>Valor residual</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Admin paga</th><th>Ativo fica com você</th><th></th></tr></thead>
                 <tbody id="setupCostRows"></tbody>
                 <tfoot>
-                  <tr><th>Total inicial</th><th></th><th></th><th></th><th id="setupAirbnbTotal">—</th><th id="setupRentedAirbnbTotal">—</th><th id="setupTraditionalTotal">—</th><th><span id="setupAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th></tr>
-                  <tr><th>Valor residual estimado</th><th></th><th></th><th></th><th id="setupAirbnbResidualTotal">—</th><th id="setupRentedAirbnbResidualTotal">—</th><th id="setupTraditionalResidualTotal">—</th><th id="setupAdminResidualTotal">—</th><th></th></tr>
+                  <tr><th>Total inicial</th><th></th><th></th><th></th><th id="setupAirbnbTotal">—</th><th id="setupRentedAirbnbTotal">—</th><th id="setupTraditionalTotal">—</th><th colspan="2"><span id="setupAdminExcludedTotal">—</span><small class="footer-hint">seu desembolso no cenário administrado (inclui onboarding)</small></th><th></th></tr>
+                  <tr><th>Valor residual estimado</th><th></th><th></th><th></th><th id="setupAirbnbResidualTotal">—</th><th id="setupRentedAirbnbResidualTotal">—</th><th id="setupTraditionalResidualTotal">—</th><th colspan="2"><span id="setupAdminResidualTotal">—</span><small class="footer-hint">valor residual dos ativos que ficam com você</small></th><th></th></tr>
                 </tfoot>
               </table>
             </div>
@@ -373,7 +375,7 @@
             <div class="table-scroll">
               <table class="results-v2">
                 <thead>
-                  <tr><th>Cenário</th><th>Receita bruta</th><th>OPEX + taxas</th><th>Imposto</th><th>Caixa antes reserva/preservação</th><th>Necessário p/ preservar principal</th><th>Aporte reserva</th><th>Caixa livre</th><th>Aporte externo</th><th>CAPEX</th><th>Residual CAPEX</th><th>Capital vinculado</th><th>Capital de oportunidade</th><th>Ganho real</th><th>Benchmark financeiro real</th><th>Δ real vs benchmark</th><th>Patrimônio nominal final</th><th>Patrimônio real final</th><th>Horas / custo do seu tempo</th><th>Yield caixa</th><th>Retorno patrimonial real</th></tr>
+                  <tr><th>Cenário</th><th>Receita bruta</th><th>OPEX + taxas</th><th>Imposto</th><th>Caixa antes reserva/preservação</th><th>Necessário p/ preservar principal</th><th>Aporte reserva</th><th>Caixa livre</th><th>Aporte externo</th><th>CAPEX</th><th>Residual CAPEX</th><th>Capital vinculado</th><th>Capital de oportunidade</th><th>Ganho real</th><th>Benchmark financeiro real</th><th>Δ financeiro vs benchmark</th><th>Δ econômico vs benchmark</th><th>Patrimônio nominal final</th><th>Patrimônio real final</th><th>Horas / custo do seu tempo</th><th>Yield caixa</th><th>Retorno patrimonial real</th></tr>
                 </thead>
                 <tbody id="resultRows"></tbody>
               </table>

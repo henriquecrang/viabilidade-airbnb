@@ -610,3 +610,6 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 @media (min-width: 560px) and (max-width: 899px) {
   .final-scenario-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* V8 — Rodada B: performance da administradora, CAPEX e benchmark econômico */
+.setup-cost-table { min-width: 1240px; }

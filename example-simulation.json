@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 7,
+  "version": 8,
   "exportedAt": "2026-10-23T00:00:00.000Z",
   "simulation": {
-    "version": 7,
+    "version": 8,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -34,7 +34,9 @@
       "adminIncludesPlatformFee": false,
       "platformFeeDeductibleIR": true,
       "adminFeeDeductibleIR": false,
-      "adminMonthlyFeeDeductibleIR": false
+      "adminMonthlyFeeDeductibleIR": false,
+      "adminNightlyRateImpactPct": 0,
+      "adminOccupancyImpactPp": 0
     },
     "rentedAirbnb": {
       "monthlyLeaseRent": 3500,
@@ -346,7 +348,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "mobilia",
@@ -356,7 +359,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "eletro",
@@ -366,7 +370,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "enxoval",
@@ -376,7 +381,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "utensilios",
@@ -386,7 +392,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "fechadura",
@@ -396,7 +403,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "decoracao",
@@ -406,7 +414,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "fotografia",
@@ -416,7 +425,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "setup-anuncio",
@@ -426,7 +436,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       },
       {
         "id": "cadastros",
@@ -436,7 +447,8 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminIncluded": false
+        "adminPays": false,
+        "adminAssetBelongsToOwner": true
       }
     ]
   }
