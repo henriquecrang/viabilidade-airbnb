@@ -15,7 +15,8 @@ Este backlog consolida os achados da auditoria mais recente da aplicação e os 
 ## Status de execução
 
 - **Rodada A — concluída em 23/10/2026:** Blocos 1, 2, 3 e 4 implementados e cobertos por testes de regressão.
-- Próxima rodada planejada: Blocos 5 a 7, conforme priorização.
+- **Rodada B0 — executada em 23/10/2026:** itens 13.1, 13.2 e 13.4 concluídos; 13.3 parcialmente calibrado com referências públicas e pendente da proposta comercial real.
+- Próxima rodada funcional planejada: Rodada B — Blocos 5, 7 e parte do 8.
 
 # Bloco 1 — Delegação para administradora e horas do investidor
 
@@ -548,7 +549,7 @@ Esse bloco absorve o achado do Bloco 10.
 
 # Próximo passo recomendado
 
-Começar pela **Rodada A** e só avançar depois de criar testes automáticos para os quatro problemas críticos. Ela é a menor unidade de trabalho que corrige as distorções capazes de mudar a conclusão econômica atual.
+Com a Rodada A concluída e a B0 executada, a próxima rodada funcional é a **Rodada B — fidelidade do cenário administrado** (Blocos 5, 7 e parte do 8). O item 13.3 pode ser finalizado assim que a proposta comercial real de administradora estiver disponível.
 
 ---
 
@@ -560,6 +561,8 @@ Começar pela **Rodada A** e só avançar depois de criar testes automáticos pa
 ## Achados incluídos
 
 ### 13.1 Destacar no resultado final o excedente nominal sobre preservação
+
+**Status:** ✅ Concluído na Rodada B0
 
 No quadro final, substituir o destaque principal de **caixa livre** pelo **Excedente nominal sobre preservação do poder de compra** quando a pergunta for “quanto posso consumir sem corroer o principal real?”.
 
@@ -574,6 +577,8 @@ Manter visíveis, em segundo plano, as demais métricas:
 **Critério de conclusão:** o ranking visual principal não deve favorecer uma aplicação apenas porque parte do rendimento nominal necessária para recompor a inflação foi tratada como renda disponível.
 
 ### 13.2 Atualizar valores default para a realidade do mercado atual
+
+**Status:** ✅ Concluído na Rodada B0 — cenário-base Rio de Janeiro/outubro de 2026
 
 Revisar os valores padrão da aplicação com dados atuais, incluindo pelo menos:
 
@@ -595,6 +600,8 @@ Separar claramente **default de exemplo** de **premissa recomendada**, evitando 
 
 ### 13.3 Estudar proposta real recebida de administradora para calibrar defaults
 
+**Status:** 🟡 Parcial — referências públicas calibradas; proposta comercial real ainda não localizada
+
 Usar uma proposta comercial real de administradora como estudo de caso para:
 
 - identificar exatamente quais serviços entram na comissão;
@@ -608,6 +615,8 @@ Usar uma proposta comercial real de administradora como estudo de caso para:
 **Critério de conclusão:** produzir um preset “administradora — caso real” ou documentar defaults revisados derivados da proposta, sem transformar uma proposta específica em regra geral.
 
 ### 13.4 Ampliar a largura da página e acomodar os cinco cenários lado a lado
+
+**Status:** ✅ Concluído na Rodada B0
 
 Aumentar a largura máxima útil da aplicação em telas grandes, especialmente na seção de resumo final, para que os cinco cenários caibam em uma única linha:
 
@@ -625,6 +634,24 @@ Preservar comportamento responsivo:
 - manter o bloco de destaque do “melhor cenário” alinhado ao novo grid.
 
 **Critério de conclusão:** em uma tela desktop ampla como a usada no print de referência, os cinco cards principais do resumo final aparecem lado a lado, com leitura confortável e sem comprometer a responsividade em telas menores.
+
+---
+
+## Registro de execução da Rodada B0 — 23/10/2026
+
+Implementado:
+
+- resumo final passa a ranquear por **Excedente nominal sobre preservação do poder de compra**; caixa livre continua visível como métrica de liquidez;
+- página ampliada para `max-width: 1560px`, com cinco cards lado a lado a partir de 1280 px e fallback responsivo 3/2/1;
+- defaults recalibrados para cenário-base do Rio de Janeiro em outubro de 2026;
+- sazonalidade simplificada para alta / intermediária / baixa com dados recentes do mercado;
+- benchmark financeiro alterado para taxa nominal de referência (CDI corrente) em vez do antigo IPCA+8%;
+- aluguel tradicional e comissão imobiliária atualizados para referências contemporâneas;
+- gestão Airbnb mantém 25% como referência de pacote completo e passa a marcar por padrão quais atividades normalmente são gerenciadas, sem presumir que os custos de terceiros estejam incluídos.
+
+Pendência mantida:
+
+- receber/localizar a **proposta comercial real de administradora** para revisar comissão, base de incidência, onboarding, despesas incluídas, contrato e horas residuais. Essa etapa deve gerar um preset/caso real, sem substituir automaticamente o default de mercado.
 
 ---
 

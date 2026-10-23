@@ -82,6 +82,24 @@ Cada item de implantação possui valor inicial e percentual residual estimado a
 
 Aporte a fundo de reposição não é OPEX. Ele reduz caixa livre e aumenta capital vinculado. O desgaste econômico dos bens é capturado pela depreciação, evitando dupla contagem. Se a administradora assumir as reposições futuras, apenas os **novos aportes** do proprietário podem zerar; qualquer saldo inicial já existente continua sendo patrimônio do investidor.
 
+## Calibração dos defaults — outubro de 2026
+
+A simulação inicial da versão 7 deixa de reproduzir os números históricos da planilha e passa a usar um **cenário-base de mercado para o Rio de Janeiro**, pensado para um apartamento de investimento disponível o ano todo. Esses números são um ponto de partida auditável, não uma recomendação universal para qualquer endereço.
+
+Principais referências usadas:
+
+- **Airbnb:** taxa do anfitrião de 16% para anúncios no Brasil, após a migração para a estrutura de taxa única em 2026. Fonte: [Airbnb Resource Center](https://www.airbnb.com/resources/hosting-homes/a/how-much-does-airbnb-charge-hosts-288).
+- **Mercado de temporada do Rio:** sazonalidade-base de 51% de ocupação / R$649 na alta (dez–mar), 46% / R$602 na intermediária (jul–ago) e 46% / R$582 na baixa (abr–jun e set–nov), com estadia média de aproximadamente 5,6 noites. Fonte: [AirROI — Rio de Janeiro 2026](https://www.airroi.com/airbnb-data/brazil/rio-de-janeiro/rio-de-janeiro).
+- **Custos operacionais Airbnb:** a calibração usa a mesma referência de mercado para aproximar limpeza/lavanderia, utilities, amenities e manutenção. O fundo de reposição continua separado de manutenção para preservar a lógica contábil do simulador.
+- **Inflação:** default prospectivo de 4,3%, alinhado à expectativa de mercado para 2027 divulgada pelo Banco Central no segundo semestre de 2026. Fonte: [Banco Central — Relatório de Política Monetária, set/2026](https://www.bcb.gov.br/publicacoes/rpm/202609).
+- **Investimento financeiro:** default nominal de 13,65% a.a., equivalente ao CDI corrente em 22/10/2026, com IR ilustrativo de 17,5% para um horizonte em torno de um ano. A taxa deve ser revisada quando o cenário for usado em outra data.
+- **Aluguel tradicional:** R$3.500/mês para um imóvel-base de R$636 mil, aproximadamente coerente com o rental yield residencial do Rio em 2026; taxa de administração padrão alterada para 10%, no centro da faixa pública de 8%–12%.
+- **Administração Airbnb:** 25% permanece como default de gestão completa. Referências públicas no Rio exibem planos de 20% a 30%, inclusive uma oferta de 25% com gestão de limpeza, lavanderia, manutenção e entrada/saída. Custos de terceiros continuam separados quando a gestora apenas coordena o serviço.
+
+Alguns parâmetros permanecem necessariamente **ilustrativos**, especialmente imposto efetivo do proprietário, condomínio, IPTU, valor/hora do investidor e CAPEX. A versão 7 usa 15% como alíquota efetiva de exemplo tanto para Airbnb quanto para aluguel tradicional apenas para eliminar a assimetria antiga; o usuário deve substituir esse número pela sua situação tributária.
+
+A proposta comercial real de administradora mencionada no backlog ainda não foi localizada nos materiais conectados. Até que ela seja fornecida, os checkboxes de gestão usam como proxy o escopo público de planos completos do mercado carioca: a administradora gerencia atendimento, preços, limpeza/lavanderia e operação, mas esses custos não são presumidos como incluídos financeiramente na comissão.
+
 ## Estrutura dos arquivos
 
 - `index.html` — interface
@@ -102,10 +120,11 @@ Publique os arquivos na raiz de um repositório e habilite **Settings → Pages 
 
 ## Testes de regressão
 
-A Rodada A inclui testes sem dependências externas para as quatro correções críticas:
+As Rodadas A e B0 incluem testes sem dependências externas para as correções críticas e para a calibração/apresentação:
 
 ```bash
 node tests/round-a.test.js
+node tests/round-b0.test.js
 ```
 
 Os testes cobrem delegação de horas, separação entre gestão e custo incluído, caixa sustentável da aplicação, preservação do saldo inicial das reservas e base tributável configurável, incluindo sublocação.

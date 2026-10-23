@@ -1,20 +1,20 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 6;
+  const APP_VERSION = 7;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
   const defaultState = {
     version: APP_VERSION,
-    name: 'Estudo Airbnb – exemplo da planilha',
+    name: 'Rio de Janeiro — cenário-base de mercado (out/2026)',
     analysis: {
       startingPosition: 'property',
       horizonYears: 1
     },
     globals: {
       propertyValue: 636000,
-      inflationPct: 8,
+      inflationPct: 4.3,
       propertyRealAppreciationPct: 0,
       ownerHourlyValue: 0
     },
@@ -27,10 +27,10 @@
     },
     airbnb: {
       platformFeePct: 16,
-      avgStayNights: 5.32,
-      cleaningFeeRevenue: 0,
+      avgStayNights: 5.6,
+      cleaningFeeRevenue: 240,
       otherGuestFeeRevenue: 0,
-      taxPct: 0,
+      taxPct: 15,
       adminFeePct: 25,
       adminMonthlyFee: 0,
       adminOnboardingFee: 0,
@@ -40,20 +40,20 @@
       adminMonthlyFeeDeductibleIR: false
     },
     rentedAirbnb: {
-      monthlyLeaseRent: 3000,
+      monthlyLeaseRent: 3500,
       securityDeposit: 0,
       initialLeaseCosts: 0,
       annualLeaseCosts: 0,
       annualLeaseCostsDeductibleIR: false
     },
     traditional: {
-      monthlyRent: 5000,
-      occupancyPct: 80,
-      managementFeePct: 8,
-      taxPct: 11,
+      monthlyRent: 3500,
+      occupancyPct: 95,
+      managementFeePct: 10,
+      taxPct: 15,
       maintenancePct: 0,
       lossPct: 0,
-      newLeaseCommissionMonths: 0,
+      newLeaseCommissionMonths: 1,
       avgContractMonths: 30,
       annualOtherCosts: 0,
       managementFeeDeductibleIR: false,
@@ -63,49 +63,46 @@
       annualOtherCostsDeductibleIR: false
     },
     investment: {
-      mode: 'ipcaPlus',
-      nominalRatePct: 14,
-      realRatePct: 8,
+      mode: 'nominal',
+      nominalRatePct: 13.65,
+      realRatePct: 6.76,
       taxPct: 17.5,
       feesPct: 0
     },
     seasons: [
-      { id: 'reveillon', name: 'Réveillon', days: 4, unavailableDays: 0, nightlyRate: 1000, occupancyPct: 100 },
-      { id: 'verao', name: 'Verão', days: 81, unavailableDays: 0, nightlyRate: 350, occupancyPct: 90 },
-      { id: 'carnaval', name: 'Carnaval', days: 7, unavailableDays: 0, nightlyRate: 1000, occupancyPct: 100 },
-      { id: 'outono', name: 'Outono', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 70 },
-      { id: 'inverno', name: 'Inverno', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 60 },
-      { id: 'primavera', name: 'Primavera', days: 91, unavailableDays: 0, nightlyRate: 200, occupancyPct: 70 }
+      { id: 'alta', name: 'Alta — dez a mar', days: 121, unavailableDays: 0, nightlyRate: 649, occupancyPct: 51 },
+      { id: 'ombro', name: 'Intermediária — jul e ago', days: 62, unavailableDays: 0, nightlyRate: 602, occupancyPct: 46 },
+      { id: 'baixa', name: 'Baixa — abr a jun + set a nov', days: 182, unavailableDays: 0, nightlyRate: 582, occupancyPct: 46 }
     ],
     stayCosts: [
-      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 80, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'limpeza', name: 'Limpeza', amount: 200, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 10, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }
+      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'limpeza', name: 'Limpeza', amount: 180, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 70, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false }
     ],
     monthlyCosts: [
-      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
       { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'seguro', name: 'Seguro', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro', name: 'Seguro', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
-      { id: 'agua', name: 'Água', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'luz', name: 'Luz', amount: 300, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'gas', name: 'Gás', amount: 98, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'agua', name: 'Água', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'luz', name: 'Luz', amount: 250, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'gas', name: 'Gás', amount: 40, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'condominio', name: 'Condomínio', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }
+      { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }
     ],
     percentageCosts: [
-      { id: 'maintenance', name: 'Manutenção e reparos', pct: 0, adminIncluded: false, deductibleIR: false },
+      { id: 'maintenance', name: 'Manutenção e reparos', pct: 2, adminIncluded: false, deductibleIR: false },
       { id: 'losses', name: 'Perdas, danos e reembolsos não recuperados', pct: 0, adminIncluded: false, deductibleIR: false }
     ],
     reserveFunds: [
-      { id: 'replacement', name: 'Fundo de reposição de móveis e equipamentos', pct: 5, openingBalance: 0, adminIncluded: false }
+      { id: 'replacement', name: 'Fundo de reposição de móveis e equipamentos', pct: 1, openingBalance: 0, adminIncluded: false }
     ],
     setupCosts: [
       { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminIncluded: false },
@@ -1097,25 +1094,24 @@
   }
 
   function renderFinalSummary(calc) {
-    const sorted = [...calc.scenarios].sort((a, b) => b.freeCash - a.freeCash);
+    const sorted = [...calc.scenarios].sort((a, b) => b.nominalExcessOverPreservation - a.nominalExcessOverPreservation);
     const best = sorted[0];
     const second = sorted[1];
-    const lead = best.freeCash - second.freeCash;
-    const maxAbsCash = Math.max(...calc.scenarios.map((s) => Math.abs(s.freeCash)), 1);
+    const lead = best.nominalExcessOverPreservation - second.nominalExcessOverPreservation;
+    const maxAbsExcess = Math.max(...calc.scenarios.map((s) => Math.abs(s.nominalExcessOverPreservation)), 1);
 
-    $('#finalWinner').innerHTML = `<span class="final-winner-label">Melhor caixa livre</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.freeCash)} / ano</span><small>${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'Empate no maior resultado'}</small>`;
+    $('#finalWinner').innerHTML = `<span class="final-winner-label">Maior excedente nominal sobre preservação</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.nominalExcessOverPreservation)} / ano</span><small>${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'Empate no maior resultado'}</small>`;
 
     $('#finalScenarioGrid').innerHTML = calc.scenarios.map((scenario) => {
       const isBest = scenario.id === best.id;
-      const diff = scenario.freeCash - best.freeCash;
-      const barWidth = Math.max(4, Math.abs(scenario.freeCash) / maxAbsCash * 100);
-      const freeCashCaption = scenario.id === 'investment' ? 'caixa sustentável distribuível / ano' : 'caixa livre gerado / ano';
+      const diff = scenario.nominalExcessOverPreservation - best.nominalExcessOverPreservation;
+      const barWidth = Math.max(4, Math.abs(scenario.nominalExcessOverPreservation) / maxAbsExcess * 100);
       const freeCashLens = scenario.id === 'investment' ? 'Caixa sustentável' : 'Caixa livre';
       return `
         <article class="final-scenario-card ${isBest ? 'best' : ''}">
-          <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Melhor caixa</span>' : ''}</div>
-          <div class="final-annual ${scenario.freeCash < 0 ? 'negative' : ''}">${money.format(scenario.freeCash)}</div>
-          <div class="final-annual-label">${freeCashCaption}</div>
+          <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Maior excedente</span>' : ''}</div>
+          <div class="final-annual ${scenario.nominalExcessOverPreservation < 0 ? 'negative' : ''}">${money.format(scenario.nominalExcessOverPreservation)}</div>
+          <div class="final-annual-label">excedente nominal além da preservação do poder de compra / ano</div>
           <div class="final-bar-track" aria-hidden="true"><span style="width:${barWidth.toFixed(1)}%"></span></div>
           <div class="money-lenses">
             <div class="money-lens"><span>${freeCashLens}</span><strong>${money.format(scenario.freeCash)}</strong><small>disponível preservando as premissas do cenário</small></div>
@@ -1141,7 +1137,7 @@
             <div><span>Yield de caixa livre</span><strong>${percent.format(scenario.cashYield)}</strong></div>
             <div><span>Retorno patrimonial real</span><strong>${percent.format(scenario.realTotalReturn)}</strong></div>
           </div>
-          <div class="final-difference ${isBest ? 'best-difference' : ''}">${isBest ? 'Maior geração de caixa livre' : `${money.format(Math.abs(diff))} a menos de caixa livre por ano que o melhor cenário`}</div>
+          <div class="final-difference ${isBest ? 'best-difference' : ''}">${isBest ? 'Maior excedente nominal sobre preservação' : `${money.format(Math.abs(diff))} a menos de excedente nominal que o melhor cenário`}</div>
         </article>`;
     }).join('');
   }

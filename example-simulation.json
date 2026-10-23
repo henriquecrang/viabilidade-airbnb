@@ -1,17 +1,17 @@
 {
   "app": "simulador-airbnb",
-  "version": 6,
-  "exportedAt": "2026-10-23T20:46:00.000Z",
+  "version": 7,
+  "exportedAt": "2026-10-23T00:00:00.000Z",
   "simulation": {
-    "version": 6,
-    "name": "Estudo Airbnb – exemplo da planilha",
+    "version": 7,
+    "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
       "horizonYears": 1
     },
     "globals": {
       "propertyValue": 636000,
-      "inflationPct": 8,
+      "inflationPct": 4.3,
       "propertyRealAppreciationPct": 0,
       "ownerHourlyValue": 0
     },
@@ -24,10 +24,10 @@
     },
     "airbnb": {
       "platformFeePct": 16,
-      "avgStayNights": 5.32,
-      "cleaningFeeRevenue": 0,
+      "avgStayNights": 5.6,
+      "cleaningFeeRevenue": 240,
       "otherGuestFeeRevenue": 0,
-      "taxPct": 0,
+      "taxPct": 15,
       "adminFeePct": 25,
       "adminMonthlyFee": 0,
       "adminOnboardingFee": 0,
@@ -37,20 +37,20 @@
       "adminMonthlyFeeDeductibleIR": false
     },
     "rentedAirbnb": {
-      "monthlyLeaseRent": 3000,
+      "monthlyLeaseRent": 3500,
       "securityDeposit": 0,
       "initialLeaseCosts": 0,
       "annualLeaseCosts": 0,
       "annualLeaseCostsDeductibleIR": false
     },
     "traditional": {
-      "monthlyRent": 5000,
-      "occupancyPct": 80,
-      "managementFeePct": 8,
-      "taxPct": 11,
+      "monthlyRent": 3500,
+      "occupancyPct": 95,
+      "managementFeePct": 10,
+      "taxPct": 15,
       "maintenancePct": 0,
       "lossPct": 0,
-      "newLeaseCommissionMonths": 0,
+      "newLeaseCommissionMonths": 1,
       "avgContractMonths": 30,
       "annualOtherCosts": 0,
       "managementFeeDeductibleIR": false,
@@ -60,87 +60,63 @@
       "annualOtherCostsDeductibleIR": false
     },
     "investment": {
-      "mode": "ipcaPlus",
-      "nominalRatePct": 14,
-      "realRatePct": 8,
+      "mode": "nominal",
+      "nominalRatePct": 13.65,
+      "realRatePct": 6.76,
       "taxPct": 17.5,
       "feesPct": 0
     },
     "seasons": [
       {
-        "id": "reveillon",
-        "name": "Réveillon",
-        "days": 4,
+        "id": "alta",
+        "name": "Alta — dez a mar",
+        "days": 121,
         "unavailableDays": 0,
-        "nightlyRate": 1000,
-        "occupancyPct": 100
+        "nightlyRate": 649,
+        "occupancyPct": 51
       },
       {
-        "id": "verao",
-        "name": "Verão",
-        "days": 81,
+        "id": "ombro",
+        "name": "Intermediária — jul e ago",
+        "days": 62,
         "unavailableDays": 0,
-        "nightlyRate": 350,
-        "occupancyPct": 90
+        "nightlyRate": 602,
+        "occupancyPct": 46
       },
       {
-        "id": "carnaval",
-        "name": "Carnaval",
-        "days": 7,
+        "id": "baixa",
+        "name": "Baixa — abr a jun + set a nov",
+        "days": 182,
         "unavailableDays": 0,
-        "nightlyRate": 1000,
-        "occupancyPct": 100
-      },
-      {
-        "id": "outono",
-        "name": "Outono",
-        "days": 91,
-        "unavailableDays": 0,
-        "nightlyRate": 200,
-        "occupancyPct": 70
-      },
-      {
-        "id": "inverno",
-        "name": "Inverno",
-        "days": 91,
-        "unavailableDays": 0,
-        "nightlyRate": 200,
-        "occupancyPct": 60
-      },
-      {
-        "id": "primavera",
-        "name": "Primavera",
-        "days": 91,
-        "unavailableDays": 0,
-        "nightlyRate": 200,
-        "occupancyPct": 70
+        "nightlyRate": 582,
+        "occupancyPct": 46
       }
     ],
     "stayCosts": [
       {
         "id": "lavanderia",
         "name": "Lavanderia de cama/banho",
-        "amount": 80,
+        "amount": 60,
         "ownerHoursPerReservation": 0,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
       {
         "id": "limpeza",
         "name": "Limpeza",
-        "amount": 200,
+        "amount": 180,
         "ownerHoursPerReservation": 0,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
       {
         "id": "amenidades",
         "name": "Amenidades e consumíveis",
-        "amount": 10,
+        "amount": 70,
         "ownerHoursPerReservation": 0,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -149,7 +125,7 @@
         "name": "Check-in / check-out presencial",
         "amount": 0,
         "ownerHoursPerReservation": 0,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       }
@@ -163,7 +139,7 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -175,7 +151,7 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -187,7 +163,7 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -199,7 +175,7 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -223,14 +199,14 @@
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
-        "adminManages": false,
+        "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
       {
         "id": "seguro",
         "name": "Seguro",
-        "amount": 0,
+        "amount": 60,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -254,7 +230,7 @@
       {
         "id": "agua",
         "name": "Água",
-        "amount": 0,
+        "amount": 30,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -266,7 +242,7 @@
       {
         "id": "luz",
         "name": "Luz",
-        "amount": 300,
+        "amount": 250,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -278,7 +254,7 @@
       {
         "id": "gas",
         "name": "Gás",
-        "amount": 98,
+        "amount": 40,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -326,7 +302,7 @@
       {
         "id": "licencas",
         "name": "Licenças e taxas administrativas",
-        "amount": 0,
+        "amount": 30,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -340,7 +316,7 @@
       {
         "id": "maintenance",
         "name": "Manutenção e reparos",
-        "pct": 0,
+        "pct": 2,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -356,7 +332,7 @@
       {
         "id": "replacement",
         "name": "Fundo de reposição de móveis e equipamentos",
-        "pct": 5,
+        "pct": 1,
         "openingBalance": 0,
         "adminIncluded": false
       }
