@@ -112,7 +112,7 @@ A proposta comercial real de administradora mencionada no backlog ainda não foi
 
 ## Organização do desenvolvimento
 
-A execução do roadmap é gerenciada em **GitHub Issues**. O arquivo `backlog.md` funciona como mapa conceitual, registra dependências e aponta para as rodadas/epics ativos.
+A execução do roadmap é gerenciada em **GitHub Issues**. O arquivo `roadmap.md` funciona como mapa conceitual, registra dependências e aponta para as rodadas/epics ativos.
 
 Convenções principais:
 
