@@ -100,6 +100,20 @@ Alguns parâmetros permanecem necessariamente **ilustrativos**, especialmente im
 
 A proposta comercial real de administradora mencionada no backlog ainda não foi localizada nos materiais conectados. Até que ela seja fornecida, os checkboxes de gestão usam como proxy o escopo público de planos completos do mercado carioca: a administradora gerencia atendimento, preços, limpeza/lavanderia e operação, mas esses custos não são presumidos como incluídos financeiramente na comissão.
 
+## Organização do desenvolvimento
+
+A execução do roadmap é gerenciada em **GitHub Issues**. O arquivo `backlog.md` funciona como mapa conceitual, registra dependências e aponta para as rodadas/epics ativos.
+
+Convenções principais:
+
+- `type:delivery` — issue que agrupa uma rodada;
+- `type:epic` — capacidade ampla com várias issues;
+- `round:B/C/D/E` — janela de entrega;
+- `priority:P1/P2/P3` — prioridade;
+- `area:*` — área funcional.
+
+Commits devem mencionar a Issue relacionada e usar `Closes #N` quando concluírem integralmente uma tarefa.
+
 ## Estrutura dos arquivos
 
 - `index.html` — interface
