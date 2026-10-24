@@ -2635,13 +2635,15 @@
     const selected = [1,3,5].includes(Number(state.analysis.horizonYears)) ? Number(state.analysis.horizonYears) : 5;
     const projections = new Map([1,3,5].map((years)=>[years,calculateHorizonProjection(state,years)]));
     const selectedProjection = projections.get(selected);
-    const ids = ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'];
+    const ids = enabledScenarioIds(state);
+    const selectedCandidates = selectedProjection.scenarios.filter((x)=>ids.includes(x.id));
+    const selectedBest = selectedCandidates.reduce((best,item)=>!best || item.realWealthCreation>best.realWealthCreation?item:best,null);
     const labelFor = (id) => projections.get(1).scenarios.find((x)=>x.id===id)?.label || id;
     root.innerHTML = `
       <div class="horizon-highlight">
         <span>Horizonte em destaque: ${selected} ano${selected>1?'s':''}</span>
-        <strong>${escapeHtml(selectedProjection.bestRealWealth.label)}</strong>
-        <small>maior ganho patrimonial real: ${money.format(selectedProjection.bestRealWealth.realWealthCreation)}</small>
+        <strong>${escapeHtml(selectedBest.label)}</strong>
+        <small>maior ganho patrimonial real: ${money.format(selectedBest.realWealthCreation)}</small>
       </div>
       <div class="table-card horizon-table-card"><div class="table-scroll"><table class="horizon-table">
         <thead><tr><th>Cenário</th>${[1,3,5].map((h)=>`<th class="${h===selected?'selected-horizon':''}">${h} ano${h>1?'s':''}</th>`).join('')}</tr></thead>
@@ -2674,7 +2676,8 @@
   }
 
   function calculateAndRender() {
-    const calc = calculateModel(state);
+    const fullCalc = calculateModel(state);
+    const calc = scenarioView(fullCalc, state);
     lastCalculation = calc;
 
     calc.seasonDetails.forEach((item) => {
@@ -2913,7 +2916,7 @@
   function renderFinalSummary(calc) {
     const sorted = [...calc.scenarios].sort((a, b) => b.nominalExcessOverPreservation - a.nominalExcessOverPreservation);
     const best = sorted[0];
-    const second = sorted[1];
+    const second = sorted[1] || best;
     const lead = best.nominalExcessOverPreservation - second.nominalExcessOverPreservation;
     const maxAbsExcess = Math.max(...calc.scenarios.map((s) => Math.abs(s.nominalExcessOverPreservation)), 1);
 
@@ -3384,6 +3387,18 @@
     $('#wizardApplyButton')?.classList.toggle('hidden', !reviewing);
   }
 
+  function openMainWizard() {
+    activeWizard = 'main';
+    activeWizardPatch = null;
+    const draft = mainWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Situação inicial';
+    $('#wizardDescription').textContent = 'Escolha quais estratégias fazem sentido comparar sem alterar silenciosamente o motor econômico.';
+    $('#wizardBody').innerHTML = mainWizardFormHtml(draft);
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
   function openFinancialWizard() {
     activeWizard = 'financial';
     activeWizardPatch = null;
@@ -3437,15 +3452,17 @@
 
   function reviewActiveWizard() {
     const draft = readWizardDraft();
-    const patch = activeWizard === 'financial'
-      ? buildFinancialWizardPatch(draft, state)
-      : activeWizard === 'property'
-        ? buildPropertyWizardPatch(draft, state)
-        : activeWizard === 'airbnbOps'
-          ? buildAirbnbOpsWizardPatch(draft, state)
-          : activeWizard === 'hybrid'
-            ? buildHybridWizardPatch(draft, state)
-            : null;
+    const patch = activeWizard === 'main'
+      ? buildMainWizardPatch(draft, state)
+      : activeWizard === 'financial'
+        ? buildFinancialWizardPatch(draft, state)
+        : activeWizard === 'property'
+          ? buildPropertyWizardPatch(draft, state)
+          : activeWizard === 'airbnbOps'
+            ? buildAirbnbOpsWizardPatch(draft, state)
+            : activeWizard === 'hybrid'
+              ? buildHybridWizardPatch(draft, state)
+              : null;
     if (!patch) return;
     activeWizardPatch = patch;
     const preview = $('#wizardPreview');
@@ -3456,6 +3473,29 @@
       return;
     }
     $('#wizardApplyButton').disabled = false;
+
+    if (activeWizard === 'main') {
+      const x = patch.normalized;
+      const labels = {
+        'airbnb-self':'Airbnb autogerido',
+        'airbnb-admin':'Airbnb com administradora',
+        'airbnb-rented':'Airbnb em imóvel alugado',
+        traditional:'Aluguel tradicional',
+        investment:'Investimento financeiro'
+      };
+      const incomplete = x.incompleteEconomicPath
+        ? `<li class="wizard-warning"><strong>Caminho de compra incompleto:</strong> os cenários imobiliários não serão exibidos como se a aquisição já estivesse modelada. A comparação fica restrita ao investimento financeiro até a Issue #42.</li>`
+        : '';
+      preview.innerHTML = `
+        <h3>Revise antes de aplicar</h3>
+        <ul class="wizard-change-list">
+          <li>Cenários exibidos: <strong>${x.enabledScenarios.map((id)=>labels[id]||id).map(escapeHtml).join(', ')}</strong>.</li>
+          <li>O filtro afeta apenas a apresentação dos resultados; todas as premissas detalhadas permanecem salvas e editáveis.</li>
+          ${incomplete}
+        </ul>`;
+      setWizardReviewMode(true);
+      return;
+    }
 
     if (activeWizard === 'property') {
       const x = patch.normalized;
@@ -3548,6 +3588,7 @@
   }
 
   function bindWizards() {
+    $('#openMainWizard')?.addEventListener('click', openMainWizard);
     $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
     $('#openPropertyWizard')?.addEventListener('click', openPropertyWizard);
     $('#openAirbnbOpsWizard')?.addEventListener('click', openAirbnbOpsWizard);
@@ -3587,7 +3628,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch
+    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
