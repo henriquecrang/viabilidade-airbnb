@@ -265,14 +265,21 @@ tfoot th { background: #f5f7fa; color: var(--text); border-bottom: 0; }
 td input[type="number"], td input[type="text"] { width: 100%; padding: 6px 7px; border-radius: 7px; font-size: .8rem; }
 td .row-name { min-width: 150px; }
 td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.season-table th:nth-child(1), .season-table td:nth-child(1) { width: 28%; }
-.season-table th:nth-child(2), .season-table td:nth-child(2) { width: 90px; }
-.season-table th:nth-child(3), .season-table td:nth-child(3) { width: 125px; }
-.season-table th:nth-child(4), .season-table td:nth-child(4) { width: 110px; }
-.season-table th:nth-child(5), .season-table td:nth-child(5) { width: 155px; }
-.season-table td:nth-child(2) input { max-width: 72px; }
-.season-table td:nth-child(3) input { max-width: 105px; }
-.season-table td:nth-child(4) input { max-width: 82px; }
+.season-table-v2 { min-width: 1180px; }
+.season-table th:nth-child(1), .season-table td:nth-child(1) { min-width: 150px; }
+.season-table th:nth-child(2), .season-table td:nth-child(2) { width: 72px; }
+.season-table th:nth-child(3), .season-table td:nth-child(3),
+.season-table th:nth-child(4), .season-table td:nth-child(4),
+.season-table th:nth-child(5), .season-table td:nth-child(5) { width: 105px; }
+.season-table th:nth-child(6), .season-table td:nth-child(6) { width: 95px; }
+.season-table th:nth-child(7), .season-table td:nth-child(7) { width: 120px; }
+.season-table th:nth-child(8), .season-table td:nth-child(8) { width: 100px; }
+.season-table th:nth-child(9), .season-table td:nth-child(9) { width: 135px; }
+.season-table td:nth-child(2) input,
+.season-table td:nth-child(3) input,
+.season-table td:nth-child(4) input,
+.season-table td:nth-child(5) input { max-width: 82px; }
+.hybrid-use-subsection { margin-top: 20px; }
 .cost-table { min-width: 480px; max-width: 700px; }
 .cost-table td:nth-child(2) input { max-width: 130px; }
 .monthly-cost-table td:nth-child(2) input { max-width: 130px; }
