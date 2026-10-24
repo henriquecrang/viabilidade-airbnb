@@ -145,17 +145,20 @@ Concluída em 24/10/2026.
 - migração do cenário-base V22 vazio carrega o snapshot;
 - resultados econômicos default permanecem inalterados até ação explícita de aplicar uma sugestão.
 
-### V24 — configuração guiada
-Iniciada em 24/10/2026.
+### V24 — configuração guiada e auditoria
+Consolidada em 24/10/2026, com duas dependências explicitamente abertas.
 
 - #25 concluída: wizard de benchmark financeiro;
 - #27 concluída: wizard de operação Airbnb;
 - #29 concluída: wizard de uso parcial/híbrido;
-- #28 implementada para imóvel já possuído e parcialmente para aquisição;
+- #24 implementada para imóvel próprio, moradia principal, segunda residência e Airbnb alugado; caminho capital → compra bloqueado até #42;
+- #28 implementada para imóvel já possuído e parcialmente para aquisição; capital disponível e custos de compra dependem da #42;
 - #42 criada para a regra econômica ausente de capital → compra/custos de aquisição;
+- #26 permanece dependente da calibração real da administradora (#5/#32);
 - estrutura genérica de revisão/aplicação compartilhada entre os wizards;
 - metadados descritivos ficam separados das variáveis que afetam o motor;
-- nenhuma regra econômica é criada silenciosamente pela camada de onboarding.
+- nenhuma regra econômica é criada silenciosamente pela camada de onboarding;
+- auditoria confirmou resultados default idênticos à V23 e 24/24 testes passando.
 
 ## Rodadas de execução
 
