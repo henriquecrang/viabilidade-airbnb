@@ -2893,22 +2893,35 @@
 
   function renderDiagnostics(calc) {
     const messages = [];
-    if (Math.abs(calc.totalDays - 365) > 0.001) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
-    if (n(state.airbnb.taxPct) === 0) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
-    if (calc.blockedDays > 0) messages.push({ text: `${number1.format(calc.blockedDays)} dias não entram na oferta: ${number1.format(calc.personalUseDays)} de uso pessoal, ${number1.format(calc.habitualUseDays)} de moradia e ${number1.format(calc.operationalUnavailableDays)} de indisponibilidade operacional. A ocupação de ${percent.format(calc.weightedOccupancy)} usa apenas os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
-    if (calc.blockedOverflowDays > 0) messages.push({ warning: true, text: `A classificação de dias excede a duração dos períodos em ${number1.format(calc.blockedOverflowDays)} dia(s). O motor limitou automaticamente o bloqueio ao total de dias disponível; ajuste a tabela para eliminar a inconsistência.` });
-    if (calc.hybridUse?.active) messages.push({ text: `Na lente de uso híbrido, o Airbnb gera ${money.format(calc.hybridUse.freeCash)} de caixa incremental e o uso próprio/moradia gera ${money.format(calc.hybridUse.consumptionBenefit)} de benefício líquido de consumo. Esses valores permanecem separados de receita e patrimônio.` });
-    if (calc.reservations > 0) messages.push({ text: `O modelo estima ${number1.format(calc.reservations)} reservas/ano. Cada R$ 10 adicionados ao custo por reserva reduzem o Airbnb autogerido em aproximadamente ${money.format(calc.reservations * 10)} ao ano.` });
-    if (calc.selfReserveContribution > 0) messages.push({ text: `${money.format(calc.selfReserveContribution)} são transferidos para reservas vinculadas no Airbnb autogerido. Esse valor reduz o caixa livre, mas continua dentro do patrimônio.` });
-    if (calc.selfSetup > 0) messages.push({ text: `Dos ${money.format(calc.selfSetup)} de CAPEX do Airbnb autogerido, ${money.format(calc.selfSetupResidual)} permanecem como valor residual estimado ao fim do 1º ano; a perda econômica estimada é ${money.format(calc.selfSetupDepreciation)}.` });
+    const visible = new Set(calc.scenarios.map((scenario) => scenario.id));
+    const hasSelf = visible.has('airbnb-self');
+    const hasAdmin = visible.has('airbnb-admin');
+    const hasRented = visible.has('airbnb-rented');
+    const hasTraditional = visible.has('traditional');
+    const hasInvestment = visible.has('investment');
+    const hasAnyAirbnb = hasSelf || hasAdmin || hasRented;
+    const hasOwnedAirbnb = hasSelf || hasAdmin;
+    const hasOwnedPropertyComparison = hasSelf || hasAdmin || hasTraditional || hasInvestment;
+
+    if (Math.abs(calc.totalDays - 365) > 0.001 && hasAnyAirbnb) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
+    if (n(state.airbnb.taxPct) === 0 && hasAnyAirbnb) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
+    if (calc.blockedDays > 0 && hasAnyAirbnb) messages.push({ text: `${number1.format(calc.blockedDays)} dias não entram na oferta: ${number1.format(calc.personalUseDays)} de uso pessoal, ${number1.format(calc.habitualUseDays)} de moradia e ${number1.format(calc.operationalUnavailableDays)} de indisponibilidade operacional. A ocupação de ${percent.format(calc.weightedOccupancy)} usa apenas os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
+    if (calc.blockedOverflowDays > 0 && hasAnyAirbnb) messages.push({ warning: true, text: `A classificação de dias excede a duração dos períodos em ${number1.format(calc.blockedOverflowDays)} dia(s). O motor limitou automaticamente o bloqueio ao total de dias disponível; ajuste a tabela para eliminar a inconsistência.` });
+    if (calc.hybridUse?.active && hasOwnedAirbnb) messages.push({ text: `Na lente de uso híbrido, o Airbnb gera ${money.format(calc.hybridUse.freeCash)} de caixa incremental e o uso próprio/moradia gera ${money.format(calc.hybridUse.consumptionBenefit)} de benefício líquido de consumo. Esses valores permanecem separados de receita e patrimônio.` });
+    if (calc.reservations > 0 && hasAnyAirbnb) messages.push({ text: `O modelo estima ${number1.format(calc.reservations)} reservas/ano. Cada R$ 10 adicionados ao custo por reserva reduzem em aproximadamente ${money.format(calc.reservations * 10)} ao ano os cenários Airbnb que assumem esse custo.` });
+    if (calc.selfReserveContribution > 0 && hasSelf) messages.push({ text: `${money.format(calc.selfReserveContribution)} são transferidos para reservas vinculadas no Airbnb autogerido. Esse valor reduz o caixa livre, mas continua dentro do patrimônio.` });
+    if (calc.selfSetup > 0 && hasSelf) messages.push({ text: `Dos ${money.format(calc.selfSetup)} de CAPEX do Airbnb autogerido, ${money.format(calc.selfSetupResidual)} permanecem como valor residual estimado ao fim do 1º ano; a perda econômica estimada é ${money.format(calc.selfSetupDepreciation)}.` });
+
     const deficitScenarios = calc.scenarios.filter((scenario) => scenario.externalFundingRequired > 0);
     deficitScenarios.forEach((scenario) => messages.push({ warning: true, text: `${scenario.label} exige ${money.format(scenario.externalFundingRequired)} de aporte externo para cobrir o caixa negativo. Esse valor também foi somado ao capital do benchmark financeiro equivalente.` }));
+
     const rentedScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-rented');
     if (rentedScenario) {
       messages.push({ text: `No Airbnb em imóvel alugado, o capital de oportunidade é ${money.format(rentedScenario.opportunityCapital)} — montagem/custos iniciais, capital vinculado e eventual aporte para déficit, sem incluir o valor do imóvel.` });
       if (!calc.rentedSubleaseAuthorized) messages.push({ warning: true, text: 'O cenário financeiro do Airbnb alugado está calculado, mas a autorização contratual para sublocação/locação por temporada ainda não foi confirmada.' });
       if (calc.rentedFurnished) messages.push({ text: 'O imóvel alugado está marcado como mobiliado: itens de CAPEX classificados como “só se não mobiliado” foram excluídos desse cenário.' });
     }
+
     const adminScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-admin');
     if (adminScenario) {
       messages.push({ text: `No Airbnb administrado, o modelo estima ${number1.format(calc.workHours.admin)} horas suas por ano: tarefas não delegadas + supervisão residual da administradora.` });
@@ -2916,13 +2929,19 @@
         messages.push({ text: `A administradora está configurada com impacto de ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}% na diária e ${number1.format(n(state.airbnb.adminOccupancyImpactPp))} p.p. na ocupação. Isso altera receita, reservas e custos variáveis do cenário administrado.` });
       }
     }
-    if (n(state.globals.ownerHourlyValue) > 0) messages.push({ text: `Com sua hora avaliada em ${money.format(state.globals.ownerHourlyValue)}, o melhor resultado econômico de caixa é ${calc.bestEconomic.label}: ${money.format(calc.bestEconomic.economicResult)} ao ano.` });
-    messages.push({ text: `A diária média das noites vendidas é ${money2.format(calc.averageNightlyRate)}. Incluindo taxas cobradas do hóspede, o ADR total é ${money2.format(calc.totalAdr)}. O RevPAR de diárias é ${money2.format(calc.revPar)} e o RevPAR total é ${money2.format(calc.totalRevPar)}.` });
-    messages.push({ text: `O imóvel está projetado para valorizar ${percent.format(calc.nominalPropertyAppreciation)} nominalmente: ${percent.format(calc.inflation)} recompõem a inflação e ${percent.format(calc.realAppreciation)} representam valorização real acima dela.` });
-    messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
-    messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
-    if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
-    messages.push({ text: `Na aplicação financeira, ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação do patrimônio inicial; o excedente sustentável após a conversão do imóvel é ${money.format(calc.investmentSustainableCash)}.` });
+
+    if (n(state.globals.ownerHourlyValue) > 0) messages.push({ text: `Com sua hora avaliada em ${money.format(state.globals.ownerHourlyValue)}, o melhor resultado econômico de caixa entre os cenários exibidos é ${calc.bestEconomic.label}: ${money.format(calc.bestEconomic.economicResult)} ao ano.` });
+    if (hasAnyAirbnb) messages.push({ text: `A diária média das noites vendidas é ${money2.format(calc.averageNightlyRate)}. Incluindo taxas cobradas do hóspede, o ADR total é ${money2.format(calc.totalAdr)}. O RevPAR de diárias é ${money2.format(calc.revPar)} e o RevPAR total é ${money2.format(calc.totalRevPar)}.` });
+    if (hasOwnedPropertyComparison) messages.push({ text: `O imóvel está projetado para valorizar ${percent.format(calc.nominalPropertyAppreciation)} nominalmente: ${percent.format(calc.inflation)} recompõem a inflação e ${percent.format(calc.realAppreciation)} representam valorização real acima dela.` });
+
+    messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje entre os cenários exibidos é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
+
+    if (hasOwnedPropertyComparison) {
+      messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
+      if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
+      messages.push({ text: `Na aplicação financeira baseada na venda do imóvel, ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação do patrimônio inicial; o excedente sustentável após a conversão é ${money.format(calc.investmentSustainableCash)}.` });
+    }
+
     $('#diagnostics').innerHTML = messages.map((m) => `<div class="diagnostic ${m.warning ? 'warning' : ''}">${escapeHtml(m.text)}</div>`).join('');
   }
 
@@ -2933,7 +2952,8 @@
     const lead = best.nominalExcessOverPreservation - second.nominalExcessOverPreservation;
     const maxAbsExcess = Math.max(...calc.scenarios.map((s) => Math.abs(s.nominalExcessOverPreservation)), 1);
 
-    $('#finalWinner').innerHTML = `<span class="final-winner-label">Maior excedente nominal sobre preservação</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.nominalExcessOverPreservation)} / ano</span><small>${money.format(best.monthlyEquivalentExcess)} / mês equivalente · ${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'empate no maior resultado'}</small>`;
+    const leadText = sorted.length === 1 ? 'único cenário habilitado' : (lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'empate no maior resultado');
+    $('#finalWinner').innerHTML = `<span class="final-winner-label">Maior excedente nominal sobre preservação</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.nominalExcessOverPreservation)} / ano</span><small>${money.format(best.monthlyEquivalentExcess)} / mês equivalente · ${leadText}</small>`;
 
     $('#finalScenarioGrid').innerHTML = calc.scenarios.map((scenario) => {
       const isBest = scenario.id === best.id;
