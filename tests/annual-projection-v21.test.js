@@ -6,7 +6,7 @@ const {defaultState,calculateHorizonProjection}=window.SimulatorAirbnb;
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===21,'motor anual deve estar na V21');
+assert(defaultState.version>=21,'motor anual introduzido na V21 deve permanecer ativo');
 
 for(const years of [1,3,5]){
   const p=calculateHorizonProjection(defaultState,years);
