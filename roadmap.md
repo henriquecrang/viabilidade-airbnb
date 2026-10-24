@@ -185,6 +185,11 @@ Quando esses dois recursos forem configurados na interface do GitHub, a convenç
 - as Issues de `type:delivery` continuam servindo como página de escopo/critério de saída da rodada;
 - as Issues de `type:epic` continuam agrupando capacidades maiores, independentemente da rodada em que suas partes forem executadas.
 
+### Evolução futura — mix de canais e taxas
+**Issue:** #undefined
+
+Hoje o modelo usa uma única taxa de plataforma. Futuramente, poderá representar um mix entre Airbnb, Booking, canal direto e outros, com taxas e participações diferentes. Essa evolução deve permanecer fora do motor principal até termos necessidade concreta e dados suficientes.
+
 ## Regra para novas ideias
 
 1. Se ainda é uma ideia conceitual ou princípio de arquitetura, registrar aqui.
