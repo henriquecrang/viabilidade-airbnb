@@ -13,6 +13,13 @@
       horizonYears: 5
     },
     guidedSetup: {
+      main: {
+        configured: false,
+        situation: 'owned',
+        compareFinancial: true,
+        enabledScenarios: ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'],
+        incompleteEconomicPath: false
+      },
       financial: {
         configured: false,
         applicationType: 'cdb',
@@ -407,6 +414,39 @@
       });
     }
     return next;
+  }
+
+  function buildMainWizardPatch(draft = {}) {
+    const situation = ['owned','capital-buy','rent-third-party','primary-home','second-home'].includes(draft.situation)
+      ? draft.situation
+      : 'owned';
+    const compareFinancial = draft.compareFinancial !== false;
+    const baseMap = {
+      owned: ['airbnb-self','airbnb-admin','traditional'],
+      'capital-buy': [],
+      'rent-third-party': ['airbnb-rented'],
+      'primary-home': ['airbnb-self','airbnb-admin'],
+      'second-home': ['airbnb-self','airbnb-admin','traditional']
+    };
+    const enabledScenarios = [...baseMap[situation]];
+    if (compareFinancial || situation === 'capital-buy') enabledScenarios.push('investment');
+    const incompleteEconomicPath = situation === 'capital-buy';
+    return {
+      valid: true,
+      errors: [],
+      values: {
+        'guidedSetup.main': {
+          configured: true,
+          situation,
+          compareFinancial,
+          enabledScenarios,
+          incompleteEconomicPath,
+          modelGapIssue: incompleteEconomicPath ? 42 : null
+        }
+      },
+      arrayValues: {},
+      normalized: { situation, compareFinancial, enabledScenarios, incompleteEconomicPath }
+    };
   }
 
   function buildFinancialWizardPatch(draft = {}, inputState = defaultState) {
@@ -2759,6 +2799,28 @@
     }
   }
 
+  function enabledScenarioIds(inputState = state) {
+    const configured = inputState?.guidedSetup?.main;
+    const known = ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'];
+    if (!configured?.configured || !Array.isArray(configured.enabledScenarios) || configured.enabledScenarios.length === 0) return known;
+    const selected = configured.enabledScenarios.filter((id) => known.includes(id));
+    return selected.length ? selected : known;
+  }
+
+  function scenarioView(calc, inputState = state) {
+    const allowed = new Set(enabledScenarioIds(inputState));
+    const scenarios = calc.scenarios.filter((scenario) => allowed.has(scenario.id));
+    const safe = scenarios.length ? scenarios : calc.scenarios;
+    const by = (field) => safe.reduce((best, item) => !best || n(item[field]) > n(best[field]) ? item : best, null);
+    return {
+      ...calc,
+      scenarios: safe,
+      bestCash: by('freeCash'),
+      bestRealWealth: by('realWealthCreation'),
+      bestEconomic: by('economicResult')
+    };
+  }
+
   function renderKpis(calc) {
     const cards = [
       { label: 'Receita Airbnb total', value: money.format(calc.airbnbRevenue), sub: `${money.format(calc.guestFeeRevenue)} em taxas do hóspede` },
@@ -3004,6 +3066,30 @@
     };
   }
 
+
+  function mainWizardDraftFromState() {
+    const saved = state.guidedSetup?.main || {};
+    return {
+      situation: saved.configured ? saved.situation : 'owned',
+      compareFinancial: saved.configured ? saved.compareFinancial !== false : true
+    };
+  }
+
+  function mainWizardFormHtml(draft) {
+    return `
+      <div class="wizard-section">
+        <h3>Qual é sua situação de partida?</h3>
+        <div class="wizard-choice-grid">
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="owned" ${draft.situation==='owned'?'checked':''} /><span><strong>Já possuo o imóvel</strong><small>Airbnb próprio/administrado, aluguel tradicional e, opcionalmente, venda + investimento.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="capital-buy" ${draft.situation==='capital-buy'?'checked':''} /><span><strong>Tenho capital e penso em comprar</strong><small>A comparação de compra ainda depende da regra econômica da Issue #42.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="rent-third-party" ${draft.situation==='rent-third-party'?'checked':''} /><span><strong>Quero alugar de terceiro para operar Airbnb</strong><small>Foca no cenário de arbitragem de locação.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="primary-home" ${draft.situation==='primary-home'?'checked':''} /><span><strong>É minha moradia principal</strong><small>Foca em Airbnb eventual do imóvel próprio; refine o uso no wizard híbrido.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="second-home" ${draft.situation==='second-home'?'checked':''} /><span><strong>É segunda residência / lazer</strong><small>Compara Airbnb, aluguel tradicional e uso híbrido.</small></span></label>
+        </div>
+      </div>
+      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir benchmark financeiro na comparação</strong><small>No caminho “tenho capital”, ele permanece visível porque é o único cenário economicamente completo até a #42.</small></span></label>
+      <div class="concept-note"><strong>O modelo detalhado continua inteiro:</strong> este wizard só filtra os cenários exibidos nos resultados. Ele não apaga premissas nem desativa cálculos internos.</div>`;
+  }
 
   function propertyWizardDraftFromState() {
     const saved = state.guidedSetup?.acquisitionSale || {};
@@ -3284,6 +3370,7 @@
   function readWizardDraft() {
     const out = {};
     $('#wizardBody [data-wizard-field]').forEach((input) => {
+      if (input.type === 'radio' && !input.checked) return;
       out[input.dataset.wizardField] = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? n(input.value) : input.value);
     });
     return out;
