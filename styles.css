@@ -673,3 +673,15 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 }
 .rented-contract-metrics span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 760px) { .rented-contract-metrics { grid-template-columns: 1fr; } }
+
+/* V16 — comparáveis de mercado */
+.market-comparable-table { min-width: 1750px; }
+.market-comparable-table th,
+.market-comparable-table td { vertical-align: middle; }
+.market-comparable-table input,
+.market-comparable-table select { min-width: 78px; }
+.market-comparable-table .row-name { min-width: 150px; }
+.market-score { min-width: 90px; text-align: center; }
+.market-score strong { display: block; }
+.market-score small { display: block; color: var(--muted); margin-top: 2px; }
+.market-comparable-summary { margin: 16px 0; }

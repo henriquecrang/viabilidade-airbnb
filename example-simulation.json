@@ -1,13 +1,32 @@
 {
   "app": "simulador-airbnb",
-  "version": 15,
+  "version": 16,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 15,
+    "version": 16,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
       "horizonYears": 1
+    },
+    "market": {
+      "subject": {
+        "address": "Rua Maestro Francisco Braga, 76, apto 405",
+        "neighborhood": "Copacabana",
+        "propertyType": "apartment",
+        "roomType": "entire_home",
+        "areaM2": 33,
+        "bedrooms": 1,
+        "bathrooms": 1,
+        "guests": 0,
+        "beds": 0,
+        "acUnits": 2,
+        "elevator": "unknown",
+        "parking": "unknown",
+        "qualityGrade": 3,
+        "minStayNights": 0
+      },
+      "comparables": []
     },
     "globals": {
       "propertyValue": 636000,

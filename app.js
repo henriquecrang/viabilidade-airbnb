@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 15;
+  const APP_VERSION = 16;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -11,6 +11,25 @@
     analysis: {
       startingPosition: 'property',
       horizonYears: 1
+    },
+    market: {
+      subject: {
+        address: 'Rua Maestro Francisco Braga, 76, apto 405',
+        neighborhood: 'Copacabana',
+        propertyType: 'apartment',
+        roomType: 'entire_home',
+        areaM2: 33,
+        bedrooms: 1,
+        bathrooms: 1,
+        guests: 0,
+        beds: 0,
+        acUnits: 2,
+        elevator: 'unknown',
+        parking: 'unknown',
+        qualityGrade: 3,
+        minStayNights: 0
+      },
+      comparables: []
     },
     globals: {
       propertyValue: 636000,
@@ -480,6 +499,33 @@
       }
     }
 
+    merged.market = merged.market || structuredCloneSafe(defaultState.market);
+    merged.market.subject = mergeDefaults(defaultState.market.subject, source.market?.subject || merged.market.subject);
+    const marketComparableSource = Array.isArray(source.market?.comparables) ? source.market.comparables : [];
+    merged.market.comparables = marketComparableSource.map((item) => ({
+      id: String(item.id || uid('comp')),
+      name: String(item.name || 'Comparável'),
+      source: String(item.source || 'other'),
+      sourceRef: String(item.sourceRef || ''),
+      distanceKm: Math.max(0, n(item.distanceKm)),
+      roomType: String(item.roomType || ''),
+      bedrooms: Math.max(0, n(item.bedrooms)),
+      guests: Math.max(0, n(item.guests)),
+      beds: Math.max(0, n(item.beds)),
+      bathrooms: Math.max(0, n(item.bathrooms)),
+      acUnits: Math.max(0, n(item.acUnits)),
+      elevator: String(item.elevator || 'unknown'),
+      parking: String(item.parking || 'unknown'),
+      qualityGrade: clamp(n(item.qualityGrade), 0, 5),
+      rating: clamp(n(item.rating), 0, 5),
+      reviewCount: Math.max(0, n(item.reviewCount)),
+      activeRecently: Boolean(item.activeRecently),
+      minStayNights: Math.max(0, n(item.minStayNights)),
+      nightlyRate: Math.max(0, n(item.nightlyRate)),
+      occupancyPct: clamp(n(item.occupancyPct), 0, 100),
+      occupancyEvidence: String(item.occupancyEvidence || 'none')
+    }));
+
     merged.version = APP_VERSION;
     return merged;
   }
@@ -517,6 +563,7 @@
         setPath(state, input.dataset.path, value);
         autosave();
         if (input.dataset.path === 'rentedAirbnb.furnished') renderSetupCosts();
+        if (input.dataset.path.startsWith('market.subject.')) renderMarketComparables();
         calculateAndRender();
       });
     });
@@ -639,6 +686,85 @@
     }).join('');
   }
 
+  function renderMarketComparables() {
+    const root = $('#marketComparableRows');
+    const summary = $('#marketComparableSummary');
+    if (!root || !summary) return;
+    const result = calculateMarketComparables(state.market);
+    root.innerHTML = result.scored.map((item) => {
+      const reason = item.exclusionReasons.length ? item.exclusionReasons.join('; ') : 'elegível';
+      return `
+      <tr data-market-id="${escapeAttr(item.id)}">
+        <td><input class="row-name" data-market-field="name" data-market-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
+        <td><select data-market-field="source" data-market-id="${escapeAttr(item.id)}"><option value="inside-airbnb" ${item.source==='inside-airbnb'?'selected':''}>Inside Airbnb</option><option value="airdna" ${item.source==='airdna'?'selected':''}>AirDNA</option><option value="airbnb-manual" ${item.source==='airbnb-manual'?'selected':''}>Airbnb manual</option><option value="other" ${item.source==='other'?'selected':''}>Outra</option></select></td>
+        <td><input data-market-field="distanceKm" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.distanceKm)}" /></td>
+        <td><select data-market-field="roomType" data-market-id="${escapeAttr(item.id)}"><option value="entire_home" ${item.roomType==='entire_home'?'selected':''}>Imóvel inteiro</option><option value="private_room" ${item.roomType==='private_room'?'selected':''}>Quarto privado</option><option value="" ${!item.roomType?'selected':''}>?</option></select></td>
+        <td><input data-market-field="bedrooms" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.bedrooms)}" /></td>
+        <td><input data-market-field="guests" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.guests)}" /></td>
+        <td><input data-market-field="bathrooms" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="0.5" value="${n(item.bathrooms)}" /></td>
+        <td><input data-market-field="acUnits" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.acUnits)}" /></td>
+        <td><input data-market-field="qualityGrade" data-market-id="${escapeAttr(item.id)}" type="number" min="0" max="5" step="1" value="${n(item.qualityGrade)}" /></td>
+        <td><input data-market-field="rating" data-market-id="${escapeAttr(item.id)}" type="number" min="0" max="5" step="0.1" value="${n(item.rating)}" /></td>
+        <td><input data-market-field="reviewCount" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.reviewCount)}" /></td>
+        <td class="center-cell"><input data-market-field="activeRecently" data-market-id="${escapeAttr(item.id)}" type="checkbox" ${item.activeRecently?'checked':''} /></td>
+        <td><input data-market-field="nightlyRate" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.nightlyRate)}" /></td>
+        <td><input data-market-field="occupancyPct" data-market-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.occupancyPct)}" /></td>
+        <td><select data-market-field="occupancyEvidence" data-market-id="${escapeAttr(item.id)}"><option value="none" ${item.occupancyEvidence==='none'?'selected':''}>Sem evidência</option><option value="estimated-source" ${item.occupancyEvidence==='estimated-source'?'selected':''}>Estimativa da fonte</option><option value="observed" ${item.occupancyEvidence==='observed'?'selected':''}>Observado</option></select></td>
+        <td class="market-score" title="${escapeAttr(reason)}"><strong>${number1.format(item.similarityScore)}</strong><small>${item.eligible?'elegível':'excluído'}</small></td>
+        <td><button class="button icon" type="button" data-remove-market-id="${escapeAttr(item.id)}">Remover</button></td>
+      </tr>`;
+    }).join('');
+
+    const occText = result.occupancyCount
+      ? `${number1.format(result.occupancyMedian)}% · P25 ${number1.format(result.occupancyP25)}% / P75 ${number1.format(result.occupancyP75)}%`
+      : 'sem evidência confiável';
+    summary.innerHTML = `
+      <article><span>Comparáveis elegíveis</span><strong>${result.eligibleCount}</strong><small>${result.eligibleCount >= result.minimumCount ? 'amostra mínima atingida' : `mínimo operacional: ${result.minimumCount}`}</small></article>
+      <article><span>Diária anunciada mediana</span><strong>${result.priceCount ? money.format(result.priceMedian) : '—'}</strong><small>${result.priceCount ? `P25 ${money.format(result.priceP25)} · P75 ${money.format(result.priceP75)}` : 'adicione preços aos comparáveis'}</small></article>
+      <article><span>Ocupação com evidência</span><strong>${occText}</strong><small>${result.occupancyCount} comparáveis com booked/available sustentado</small></article>
+      <article><span>Maior distância elegível</span><strong>${number1.format(result.maxEligibleDistanceKm)} km</strong><small>acima de 2 km é excluído pelo método atual</small></article>`;
+  }
+
+  function bindMarketComparables() {
+    const root = $('#marketComparableRows');
+    if (!root) return;
+    const update = (event) => {
+      const input = event.target.closest('[data-market-field][data-market-id]');
+      if (!input) return;
+      const item = state.market.comparables.find((x) => String(x.id) === input.dataset.marketId);
+      if (!item) return;
+      let value;
+      if (input.type === 'checkbox') value = input.checked;
+      else if (input.type === 'number') value = input.value === '' ? 0 : n(input.value);
+      else value = input.value;
+      item[input.dataset.marketField] = value;
+      autosave();
+      renderMarketComparables();
+    };
+    root.addEventListener('input', update);
+    root.addEventListener('change', update);
+    root.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-remove-market-id]');
+      if (!button) return;
+      state.market.comparables = state.market.comparables.filter((x) => String(x.id) !== button.dataset.removeMarketId);
+      autosave();
+      renderMarketComparables();
+    });
+  }
+
+  function addMarketComparable() {
+    state.market.comparables.push({
+      id: uid('comp'), name: 'Novo comparável', source: 'other', sourceRef: '',
+      distanceKm: 0, roomType: state.market.subject.roomType || 'entire_home',
+      bedrooms: n(state.market.subject.bedrooms), guests: 0, beds: 0, bathrooms: n(state.market.subject.bathrooms),
+      acUnits: n(state.market.subject.acUnits), elevator: 'unknown', parking: 'unknown',
+      qualityGrade: n(state.market.subject.qualityGrade), rating: 0, reviewCount: 0,
+      activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+    });
+    autosave();
+    renderMarketComparables();
+  }
+
   function renderDynamicTables() {
     renderSeasons();
     renderStayCosts();
@@ -694,6 +820,115 @@
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
   function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
   function refreshDynamic() { autosave(); renderDynamicTables(); calculateAndRender(); }
+
+  function marketQuantile(values, q) {
+    const xs = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
+    if (!xs.length) return 0;
+    if (xs.length === 1) return xs[0];
+    const pos = (xs.length - 1) * q;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    return xs[base + 1] == null ? xs[base] : xs[base] + rest * (xs[base + 1] - xs[base]);
+  }
+
+  function calculateMarketComparables(market = defaultState.market) {
+    const subject = market?.subject || {};
+    const comps = Array.isArray(market?.comparables) ? market.comparables : [];
+    const known = (value) => Number.isFinite(Number(value)) && Number(value) > 0;
+    const sameFlag = (a, b) => a !== 'unknown' && b !== 'unknown' && a !== '' && b !== '';
+
+    const scored = comps.map((comp) => {
+      const reasons = [];
+      if (subject.roomType && comp.roomType && subject.roomType !== comp.roomType) reasons.push('tipo de anúncio diferente');
+      if (known(subject.bedrooms) && known(comp.bedrooms) && Number(subject.bedrooms) !== Number(comp.bedrooms)) reasons.push('número de quartos diferente');
+      if (known(subject.guests) && known(comp.guests) && Math.abs(Number(subject.guests) - Number(comp.guests)) > 1) reasons.push('capacidade difere em mais de 1 hóspede');
+      if (known(comp.distanceKm) && Number(comp.distanceKm) > 2) reasons.push('distância acima de 2 km');
+
+      let points = 0;
+      let maxPoints = 0;
+      const parts = [];
+      const add = (label, max, ratio) => {
+        const safe = clamp(n(ratio), 0, 1);
+        points += max * safe;
+        maxPoints += max;
+        parts.push({ label, points: max * safe, max });
+      };
+
+      if (known(comp.distanceKm)) {
+        const d = Number(comp.distanceKm);
+        add('localização', 25, d <= .5 ? 1 : d <= 1 ? .8 : d <= 2 ? .5 : 0);
+      }
+
+      let typeMax = 0, typePts = 0;
+      if (subject.roomType && comp.roomType) { typeMax += 10; if (subject.roomType === comp.roomType) typePts += 10; }
+      if (known(subject.bedrooms) && known(comp.bedrooms)) {
+        typeMax += 15;
+        const diff = Math.abs(Number(subject.bedrooms) - Number(comp.bedrooms));
+        typePts += diff === 0 ? 15 : diff === 1 ? 7.5 : 0;
+      }
+      if (typeMax) add('tipo/quartos', typeMax, typePts / typeMax);
+
+      for (const [label,key] of [['hóspedes','guests'],['camas','beds'],['banheiros','bathrooms']]) {
+        if (known(subject[key]) && known(comp[key])) {
+          const diff = Math.abs(Number(subject[key]) - Number(comp[key]));
+          add(label, 5, diff === 0 ? 1 : diff === 1 ? .5 : 0);
+        }
+      }
+
+      if (known(subject.acUnits) && known(comp.acUnits)) {
+        const diff = Math.abs(Number(subject.acUnits) - Number(comp.acUnits));
+        add('ar-condicionado', 4, diff === 0 ? 1 : diff === 1 ? .5 : 0);
+      }
+      if (sameFlag(subject.elevator, comp.elevator)) add('elevador', 3, subject.elevator === comp.elevator ? 1 : 0);
+      if (sameFlag(subject.parking, comp.parking)) add('garagem', 3, subject.parking === comp.parking ? 1 : 0);
+
+      if (known(subject.qualityGrade) && known(comp.qualityGrade)) {
+        const diff = Math.abs(Number(subject.qualityGrade) - Number(comp.qualityGrade));
+        add('qualidade', 10, diff === 0 ? 1 : diff === 1 ? .7 : diff === 2 ? .3 : 0);
+      }
+
+      if (known(comp.rating)) add('rating', 4, comp.rating >= 4.8 ? 1 : comp.rating >= 4.6 ? .75 : comp.rating >= 4.3 ? .5 : .25);
+      if (known(comp.reviewCount)) add('reviews', 3, comp.reviewCount >= 20 ? 1 : comp.reviewCount >= 5 ? .67 : .33);
+      add('atividade recente', 3, comp.activeRecently ? 1 : 0);
+
+      if (known(subject.minStayNights) && known(comp.minStayNights)) {
+        const diff = Math.abs(Number(subject.minStayNights) - Number(comp.minStayNights));
+        add('estadia mínima', 5, diff === 0 ? 1 : diff === 1 ? .6 : .2);
+      }
+
+      const similarityScore = maxPoints > 0 ? points / maxPoints * 100 : 0;
+      return {
+        ...comp,
+        eligible: reasons.length === 0,
+        exclusionReasons: reasons,
+        similarityScore,
+        scoreParts: parts
+      };
+    }).sort((a,b) => (Number(b.eligible)-Number(a.eligible)) || b.similarityScore-a.similarityScore);
+
+    const eligible = scored.filter((x) => x.eligible);
+    const prices = eligible.map((x) => n(x.nightlyRate)).filter((x) => x > 0);
+    const occupancyRows = eligible.filter((x) => x.occupancyEvidence !== 'none' && n(x.occupancyPct) > 0);
+    const occupancies = occupancyRows.map((x) => n(x.occupancyPct));
+    return {
+      subject,
+      scored,
+      eligible,
+      eligibleCount: eligible.length,
+      sampleStatus: eligible.length >= 15 ? 'adequate' : 'insufficient',
+      targetCount: 25,
+      minimumCount: 15,
+      priceCount: prices.length,
+      priceP25: marketQuantile(prices,.25),
+      priceMedian: marketQuantile(prices,.5),
+      priceP75: marketQuantile(prices,.75),
+      occupancyCount: occupancies.length,
+      occupancyP25: marketQuantile(occupancies,.25),
+      occupancyMedian: marketQuantile(occupancies,.5),
+      occupancyP75: marketQuantile(occupancies,.75),
+      maxEligibleDistanceKm: eligible.reduce((m,x)=>Math.max(m,n(x.distanceKm)),0)
+    };
+  }
 
   function calculateModel(inputState = state) {
     const currentState = inputState;
@@ -1609,11 +1844,12 @@
     $('#collapseAllSections')?.addEventListener('click', () => setAllAccordions(false));
   }
 
-  function renderAll() { hydrateStaticInputs(); renderDynamicTables(); calculateAndRender(); }
+  function renderAll() { hydrateStaticInputs(); renderDynamicTables(); renderMarketComparables(); calculateAndRender(); }
 
   function init() {
     bindStaticInputs();
     bindDynamicTables();
+    bindMarketComparables();
     bindAccordions();
     $('#addSeasonButton').addEventListener('click', addSeason);
     $('#addStayCostButton').addEventListener('click', addStayCost);
@@ -1621,6 +1857,7 @@
     $('#addPercentageCostButton').addEventListener('click', addPercentageCost);
     $('#addReserveFundButton').addEventListener('click', addReserveFund);
     $('#addSetupCostButton').addEventListener('click', addSetupCost);
+    $('#addMarketComparableButton')?.addEventListener('click', addMarketComparable);
     ['#saveButton', '#saveButtonBottom'].forEach((selector) => $(selector).addEventListener('click', exportSimulation));
     ['#loadButton', '#loadButtonBottom'].forEach((selector) => $(selector).addEventListener('click', () => $('#fileInput').click()));
     $('#fileInput').addEventListener('change', (event) => { const [file] = event.target.files || []; if (file) importSimulation(file); event.target.value = ''; });
@@ -1628,6 +1865,6 @@
     renderAll();
   }
 
-  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, defaultState: structuredCloneSafe(defaultState), normalizeState };
+  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, defaultState: structuredCloneSafe(defaultState), normalizeState };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();

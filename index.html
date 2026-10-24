@@ -150,6 +150,57 @@
         </div>
       </details>
 
+      <details class="accordion" id="section-market">
+        <summary>
+          <span class="accordion-title-wrap">
+            <span class="accordion-kicker">02B · Mercado</span>
+            <span class="accordion-title">Imóvel-alvo e comparáveis</span>
+            <span class="accordion-description">Selecione comparáveis auditáveis antes de transformar mercado em premissas.</span>
+          </span>
+          <span class="accordion-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="accordion-body">
+          <div class="subsection">
+            <div class="subsection-heading"><div><h3>Perfil do imóvel-alvo</h3><p>Campos desconhecidos podem ficar em zero ou “?”. O score só usa dimensões com evidência disponível.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Endereço / referência</span><input data-path="market.subject.address" type="text" /></label>
+              <label class="field-group"><span class="field-label">Bairro</span><input data-path="market.subject.neighborhood" type="text" /></label>
+              <label class="field-group"><span class="field-label">Tipo de anúncio</span><select data-path="market.subject.roomType"><option value="entire_home">Imóvel inteiro</option><option value="private_room">Quarto privado</option></select></label>
+              <label class="field-group"><span class="field-label">Área</span><div class="input-suffix compact-control"><input data-path="market.subject.areaM2" type="number" min="0" step="1" /><span>m²</span></div></label>
+              <label class="field-group"><span class="field-label">Quartos</span><input data-path="market.subject.bedrooms" type="number" min="0" step="1" /></label>
+              <label class="field-group"><span class="field-label">Banheiros</span><input data-path="market.subject.bathrooms" type="number" min="0" step="0.5" /></label>
+              <label class="field-group"><span class="field-label">Capacidade</span><div class="input-suffix compact-control"><input data-path="market.subject.guests" type="number" min="0" step="1" /><span>hóspedes</span></div></label>
+              <label class="field-group"><span class="field-label">Camas</span><input data-path="market.subject.beds" type="number" min="0" step="1" /></label>
+              <label class="field-group"><span class="field-label">Ar-condicionado</span><div class="input-suffix compact-control"><input data-path="market.subject.acUnits" type="number" min="0" step="1" /><span>unidades</span></div></label>
+              <label class="field-group"><span class="field-label">Elevador</span><select data-path="market.subject.elevator"><option value="unknown">?</option><option value="yes">Sim</option><option value="no">Não</option></select></label>
+              <label class="field-group"><span class="field-label">Garagem</span><select data-path="market.subject.parking"><option value="unknown">?</option><option value="yes">Sim</option><option value="no">Não</option></select></label>
+              <label class="field-group"><span class="field-label">Qualidade/acabamento</span><div class="input-suffix compact-control"><input data-path="market.subject.qualityGrade" type="number" min="0" max="5" step="1" /><span>0–5</span></div></label>
+              <label class="field-group"><span class="field-label">Estadia mínima</span><div class="input-suffix compact-control"><input data-path="market.subject.minStayNights" type="number" min="0" step="1" /><span>noites</span></div></label>
+            </div>
+          </div>
+
+          <div class="concept-note">
+            <strong>Regra de evidência:</strong> preço anunciado pode vir de Airbnb/Inside Airbnb. Ocupação só entra na estatística quando estiver marcada como observada ou estimada por fonte capaz de distinguir reservas de bloqueios. Calendário indisponível, sozinho, não é ocupação.
+          </div>
+
+          <div class="market-comparable-summary normalization-preview" id="marketComparableSummary"></div>
+
+          <div class="section-actions-line">
+            <p class="helper">Filtros duros atuais: tipo de anúncio, mesmo número de quartos, capacidade ±1 quando conhecida e distância máxima de 2 km. O score restante apenas ordena os elegíveis.</p>
+            <button class="button ghost small-button" id="addMarketComparableButton" type="button">+ Adicionar comparável</button>
+          </div>
+          <div class="table-card compact-table-card">
+            <div class="table-scroll">
+              <table class="market-comparable-table">
+                <thead><tr><th>Comparável</th><th>Fonte</th><th>km</th><th>Tipo</th><th>Quartos</th><th>Hóspedes</th><th>Banhos</th><th>AC</th><th>Qual.</th><th>Rating</th><th>Reviews</th><th>Recente</th><th>Diária anunciada</th><th>Ocupação</th><th>Evidência ocup.</th><th>Score</th><th></th></tr></thead>
+                <tbody id="marketComparableRows"></tbody>
+              </table>
+            </div>
+          </div>
+          <p class="helper">Metodologia completa em <code>docs/market-methodology.md</code>. A #17 apenas modela e ranqueia comparáveis; aplicar sugestões à sazonalidade pertence à #18.</p>
+        </div>
+      </details>
+
       <details class="accordion" id="section-airbnb-costs" open>
         <summary>
           <span class="accordion-title-wrap">

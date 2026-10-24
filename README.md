@@ -290,3 +290,20 @@ Total: **R$ 27.100**.
 Se o imóvel vier **mobiliado**, mobiliário, eletrodomésticos e decoração são retirados automaticamente; permanecem R$ 7.100 em adequação/complementação operacional por default.
 
 Referências de varejo consultadas em outubro/2026 incluem Magazine Luiza para cama box, sofá-cama/retrátil, geladeira ~300 L, TV 43", lavadora 11 kg, cooktop, split 12 mil BTU, mesa com 4 cadeiras e guarda-roupa. Os valores são premissas centrais editáveis, não orçamento fechado de compra.
+
+
+## V16 — perfil e ranking de comparáveis
+
+A Issue #17 adiciona uma camada de mercado ainda **sem alterar as premissas da simulação**:
+
+- perfil estruturado do imóvel-alvo;
+- entrada manual/auditável de comparáveis;
+- filtros duros de elegibilidade;
+- score de similaridade explicável;
+- ranking;
+- P25, mediana e P75 de diária anunciada;
+- estatística de ocupação apenas quando a evidência é marcada como observada ou estimada por fonte adequada.
+
+O imóvel-base começa identificado como apartamento inteiro de 1 quarto, 33 m², em Copacabana, com dois aparelhos de ar-condicionado. Campos ainda não confirmados permanecem desconhecidos/zero e não entram no score.
+
+A metodologia está em `docs/market-methodology.md`.
