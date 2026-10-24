@@ -145,6 +145,14 @@ Concluída em 24/10/2026.
 - migração do cenário-base V22 vazio carrega o snapshot;
 - resultados econômicos default permanecem inalterados até ação explícita de aplicar uma sugestão.
 
+### V24 — configuração guiada
+Iniciada em 24/10/2026.
+
+- #25 concluída: wizard de benchmark financeiro;
+- estrutura genérica de revisão/aplicação criada para os próximos wizards;
+- metadados descritivos ficam separados das variáveis que afetam o motor;
+- nenhuma regra econômica é criada pela camada de onboarding.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
