@@ -107,6 +107,14 @@ Epic #15 concluído em 24/10/2026.
 - cenários pessimista/base/otimista;
 - aplicação explícita, sem sobrescrita silenciosa.
 
+### V20 — política de continuidade ao fim do horizonte
+Concluída em 24/10/2026.
+
+- default: renovar / continuar;
+- alternativa futura "encerrar a operação" já aparece na interface, mas permanece desabilitada;
+- estratégia de saída multi-cenário foi separada na Issue #40;
+- Issue #36 encerrada.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
