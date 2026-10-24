@@ -424,3 +424,26 @@ Todos os novos defaults são zero/falso, portanto a V22 não altera os resultado
 ```bash
 node tests/hybrid-use-v22.test.js
 ```
+
+
+## V23 — snapshot auditável de mercado do imóvel-base
+
+O módulo de comparáveis passa a nascer preenchido no cenário-base com evidência pública coletada em setembro/outubro de 2026.
+
+- 19 comparáveis locais passam pelos filtros duros atuais;
+- 14 possuem diária pública verificável;
+- a amostra de preço continua marcada como **insuficiente** frente ao mínimo operacional de 15;
+- P25/mediana/P75 do snapshot atual: **R$ 278,38 / R$ 348,50 / R$ 519,25**;
+- nenhuma ocupação é inferida de calendário público;
+- cada linha preserva URL, data de coleta/referência e nota de evidência;
+- a interface distingue comparáveis elegíveis de comparáveis com diária;
+- o Residencial Peixoto passa a registrar elevador como característica conhecida;
+- nenhum valor de mercado é aplicado automaticamente à sazonalidade.
+
+A evidência detalhada está em `docs/base-property-market-evidence-2026-10.md`.
+
+### Teste específico
+
+```bash
+node tests/market-evidence-v23.test.js
+```
