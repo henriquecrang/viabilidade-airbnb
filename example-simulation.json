@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 10,
+  "version": 11,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 10,
+    "version": 11,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -45,6 +45,8 @@
       "adminMonthlyFeeDeductibleIR": false
     },
     "rentedAirbnb": {
+      "furnished": false,
+      "subleaseAuthorized": false,
       "monthlyLeaseRent": 3500,
       "securityDeposit": 0,
       "initialLeaseCosts": 0,
@@ -237,10 +239,22 @@
       },
       {
         "id": "seguro",
-        "name": "Seguro",
+        "name": "Seguro do imóvel / incêndio",
         "amount": 60,
         "ownerHoursMonthly": 0,
         "airbnb": true,
+        "rentedAirbnb": false,
+        "traditional": false,
+        "adminManages": false,
+        "adminIncluded": false,
+        "deductibleIR": false
+      },
+      {
+        "id": "seguro-garantia",
+        "name": "Seguro-fiança / garantia locatícia",
+        "amount": 0,
+        "ownerHoursMonthly": 0,
+        "airbnb": false,
         "rentedAirbnb": true,
         "traditional": false,
         "adminManages": false,
@@ -309,11 +323,11 @@
       },
       {
         "id": "condominio",
-        "name": "Condomínio",
+        "name": "Condomínio ordinário",
         "amount": 450,
         "ownerHoursMonthly": 0,
         "airbnb": true,
-        "rentedAirbnb": false,
+        "rentedAirbnb": true,
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
@@ -347,8 +361,9 @@
     "percentageCosts": [
       {
         "id": "maintenance",
-        "name": "Manutenção e reparos",
+        "name": "Manutenção e reparos operacionais",
         "pct": 2,
+        "rentedAirbnb": true,
         "adminIncluded": false,
         "deductibleIR": false
       },
@@ -356,6 +371,7 @@
         "id": "losses",
         "name": "Perdas, danos e reembolsos não recuperados",
         "pct": 0,
+        "rentedAirbnb": true,
         "adminIncluded": false,
         "deductibleIR": false
       }
@@ -377,6 +393,7 @@
         "residualPct": 0,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -388,6 +405,7 @@
         "residualPct": 40,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": true,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -399,6 +417,7 @@
         "residualPct": 35,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": true,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -410,6 +429,7 @@
         "residualPct": 10,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -421,6 +441,7 @@
         "residualPct": 20,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": true,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -432,6 +453,7 @@
         "residualPct": 30,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -443,6 +465,7 @@
         "residualPct": 25,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": true,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -454,6 +477,7 @@
         "residualPct": 0,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -465,6 +489,7 @@
         "residualPct": 0,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true
@@ -476,6 +501,7 @@
         "residualPct": 0,
         "airbnb": true,
         "rentedAirbnb": true,
+        "rentedOnlyIfUnfurnished": false,
         "traditional": false,
         "adminPays": false,
         "adminAssetBelongsToOwner": true

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 10;
+  const APP_VERSION = 11;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -48,6 +48,8 @@
       adminMonthlyFeeDeductibleIR: false
     },
     rentedAirbnb: {
+      furnished: false,
+      subleaseAuthorized: false,
       monthlyLeaseRent: 3500,
       securityDeposit: 0,
       initialLeaseCosts: 0,
@@ -98,34 +100,35 @@
       { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
       { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 1.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'seguro', name: 'Seguro', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro', name: 'Seguro do imóvel / incêndio', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro-garantia', name: 'Seguro-fiança / garantia locatícia', amount: 0, ownerHoursMonthly: 0, airbnb: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'agua', name: 'Água', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'luz', name: 'Luz', amount: 250, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'gas', name: 'Gás', amount: 40, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'condominio', name: 'Condomínio', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'condominio', name: 'Condomínio ordinário', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }
     ],
     percentageCosts: [
-      { id: 'maintenance', name: 'Manutenção e reparos', pct: 2, adminIncluded: false, deductibleIR: false },
-      { id: 'losses', name: 'Perdas, danos e reembolsos não recuperados', pct: 0, adminIncluded: false, deductibleIR: false }
+      { id: 'maintenance', name: 'Manutenção e reparos operacionais', pct: 2, rentedAirbnb: true, adminIncluded: false, deductibleIR: false },
+      { id: 'losses', name: 'Perdas, danos e reembolsos não recuperados', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }
     ],
     reserveFunds: [
       { id: 'replacement', name: 'Fundo de reposição de móveis e equipamentos', pct: 1, openingBalance: 0, adminIncluded: false }
     ],
     setupCosts: [
-      { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'mobilia', name: 'Mobiliário', amount: 0, residualPct: 40, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'eletro', name: 'Eletrodomésticos', amount: 0, residualPct: 35, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'enxoval', name: 'Roupa de cama e banho inicial', amount: 0, residualPct: 10, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'utensilios', name: 'Utensílios e equipamentos', amount: 0, residualPct: 20, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'fechadura', name: 'Fechadura eletrônica / acesso', amount: 0, residualPct: 30, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'decoracao', name: 'Decoração', amount: 0, residualPct: 25, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'fotografia', name: 'Fotografia profissional', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'setup-anuncio', name: 'Setup inicial do anúncio', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'cadastros', name: 'Licenças / cadastros iniciais', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }
+      { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'mobilia', name: 'Mobiliário', amount: 0, residualPct: 40, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'eletro', name: 'Eletrodomésticos', amount: 0, residualPct: 35, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'enxoval', name: 'Roupa de cama e banho inicial', amount: 0, residualPct: 10, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'utensilios', name: 'Utensílios e equipamentos', amount: 0, residualPct: 20, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'fechadura', name: 'Fechadura eletrônica / acesso', amount: 0, residualPct: 30, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'decoracao', name: 'Decoração', amount: 0, residualPct: 25, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'fotografia', name: 'Fotografia profissional', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'setup-anuncio', name: 'Setup inicial do anúncio', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'cadastros', name: 'Licenças / cadastros iniciais', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }
     ]
   };
 
@@ -236,6 +239,7 @@
       const def = defaultState.percentageCosts.find((x) => String(x.id) === String(item.id));
       return {
         ...item,
+        rentedAirbnb: item.rentedAirbnb == null ? Boolean(def?.rentedAirbnb ?? true) : Boolean(item.rentedAirbnb),
         adminIncluded: Boolean(item.adminIncluded),
         deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
       };
@@ -265,6 +269,9 @@
         residualPct: clamp(n(item.residualPct, defaultItem?.residualPct ?? 0), 0, 100),
         airbnb: item.airbnb !== false,
         rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
+        rentedOnlyIfUnfurnished: item.rentedOnlyIfUnfurnished == null
+          ? Boolean(defaultItem?.rentedOnlyIfUnfurnished)
+          : Boolean(item.rentedOnlyIfUnfurnished),
         traditional: Boolean(item.traditional),
         // V8: quem paga e quem fica com o ativo são dimensões independentes.
         // Para JSONs antigos, preservamos a semântica anterior:
@@ -346,6 +353,30 @@
       merged.monthlyCosts.forEach((x) => { if (monthlyHours.has(String(x.id))) x.ownerHoursMonthly = monthlyHours.get(String(x.id)); });
     }
 
+    // V11: o antigo cenário-base V10 recebe a nova calibração contratual do
+    // Airbnb alugado. Simulações customizadas preservam os flags que já tinham.
+    const sourceMonthlyById = new Map((Array.isArray(source.monthlyCosts) ? source.monthlyCosts : []).map((x) => [String(x.id), x]));
+    const looksLikeV10RentalDefault = incomingVersion === 10
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && source.rentedAirbnb?.furnished == null
+      && source.rentedAirbnb?.subleaseAuthorized == null
+      && sourceMonthlyById.get('condominio')?.rentedAirbnb === false
+      && sourceMonthlyById.get('iptu')?.rentedAirbnb === false
+      && sourceMonthlyById.get('seguro')?.rentedAirbnb === true
+      && !sourceMonthlyById.has('seguro-garantia');
+    if (looksLikeV10RentalDefault) {
+      merged.rentedAirbnb.furnished = defaultState.rentedAirbnb.furnished;
+      merged.rentedAirbnb.subleaseAuthorized = defaultState.rentedAirbnb.subleaseAuthorized;
+      const condo = merged.monthlyCosts.find((x) => String(x.id) === 'condominio');
+      if (condo) { condo.rentedAirbnb = true; condo.name = 'Condomínio ordinário'; }
+      const insurance = merged.monthlyCosts.find((x) => String(x.id) === 'seguro');
+      if (insurance) { insurance.rentedAirbnb = false; insurance.name = 'Seguro do imóvel / incêndio'; }
+      if (!merged.monthlyCosts.some((x) => String(x.id) === 'seguro-garantia')) {
+        const guarantee = defaultState.monthlyCosts.find((x) => String(x.id) === 'seguro-garantia');
+        if (guarantee) merged.monthlyCosts.push(structuredCloneSafe(guarantee));
+      }
+    }
+
     merged.version = APP_VERSION;
     return merged;
   }
@@ -382,6 +413,7 @@
         else value = input.value;
         setPath(state, input.dataset.path, value);
         autosave();
+        if (input.dataset.path === 'rentedAirbnb.furnished') renderSetupCosts();
         calculateAndRender();
       });
     });
@@ -462,6 +494,7 @@
       <tr>
         <td><input class="row-name" data-array="percentageCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
         <td><input data-array="percentageCosts" data-field="pct" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.pct)}" /></td>
+        <td class="center-cell"><input data-array="percentageCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} aria-label="Aplica ao Airbnb em imóvel alugado" /></td>
         <td class="center-cell"><input data-array="percentageCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="percentageCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} /></td>
         <td><button class="button icon" type="button" data-remove-array="percentageCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
@@ -490,6 +523,7 @@
         <td class="money-cell">${money.format(residualValue)}</td>
         <td class="center-cell"><input data-array="setupCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="rentedOnlyIfUnfurnished" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedOnlyIfUnfurnished ? 'checked' : ''} ${item.rentedAirbnb ? '' : 'disabled'} aria-label="Aplicar ao cenário alugado apenas se não mobiliado" /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="adminPays" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminPays ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="adminAssetBelongsToOwner" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminAssetBelongsToOwner ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
@@ -549,9 +583,9 @@
   function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
   function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
-  function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
-  function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
+  function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
   function refreshDynamic() { autosave(); renderDynamicTables(); calculateAndRender(); }
 
   function calculateModel(inputState = state) {
@@ -637,8 +671,10 @@
 
     // OPEX percentual: apenas custos efetivamente consumidos. Reservas ficam fora daqui.
     const pctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
+    const rentedPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const adminPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.adminIncluded ? 0 : Math.max(0, n(x.pct)) / 100), 0);
     const selfPctCosts = airbnbRevenue * pctCostRate;
+    const rentedPctCosts = airbnbRevenue * rentedPctCostRate;
     const adminPctCosts = adminAirbnbRevenue * adminPctCostRate;
 
     // Reservas vinculadas: reduzem caixa livre, mas não patrimônio líquido.
@@ -669,7 +705,7 @@
     const traditionalMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const selfPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const adminPctTaxDeductions = adminAirbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.pct)) / 100 : 0), 0);
-    const rentedPctTaxDeductions = selfPctTaxDeductions;
+    const rentedPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const selfPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? platformFee : 0;
 
     const selfTaxDeductions = selfPlatformTaxDeduction + selfStayTaxDeductions + selfMonthlyTaxDeductions + selfPctTaxDeductions;
@@ -708,7 +744,7 @@
       if (x.adminAssetBelongsToOwner) acc.residual += residualValue;
       return acc;
     }, { capex: 0, residual: 0, paidByAdmin: 0 });
-    const rentedSetupData = setupFor((x) => x.rentedAirbnb);
+    const rentedSetupData = setupFor((x) => x.rentedAirbnb && (!currentState.rentedAirbnb.furnished || !x.rentedOnlyIfUnfurnished));
     const traditionalSetupData = setupFor((x) => x.traditional);
     const selfSetup = selfSetupData.capex;
     const adminOnboarding = Math.max(0, n(currentState.airbnb.adminOnboardingFee));
@@ -752,7 +788,10 @@
     const rentedLeaseRent = Math.max(0, n(currentState.rentedAirbnb.monthlyLeaseRent)) * 12;
     const rentedAnnualLeaseCosts = Math.max(0, n(currentState.rentedAirbnb.annualLeaseCosts));
     const rentedSecurityDeposit = Math.max(0, n(currentState.rentedAirbnb.securityDeposit));
-    const rentedOperatingCosts = platformFee + selfStayCosts + fixedRentedAirbnb + selfPctCosts + rentedLeaseRent + rentedAnnualLeaseCosts;
+    const rentedMonthlyCostItems = currentState.monthlyCosts
+      .filter((x) => x.rentedAirbnb && Math.max(0, n(x.amount)) > 0)
+      .map((x) => ({ id: x.id, name: x.name, monthly: Math.max(0, n(x.amount)), annual: Math.max(0, n(x.amount)) * 12 }));
+    const rentedOperatingCosts = platformFee + selfStayCosts + fixedRentedAirbnb + rentedPctCosts + rentedLeaseRent + rentedAnnualLeaseCosts;
     const rentedTaxDeductions = selfPlatformTaxDeduction + rentedStayTaxDeductions + rentedMonthlyTaxDeductions + rentedPctTaxDeductions
       + rentedLeaseRent
       + (currentState.rentedAirbnb.annualLeaseCostsDeductibleIR ? rentedAnnualLeaseCosts : 0);
@@ -895,6 +934,8 @@
           'Receita de diárias': accommodationRevenue,
           'Taxas cobradas do hóspede': guestFeeRevenue,
           'Aluguel pago ao proprietário': rentedLeaseRent,
+          'Imóvel vem mobiliado': currentState.rentedAirbnb.furnished ? 1 : 0,
+          'Sublocação/temporada autorizada': currentState.rentedAirbnb.subleaseAuthorized ? 1 : 0,
           'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts,
           'Taxa da plataforma': platformFee,
           'Diária média das noites vendidas': averageNightlyRate,
@@ -903,7 +944,7 @@
           'RevPAR total': totalRevPar,
           'Custos por reservas': selfStayCosts,
           'Custos mensais da operação': fixedRentedAirbnb,
-          'OPEX percentual': selfPctCosts,
+          'OPEX percentual aplicável ao locatário': rentedPctCosts,
           'Deduções consideradas na base de IR': rentedTaxDeductions,
           'Base tributável estimada': rentedTaxBase,
           'IR estimado': rentedTax,
@@ -912,6 +953,8 @@
           'Caução/garantia reembolsável': rentedSecurityDeposit,
           'Capital de giro vinculado': workingCapitalValue,
           'Capital vinculado final': tiedCapital,
+          'CAPEX de ativos aplicável': rentedSetupAssets,
+          'Custos iniciais não recuperáveis do contrato': rentedInitialLeaseCosts,
           'CAPEX + custos iniciais do contrato': rentedSetup,
           'Valor residual do CAPEX': rentedSetupResidual,
           'Depreciação econômica do CAPEX': rentedSetupDepreciation,
@@ -1066,7 +1109,11 @@
       selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets, traditionalSetup,
       selfSetupResidual, adminSetupResidual, adminSetupPaidByAdmin: adminSetupData.paidByAdmin, rentedSetupResidual, traditionalSetupResidual,
       selfSetupDepreciation, adminSetupDepreciation, rentedSetupDepreciation, traditionalSetupDepreciation,
-      rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit, workingCapital,
+      rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit, rentedInitialLeaseCosts,
+      rentedMonthlyCostItems, rentedPctCostRate, rentedPctCosts,
+      rentedFurnished: Boolean(currentState.rentedAirbnb.furnished),
+      rentedSubleaseAuthorized: Boolean(currentState.rentedAirbnb.subleaseAuthorized),
+      workingCapital,
       scenarios, bestCash, bestFirstYear, bestEconomic, bestWealth, bestRealWealth, bestReal,
       propertyValue, inflation, realAppreciation, nominalPropertyAppreciation, propertyEndValue,
       propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation, investmentGrossRate,
@@ -1129,6 +1176,7 @@
     }
 
     renderAdminPackage(calc);
+    renderRentedContract(calc);
     renderDayStatus(calc.totalDays);
     renderKpis(calc);
     renderResultsTable(calc);
@@ -1136,6 +1184,29 @@
     renderDiagnostics(calc);
     renderFinalSummary(calc);
   }
+  function renderRentedContract(calc) {
+    const root = $('#rentedContractSummary');
+    if (!root) return;
+    const itemTags = (calc.rentedMonthlyCostItems || []).length
+      ? calc.rentedMonthlyCostItems.map((x) => `<span class="admin-tag">${escapeHtml(x.name)} · ${money.format(x.monthly)}/mês</span>`).join('')
+      : '<span class="admin-empty">Nenhum custo mensal adicional atribuído ao locatário.</span>';
+    root.innerHTML = `
+      <div class="rented-contract-status ${calc.rentedSubleaseAuthorized ? 'authorized' : 'warning'}">
+        <strong>${calc.rentedSubleaseAuthorized ? 'Operação autorizada no contrato' : 'Autorização contratual ainda não confirmada'}</strong>
+        <span>${calc.rentedFurnished ? 'Imóvel mobiliado' : 'Imóvel não mobiliado'} · aluguel ${money.format(calc.rentedLeaseRent / 12)}/mês</span>
+      </div>
+      <div class="rented-contract-metrics">
+        <div><span>Aluguel anual</span><strong>${money.format(calc.rentedLeaseRent)}</strong></div>
+        <div><span>Custos mensais atribuídos</span><strong>${money.format(calc.fixedRentedAirbnb)}</strong></div>
+        <div><span>OPEX percentual aplicável</span><strong>${percent.format(calc.rentedPctCostRate)}</strong></div>
+        <div><span>CAPEX de ativos aplicável</span><strong>${money.format(calc.rentedSetupAssets)}</strong></div>
+        <div><span>Entrada do contrato</span><strong>${money.format(calc.rentedInitialLeaseCosts)}</strong></div>
+        <div><span>Caução / garantia vinculada</span><strong>${money.format(calc.rentedSecurityDeposit)}</strong></div>
+      </div>
+      <div class="admin-tag-group"><strong>Custos mensais marcados para o locatário</strong>${itemTags}</div>
+    `;
+  }
+
   function renderAdminPackage(calc) {
     const root = $('#adminIncludedSummary');
     const managed = calc.managedAdminItems || [];
@@ -1230,7 +1301,11 @@
     const deficitScenarios = calc.scenarios.filter((scenario) => scenario.externalFundingRequired > 0);
     deficitScenarios.forEach((scenario) => messages.push({ warning: true, text: `${scenario.label} exige ${money.format(scenario.externalFundingRequired)} de aporte externo para cobrir o caixa negativo. Esse valor também foi somado ao capital do benchmark financeiro equivalente.` }));
     const rentedScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-rented');
-    if (rentedScenario) messages.push({ text: `No Airbnb em imóvel alugado, o capital de oportunidade é ${money.format(rentedScenario.opportunityCapital)} — montagem/custos iniciais, capital vinculado e eventual aporte para déficit, sem incluir o valor do imóvel.` });
+    if (rentedScenario) {
+      messages.push({ text: `No Airbnb em imóvel alugado, o capital de oportunidade é ${money.format(rentedScenario.opportunityCapital)} — montagem/custos iniciais, capital vinculado e eventual aporte para déficit, sem incluir o valor do imóvel.` });
+      if (!calc.rentedSubleaseAuthorized) messages.push({ warning: true, text: 'O cenário financeiro do Airbnb alugado está calculado, mas a autorização contratual para sublocação/locação por temporada ainda não foi confirmada.' });
+      if (calc.rentedFurnished) messages.push({ text: 'O imóvel alugado está marcado como mobiliado: itens de CAPEX classificados como “só se não mobiliado” foram excluídos desse cenário.' });
+    }
     const adminScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-admin');
     if (adminScenario) {
       messages.push({ text: `No Airbnb administrado, o modelo estima ${number1.format(calc.workHours.admin)} horas suas por ano: tarefas não delegadas + supervisão residual da administradora.` });

@@ -11,7 +11,7 @@ const scenario = (calc,id) => calc.scenarios.find(x=>x.id===id);
 function assert(c,m){ if(!c) throw new Error(m); }
 function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esperado ${b}, obtido ${a}`); }
 
-assert(defaultState.version === 10, 'defaults recalibrados devem estar na V10');
+assert(defaultState.version >= 10, 'estado deve preservar a recalibração da V10');
 approx(defaultState.globals.ownerHourlyValue,100,1e-9,'valor da hora');
 
 const expectedSeasons = [

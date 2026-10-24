@@ -204,7 +204,7 @@
             <div class="table-card compact-table-card">
               <div class="table-scroll">
                 <table class="monthly-cost-table admin-table">
-                  <thead><tr><th>Item</th><th>Valor mensal</th><th>Seu tempo/mês</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <thead><tr><th>Item</th><th>Valor mensal</th><th>Seu tempo/mês</th><th>Airbnb próprio</th><th>Locatário paga<br><small>Airbnb alugado</small></th><th>Aluguel tradicional</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
                   <tbody id="monthlyCostRows"></tbody>
                   <tfoot><tr><th>Total anual</th><th></th><th></th><th id="monthlyAirbnbTotal">—</th><th id="monthlyRentedAirbnbTotal">—</th><th id="monthlyTraditionalTotal">—</th><th></th><th><span id="monthlyAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th><th></th></tr></tfoot>
                 </table>
@@ -220,9 +220,9 @@
             <div class="table-card compact-table-card narrow-table">
               <div class="table-scroll">
                 <table class="percentage-cost-table admin-table">
-                  <thead><tr><th>Item</th><th>% da receita</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <thead><tr><th>Item</th><th>% da receita</th><th>Airbnb alugado</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
                   <tbody id="percentageCostRows"></tbody>
-                  <tfoot><tr><th>Total</th><th id="percentageCostTotal">—</th><th colspan="3"></th></tr></tfoot>
+                  <tfoot><tr><th>Total</th><th id="percentageCostTotal">—</th><th colspan="4"></th></tr></tfoot>
                 </table>
               </div>
             </div>
@@ -265,6 +265,8 @@
         </summary>
         <div class="accordion-body">
           <div class="form-grid compact-fields">
+            <label class="field-group checkbox-field"><span class="field-label">Condição do imóvel</span><span class="check-row"><label><input data-path="rentedAirbnb.furnished" type="checkbox" /> Imóvel já vem mobiliado</label></span><small class="field-help">Itens de CAPEX marcados como “só se não mobiliado” deixam de entrar automaticamente.</small></label>
+            <label class="field-group checkbox-field"><span class="field-label">Autorização contratual</span><span class="check-row"><label><input data-path="rentedAirbnb.subleaseAuthorized" type="checkbox" /> Contrato autoriza sublocação / locação por temporada</label></span><small class="field-help">O cálculo continua disponível, mas o resumo sinaliza quando essa autorização ainda não foi confirmada.</small></label>
             <label class="field-group"><span class="field-label">Aluguel mensal pago ao proprietário</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.monthlyLeaseRent" type="number" min="0" step="50" /></div></label>
             <label class="field-group"><span class="field-label">Caução / garantia reembolsável</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.securityDeposit" type="number" min="0" step="100" /></div></label>
             <label class="field-group"><span class="field-label">Custos iniciais não recuperáveis do contrato</span><div class="input-prefix money-control"><span>R$</span><input data-path="rentedAirbnb.initialLeaseCosts" type="number" min="0" step="100" /></div></label>
@@ -272,7 +274,11 @@
             <label class="field-group checkbox-field"><span class="field-label">Tributação</span><span class="check-row"><label><input data-path="rentedAirbnb.annualLeaseCostsDeductibleIR" type="checkbox" /> Custos anuais do contrato dedutíveis IR</label></span></label>
           </div>
           <div class="concept-note">
-            <strong>Como o cenário funciona:</strong> usa as mesmas diárias, ocupação, custos por reserva, OPEX percentual e reservas do Airbnb autogerido. Na tabela de custos mensais e no CAPEX, a coluna “Airbnb alugado” permite ajustar o que realmente cabe ao locatário. A caução não é despesa: continua sendo patrimônio, mas fica vinculada ao contrato.
+            <strong>Como o cenário funciona:</strong> usa as mesmas diárias, ocupação, custos por reserva e reservas do Airbnb autogerido. Na tabela de custos mensais, “Locatário paga” define os encargos do contrato/operação; nos custos percentuais, uma coluna própria decide o que também vale para esse cenário. A caução não é despesa: continua sendo patrimônio, mas fica vinculada ao contrato.
+          </div>
+          <div class="rented-contract-box">
+            <div><span class="eyebrow">Contrato configurado</span><h3>Resumo do imóvel alugado</h3><p>Aluguel, encargos atribuídos ao locatário, CAPEX aplicável e autorização contratual.</p></div>
+            <div id="rentedContractSummary"></div>
           </div>
           <div class="real-return-note">
             <strong>Custo de oportunidade:</strong> o benchmark financeiro equivalente usa o capital realmente comprometido nesta estratégia — CAPEX de montagem + caução + reservas iniciais + qualquer aporte necessário para cobrir um caixa anual negativo. O valor do imóvel não entra, porque ele pertence ao locador.
@@ -291,17 +297,17 @@
         </summary>
         <div class="accordion-body">
           <div class="section-actions-line">
-            <p class="helper">Informe também quanto cada item ainda deve valer ao fim do 1º ano. No cenário administrado, separe quem paga do destino do ativo: a administradora pode pagar um item que continua pertencendo a você, ou o inverso. O valor residual só entra no seu patrimônio quando o ativo fica com você.</p>
+            <p class="helper">Informe também quanto cada item ainda deve valer ao fim do 1º ano. No Airbnb alugado, “só se não mobiliado” exclui automaticamente o item quando o contrato já entrega o imóvel mobiliado. No cenário administrado, separe quem paga do destino do ativo: a administradora pode pagar um item que continua pertencendo a você, ou o inverso. O valor residual só entra no seu patrimônio quando o ativo fica com você.</p>
             <button class="button ghost small-button" id="addSetupCostButton" type="button">+ Adicionar item</button>
           </div>
           <div class="table-card compact-table-card">
             <div class="table-scroll">
               <table class="setup-cost-table admin-table">
-                <thead><tr><th>Item</th><th>Valor inicial</th><th>Residual após 1 ano</th><th>Valor residual</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Aluguel tradicional</th><th>Admin paga</th><th>Ativo fica com você</th><th></th></tr></thead>
+                <thead><tr><th>Item</th><th>Valor inicial</th><th>Residual após 1 ano</th><th>Valor residual</th><th>Airbnb próprio</th><th>Airbnb alugado</th><th>Só se não mobiliado</th><th>Aluguel tradicional</th><th>Admin paga</th><th>Ativo fica com você</th><th></th></tr></thead>
                 <tbody id="setupCostRows"></tbody>
                 <tfoot>
-                  <tr><th>Total inicial</th><th></th><th></th><th></th><th id="setupAirbnbTotal">—</th><th id="setupRentedAirbnbTotal">—</th><th id="setupTraditionalTotal">—</th><th colspan="2"><span id="setupAdminExcludedTotal">—</span><small class="footer-hint">seu desembolso no cenário administrado (inclui onboarding)</small></th><th></th></tr>
-                  <tr><th>Valor residual estimado</th><th></th><th></th><th></th><th id="setupAirbnbResidualTotal">—</th><th id="setupRentedAirbnbResidualTotal">—</th><th id="setupTraditionalResidualTotal">—</th><th colspan="2"><span id="setupAdminResidualTotal">—</span><small class="footer-hint">valor residual dos ativos que ficam com você</small></th><th></th></tr>
+                  <tr><th>Total inicial</th><th></th><th></th><th></th><th id="setupAirbnbTotal">—</th><th id="setupRentedAirbnbTotal">—</th><th></th><th id="setupTraditionalTotal">—</th><th colspan="2"><span id="setupAdminExcludedTotal">—</span><small class="footer-hint">seu desembolso no cenário administrado (inclui onboarding)</small></th><th></th></tr>
+                  <tr><th>Valor residual estimado</th><th></th><th></th><th></th><th id="setupAirbnbResidualTotal">—</th><th id="setupRentedAirbnbResidualTotal">—</th><th></th><th id="setupTraditionalResidualTotal">—</th><th colspan="2"><span id="setupAdminResidualTotal">—</span><small class="footer-hint">valor residual dos ativos que ficam com você</small></th><th></th></tr>
                 </tfoot>
               </table>
             </div>

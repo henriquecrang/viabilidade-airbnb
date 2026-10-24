@@ -636,3 +636,40 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 .final-monthly-equivalent { margin-top: 3px; font-size: .86rem; font-weight: 650; }
 @media (max-width: 900px) { .market-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .market-metric-grid { grid-template-columns: 1fr; } }
+
+/* V11 — contrato do Airbnb em imóvel alugado */
+.rented-contract-box {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--surface);
+  display: grid;
+  gap: 14px;
+}
+.rented-contract-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.rented-contract-status.warning { border-left: 4px solid var(--danger); }
+.rented-contract-status.authorized { border-left: 4px solid var(--accent); }
+.rented-contract-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.rented-contract-metrics div {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+.rented-contract-metrics span { color: var(--muted); font-size: .82rem; }
+@media (max-width: 760px) { .rented-contract-metrics { grid-template-columns: 1fr; } }

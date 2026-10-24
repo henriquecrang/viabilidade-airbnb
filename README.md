@@ -188,3 +188,19 @@ O cenário-base passa a incorporar trabalho próprio e uma sazonalidade híbrida
 O custo das horas **não é OPEX e não reduz o caixa**. Ele serve para comparar economicamente estratégias que consomem quantidades diferentes de trabalho do proprietário.
 
 A migração V9 → V10 só recalibra automaticamente o antigo cenário-base intacto (sazonalidade B0 e trabalho todo zerado). Simulações customizadas preservam suas próprias premissas.
+
+
+## V11 — Airbnb em imóvel alugado
+
+A primeira etapa da Issue #36 torna o cenário de arbitragem contratualmente mais explícito:
+
+- seletor **mobiliado × não mobiliado**;
+- sinalização de **autorização contratual para sublocação/locação por temporada**;
+- custos mensais compartilhados passam a representar explicitamente o que o locatário paga;
+- condomínio ordinário entra no cenário alugado por default; IPTU continua fora por default;
+- seguro do imóvel/incêndio fica separado de seguro-fiança/garantia locatícia;
+- custos percentuais podem ser ligados/desligados especificamente no Airbnb alugado;
+- itens de CAPEX podem ser marcados como **“só se não mobiliado”**;
+- resumo do contrato mostra aluguel, encargos, CAPEX, entrada e caução.
+
+A ausência de autorização contratual gera alerta, mas não impede a simulação financeira. Custos de saída, reajustes e horizonte contratual continuam para a modelagem plurianual (#35).
