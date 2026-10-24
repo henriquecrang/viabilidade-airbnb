@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 13;
+  const APP_VERSION = 14;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -17,6 +17,14 @@
       inflationPct: 4.3,
       propertyRealAppreciationPct: 0,
       ownerHourlyValue: 100
+    },
+    propertySale: {
+      salePriceAdjustmentPct: 0,
+      brokeragePct: 5,
+      fixedCosts: 0,
+      mortgageBalance: 0,
+      capitalGainsTax: 0,
+      otherCosts: 0
     },
     workingCapital: {
       airbnbSelf: 0,
@@ -417,6 +425,34 @@
       const tcl = defaultState.monthlyCosts.find((x) => String(x.id) === 'tcl');
       if (tcl && !merged.monthlyCosts.some((x) => String(x.id) === 'tcl')) {
         merged.monthlyCosts.push(structuredCloneSafe(tcl));
+      }
+    }
+
+    // V14: benchmark financeiro passa a considerar a conversão do imóvel em
+    // capital líquido. O antigo cenário-base recebe 5% de corretagem; arquivos
+    // customizados anteriores preservam a antiga semântica (venda sem custo)
+    // até que o usuário configure explicitamente os custos de saída.
+    if (incomingVersion < 14) {
+      const sourceMonthlyByIdV14 = new Map((Array.isArray(source.monthlyCosts) ? source.monthlyCosts : []).map((x) => [String(x.id), x]));
+      const looksLikeV13Base = incomingVersion === 13
+        && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+        && n(source.globals?.propertyValue) === 636000
+        && n(source.globals?.ownerHourlyValue) === 100
+        && source.analysis?.startingPosition === 'property'
+        && sourceMonthlyByIdV14.get('iptu')?.amount === 0
+        && Math.abs(n(sourceMonthlyByIdV14.get('tcl')?.amount) * 12 - 625) < 0.01
+        && sourceMonthlyByIdV14.get('agua')?.amount === 200
+        && sourceMonthlyByIdV14.get('luz')?.amount === 400
+        && sourceMonthlyByIdV14.get('gas')?.amount === 100;
+      if (!looksLikeV13Base) {
+        merged.propertySale = {
+          salePriceAdjustmentPct: 0,
+          brokeragePct: 0,
+          fixedCosts: 0,
+          mortgageBalance: 0,
+          capitalGainsTax: 0,
+          otherCosts: 0
+        };
       }
     }
 
@@ -842,32 +878,46 @@
     const rentedTax = rentedTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
     const rentedOperatingCash = airbnbRevenue - rentedOperatingCosts - rentedTax;
 
+    const salePrice = Math.max(0, propertyValue * (1 + n(currentState.propertySale.salePriceAdjustmentPct) / 100));
+    const saleBrokerage = salePrice * Math.max(0, n(currentState.propertySale.brokeragePct)) / 100;
+    const saleFixedCosts = Math.max(0, n(currentState.propertySale.fixedCosts));
+    const saleMortgageBalance = Math.max(0, n(currentState.propertySale.mortgageBalance));
+    const saleCapitalGainsTax = Math.max(0, n(currentState.propertySale.capitalGainsTax));
+    const saleOtherCosts = Math.max(0, n(currentState.propertySale.otherCosts));
+    const saleTransactionCosts = saleBrokerage + saleFixedCosts + saleCapitalGainsTax + saleOtherCosts;
+    const saleDeductionsTotal = saleTransactionCosts + saleMortgageBalance;
+    const netSaleProceeds = Math.max(0, salePrice - saleDeductionsTotal);
+    const startingPropertyEquity = Math.max(0, propertyValue - saleMortgageBalance);
+
     let investmentGrossRate;
     if (currentState.investment.mode === 'ipcaPlus') {
       const realRate = n(currentState.investment.realRatePct) / 100;
       investmentGrossRate = (1 + inflation) * (1 + realRate) - 1;
     } else investmentGrossRate = n(currentState.investment.nominalRatePct) / 100;
 
-    const investmentForCapital = (capital) => {
+    const investmentForCapital = (capital, wealthBasis = capital) => {
       const initialCapital = Math.max(0, n(capital));
+      const startingWealth = Math.max(0, n(wealthBasis, initialCapital));
       const grossIncome = initialCapital * investmentGrossRate;
       const fees = initialCapital * Math.max(0, n(currentState.investment.feesPct)) / 100;
       const taxBase = Math.max(0, grossIncome - fees);
       const tax = taxBase * Math.max(0, n(currentState.investment.taxPct)) / 100;
       const operatingCash = grossIncome - fees - tax;
-      const capitalPreservationAmount = initialCapital * inflation;
-      const sustainableCash = operatingCash - capitalPreservationAmount;
       const endNetWorth = initialCapital + operatingCash;
       const inflationFactor = 1 + inflation;
+      const preservationTarget = startingWealth * inflationFactor;
+      const capitalPreservationAmount = startingWealth * inflation;
+      const sustainableCash = endNetWorth - preservationTarget;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
-      const realWealthCreation = realEndNetWorth - initialCapital;
+      const realWealthCreation = realEndNetWorth - startingWealth;
+      const conversionLoss = startingWealth - initialCapital;
       return {
-        initialCapital, grossIncome, fees, tax, operatingCash, sustainableCash, endNetWorth, realEndNetWorth, realWealthCreation,
-        capitalPreservationAmount,
+        initialCapital, startingWealth, conversionLoss, grossIncome, fees, tax, operatingCash, sustainableCash,
+        endNetWorth, realEndNetWorth, realWealthCreation, capitalPreservationAmount, preservationTarget,
         nominalExcessOverPreservation: sustainableCash,
         nominalReturn: initialCapital > 0 ? operatingCash / initialCapital : 0,
-        sustainableCashYield: initialCapital > 0 ? sustainableCash / initialCapital : 0,
-        realReturn: initialCapital > 0 ? realWealthCreation / initialCapital : 0
+        sustainableCashYield: startingWealth > 0 ? sustainableCash / startingWealth : 0,
+        realReturn: startingWealth > 0 ? realWealthCreation / startingWealth : 0
       };
     };
 
@@ -892,10 +942,21 @@
     const propertyNominalGain = propertyEndValue - propertyValue;
     const propertyNominalGainBeyondInflation = propertyNominalGain - propertyInflationPreservation;
 
-    const enrichScenarioWithBenchmark = (scenario) => {
-      const benchmark = investmentForCapital(scenario.opportunityCapital);
+    const enrichScenarioWithBenchmark = (scenario, propertyBacked = false) => {
+      const extraCapital = propertyBacked ? Math.max(0, scenario.opportunityCapital - propertyValue) : 0;
+      const benchmarkInvestableCapital = propertyBacked
+        ? netSaleProceeds + extraCapital
+        : scenario.opportunityCapital;
+      const benchmarkWealthBasis = propertyBacked
+        ? startingPropertyEquity + extraCapital
+        : scenario.opportunityCapital;
+      const benchmark = investmentForCapital(benchmarkInvestableCapital, benchmarkWealthBasis);
       return {
         ...scenario,
+        benchmarkUsesPropertySale: propertyBacked,
+        benchmarkInvestableCapital,
+        benchmarkWealthBasis,
+        benchmarkSaleTransactionCosts: propertyBacked ? saleTransactionCosts : 0,
         benchmarkRealGain: benchmark.realWealthCreation,
         benchmarkNominalGain: benchmark.operatingCash,
         benchmarkRealReturn: benchmark.realReturn,
@@ -939,7 +1000,7 @@
         baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
         wealthCreation, realWealthCreation, capitalPreservationAmount, nominalExcessOverPreservation,
         realFreeCash, cashYield, nominalTotalReturn, realTotalReturn, details
-      });
+      }, true);
     };
 
     const makeRentedScenario = () => {
@@ -1073,9 +1134,9 @@
       }
     });
 
-    // O cenário financeiro isolado continua usando o valor do imóvel como base simples.
-    // Para cada alternativa, o campo benchmarkRealGain usa o capital de oportunidade específico daquela estratégia.
-    const invCalc = investmentForCapital(propertyValue);
+    // Como o cenário-base parte de alguém que já possui o imóvel, a aplicação
+    // financeira nasce do capital líquido realizável após a venda.
+    const invCalc = investmentForCapital(netSaleProceeds, startingPropertyEquity);
     const investment = {
       id: 'investment', label: 'Investimento financeiro', grossRevenue: invCalc.grossIncome, opCosts: invCalc.fees,
       tax: invCalc.tax, operatingCash: invCalc.operatingCash, cashPreservationRequirement: invCalc.capitalPreservationAmount, preservationShortfall: Math.max(0, -invCalc.sustainableCash),
@@ -1084,13 +1145,15 @@
       monthlyNet: invCalc.sustainableCash / 12, capex: 0, setupResidual: 0, setupDepreciation: 0, firstYearCash: invCalc.sustainableCash,
       laborCost: workCost.investment, workHoursAnnual: workHours.investment, economicResult: invCalc.sustainableCash - workCost.investment,
       firstYearEconomic: invCalc.sustainableCash - workCost.investment,
-      baseInitialCapital: propertyValue, initialCapital: propertyValue, opportunityCapital: propertyValue,
+      transactionCosts: saleTransactionCosts,
+      baseInitialCapital: startingPropertyEquity, initialCapital: startingPropertyEquity, opportunityCapital: netSaleProceeds,
       endNetWorth: invCalc.endNetWorth, realEndNetWorth: invCalc.realEndNetWorth,
-      wealthCreation: invCalc.operatingCash, realWealthCreation: invCalc.realWealthCreation,
+      wealthCreation: invCalc.endNetWorth - startingPropertyEquity, realWealthCreation: invCalc.realWealthCreation,
       capitalPreservationAmount: invCalc.capitalPreservationAmount, nominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
       realFreeCash: (1 + inflation) > 0 ? invCalc.sustainableCash / (1 + inflation) : invCalc.sustainableCash,
-      cashYield: propertyValue > 0 ? invCalc.sustainableCash / propertyValue : 0,
-      nominalTotalReturn: invCalc.nominalReturn, realTotalReturn: invCalc.realReturn,
+      cashYield: startingPropertyEquity > 0 ? invCalc.sustainableCash / startingPropertyEquity : 0,
+      nominalTotalReturn: startingPropertyEquity > 0 ? (invCalc.endNetWorth - startingPropertyEquity) / startingPropertyEquity : 0,
+      realTotalReturn: invCalc.realReturn,
       benchmarkRealGain: invCalc.realWealthCreation, benchmarkNominalGain: invCalc.operatingCash,
       benchmarkRealReturn: invCalc.realReturn, benchmarkEndNetWorth: invCalc.endNetWorth,
       benchmarkRealEndNetWorth: invCalc.realEndNetWorth,
@@ -1101,8 +1164,17 @@
       benchmarkEconomicRealGain: invCalc.realWealthCreation - workCost.investment,
       economicGapVsBenchmark: 0,
       details: {
-        'Taxa bruta nominal': investmentGrossRate, 'Custos / taxas': invCalc.fees, 'IR sobre rendimento': invCalc.tax,
-        'Capital investido': propertyValue, 'Rendimento líquido nominal': invCalc.operatingCash,
+        'Valor de mercado do imóvel': propertyValue,
+        'Valor esperado de venda': salePrice,
+        'Corretagem na venda': saleBrokerage,
+        'Custos/documentação de venda': saleFixedCosts,
+        'Saldo de financiamento quitado': saleMortgageBalance,
+        'IR estimado sobre ganho de capital na venda': saleCapitalGainsTax,
+        'Outros custos de liquidação': saleOtherCosts,
+        'Custos de transação da venda': saleTransactionCosts,
+        'Capital líquido investido': netSaleProceeds,
+        'Taxa bruta nominal': investmentGrossRate, 'Custos / taxas do investimento': invCalc.fees, 'IR sobre rendimento': invCalc.tax,
+        'Rendimento líquido nominal': invCalc.operatingCash,
         'Parcela retida para preservar poder de compra': invCalc.capitalPreservationAmount,
         'Caixa distribuível preservando o principal real': invCalc.sustainableCash,
         'Aporte adicional necessário se rendimento não cobrir inflação': Math.max(0, -invCalc.sustainableCash),
@@ -1159,7 +1231,10 @@
       workingCapital,
       scenarios, bestCash, bestFirstYear, bestEconomic, bestWealth, bestRealWealth, bestReal,
       propertyValue, inflation, realAppreciation, nominalPropertyAppreciation, propertyEndValue,
-      propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation, investmentGrossRate,
+      propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation,
+      salePrice, saleBrokerage, saleFixedCosts, saleMortgageBalance, saleCapitalGainsTax, saleOtherCosts,
+      saleTransactionCosts, saleDeductionsTotal, netSaleProceeds, startingPropertyEquity,
+      investmentGrossRate,
       investmentCapitalPreservationAmount: invCalc.capitalPreservationAmount,
       investmentNominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
       investmentRealWealthCreation: invCalc.realWealthCreation, investmentSustainableCash: invCalc.sustainableCash, workHours, includedAdminItems, managedAdminItems
@@ -1208,6 +1283,14 @@
     const propertyPreview = $('#propertyAppreciationPreview');
     if (propertyPreview) propertyPreview.textContent = `Com inflação de ${percent.format(calc.inflation)}, isso equivale a ${percent.format(calc.nominalPropertyAppreciation)} de valorização nominal.`;
     const investmentScenario = calc.scenarios.find((scenario) => scenario.id === 'investment');
+    const salePreview = $('#saleConversionPreview');
+    if (salePreview) {
+      salePreview.innerHTML = `
+        <article><span>Valor de mercado</span><strong>${money.format(calc.propertyValue)}</strong><small>patrimônio imobiliário de referência</small></article>
+        <article><span>Valor esperado de venda</span><strong>${money.format(calc.salePrice)}</strong><small>após ajuste informado</small></article>
+        <article><span>Custos de transação</span><strong>${money.format(calc.saleTransactionCosts)}</strong><small>corretagem + documentação + IR de ganho + outros</small></article>
+        <article><span>Capital líquido investível</span><strong>${money.format(calc.netSaleProceeds)}</strong><small>após custos e eventual quitação de financiamento</small></article>`;
+    }
     const investmentPreview = $('#investmentNormalizationPreview');
     if (investmentPreview && investmentScenario) {
       const netNominalRate = investmentScenario.initialCapital > 0 ? investmentScenario.wealthCreation / investmentScenario.initialCapital : 0;
@@ -1360,7 +1443,9 @@
     messages.push({ text: `A diária média das noites vendidas é ${money2.format(calc.averageNightlyRate)}. Incluindo taxas cobradas do hóspede, o ADR total é ${money2.format(calc.totalAdr)}. O RevPAR de diárias é ${money2.format(calc.revPar)} e o RevPAR total é ${money2.format(calc.totalRevPar)}.` });
     messages.push({ text: `O imóvel está projetado para valorizar ${percent.format(calc.nominalPropertyAppreciation)} nominalmente: ${percent.format(calc.inflation)} recompõem a inflação e ${percent.format(calc.realAppreciation)} representam valorização real acima dela.` });
     messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
-    messages.push({ text: `Na aplicação financeira, ${money.format(calc.investmentCapitalPreservationAmount)} do rendimento líquido nominal precisam permanecer aplicados para preservar o principal real. O caixa sustentável distribuível é ${money.format(calc.investmentSustainableCash)}.` });
+    messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
+    if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
+    messages.push({ text: `Na aplicação financeira, ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação do patrimônio inicial; o excedente sustentável após a conversão do imóvel é ${money.format(calc.investmentSustainableCash)}.` });
     $('#diagnostics').innerHTML = messages.map((m) => `<div class="diagnostic ${m.warning ? 'warning' : ''}">${escapeHtml(m.text)}</div>`).join('');
   }
 
@@ -1399,6 +1484,8 @@
             <div><span>Valor residual CAPEX</span><strong>${money.format(scenario.setupResidual)}</strong></div>
             <div><span>Capital de giro vinculado</span><strong>${money.format(scenario.workingCapital || 0)}</strong></div>
             <div><span>Capital de oportunidade</span><strong>${money.format(scenario.opportunityCapital)}</strong></div>
+            ${scenario.id === 'investment' ? `<div><span>Custos de venda do imóvel</span><strong>${money.format(scenario.transactionCosts || 0)}</strong></div><div><span>Capital líquido investido</span><strong>${money.format(scenario.opportunityCapital)}</strong></div>` : ''}
+            ${scenario.benchmarkUsesPropertySale ? `<div><span>Capital líquido no benchmark</span><strong>${money.format(scenario.benchmarkInvestableCapital)}</strong></div>` : ''}
             <div><span>Ganho real do benchmark</span><strong>${money.format(scenario.benchmarkRealGain)}</strong></div>
             <div><span>Δ financeiro vs. benchmark</span><strong class="${scenario.financialGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.financialGapVsBenchmark)}</strong></div>
             <div><span>Δ econômico vs. benchmark</span><strong class="${scenario.economicGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.economicGapVsBenchmark)}</strong></div>
@@ -1461,6 +1548,7 @@
       `Inflação: ${percent.format(calc.inflation)}`,
       `Valorização real esperada do imóvel: ${percent.format(calc.realAppreciation)}`,
       `Valorização nominal projetada do imóvel: ${percent.format(calc.nominalPropertyAppreciation)}`,
+      `Venda para benchmark: ${money.format(calc.salePrice)} − custos de transação ${money.format(calc.saleTransactionCosts)} − saldo de financiamento ${money.format(calc.saleMortgageBalance)} = capital líquido ${money.format(calc.netSaleProceeds)}`,
       '',
       ...calc.scenarios.map((s) => `${s.label}: excedente ${money.format(s.nominalExcessOverPreservation)}/ano (${money.format(s.monthlyEquivalentExcess)}/mês equivalente) · caixa livre ${money.format(s.freeCash)}/ano · trabalho ${number1.format(s.workHoursAnnual || 0)} h/ano = ${money.format(s.laborCost)} · resultado econômico ${money.format(s.economicResult)} · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ financeiro ${money.format(s.financialGapVsBenchmark)} · Δ econômico ${money.format(s.economicGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
       '',

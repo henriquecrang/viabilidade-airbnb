@@ -236,3 +236,36 @@ O cenário-base passa a refletir o imóvel específico usado na calibração:
 O carnê municipal de 2026 registra 10 cotas de R$ 62,50 e cota única de R$ 581,25 com 7% de desconto. A Prefeitura identifica a TCL como taxa anual de coleta, recolhimento, transporte e destinação de resíduos, lançada junto com o IPTU.
 
 A TCL fica separada do IPTU no modelo e não é atribuída por default ao locatário do cenário de Airbnb alugado.
+
+
+## V14 — venda do imóvel e benchmark líquido
+
+Quando a posição inicial é **já possui o imóvel**, o cenário de investimento financeiro passa a representar a decisão econômica completa: **vender o imóvel e investir o capital líquido realizável**.
+
+A conversão usa:
+
+```
+valor esperado de venda
+- corretagem
+- custos/documentação
+- saldo de financiamento a quitar
+- IR estimado sobre ganho de capital
+- outros custos de liquidação
+= capital líquido investível
+```
+
+O modelo mantém duas bases separadas:
+- **patrimônio inicial:** valor/equity existente antes da venda;
+- **capital investível:** valor líquido que sobra após a alienação.
+
+Isso faz a corretagem e demais custos aparecerem como perda patrimonial real da decisão de vender, em vez de simplesmente desaparecerem da base de comparação.
+
+### Default
+- ajuste do preço de venda: 0%;
+- corretagem: **5%**;
+- demais custos: R$ 0 até serem informados.
+
+A corretagem é editável. O CRECI-RJ informa que a remuneração é de livre negociação; a referência de 5% foi escolhida por ser praticada em operações da Loft no Rio de Janeiro.
+
+### Limitação atual
+Se houver saldo de financiamento, ele é quitado na conversão para caixa. Os cenários que mantêm o imóvel ainda não modelam juros e amortização da dívida; o aplicativo gera um alerta para essa assimetria.

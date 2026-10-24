@@ -352,11 +352,24 @@
           <span class="accordion-title-wrap">
             <span class="accordion-kicker">07 · Custo de oportunidade</span>
             <span class="accordion-title">Investimento financeiro</span>
-            <span class="accordion-description">O card isolado usa o valor do imóvel; cada estratégia também calcula um benchmark financeiro com seu próprio capital de oportunidade.</span>
+            <span class="accordion-description">Como o default parte de quem já possui o imóvel, o benchmark financeiro considera vender o ativo e investir o capital líquido realizável.</span>
           </span>
           <span class="accordion-chevron" aria-hidden="true"></span>
         </summary>
         <div class="accordion-body">
+          <div class="subsection">
+            <div class="subsection-heading"><div><h3>Converter o imóvel em capital investível</h3><p>Custos de venda reduzem o patrimônio disponível para a aplicação financeira. O valor de mercado do imóvel continua sendo a referência patrimonial inicial.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Ajuste do valor esperado de venda</span><div class="input-suffix compact-control"><input data-path="propertySale.salePriceAdjustmentPct" type="number" step="0.1" /><span>% vs. valor do imóvel</span></div></label>
+              <label class="field-group"><span class="field-label">Corretagem</span><div class="input-suffix compact-control"><input data-path="propertySale.brokeragePct" type="number" min="0" step="0.1" /><span>% da venda</span></div><small class="field-help">Default de 5% como referência de mercado no Rio; é livremente negociável.</small></label>
+              <label class="field-group"><span class="field-label">Custos/documentação da venda</span><div class="input-prefix money-control"><span>R$</span><input data-path="propertySale.fixedCosts" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Saldo de financiamento a quitar</span><div class="input-prefix money-control"><span>R$</span><input data-path="propertySale.mortgageBalance" type="number" min="0" step="1000" /></div></label>
+              <label class="field-group"><span class="field-label">IR estimado sobre ganho de capital</span><div class="input-prefix money-control"><span>R$</span><input data-path="propertySale.capitalGainsTax" type="number" min="0" step="100" /></div><small class="field-help">Informe o valor estimado; o simulador não presume base de aquisição nem hipóteses de isenção.</small></label>
+              <label class="field-group"><span class="field-label">Outros custos de liquidação</span><div class="input-prefix money-control"><span>R$</span><input data-path="propertySale.otherCosts" type="number" min="0" step="100" /></div></label>
+            </div>
+            <div class="normalization-preview" id="saleConversionPreview" aria-label="Conversão do imóvel em capital líquido"></div>
+          </div>
+
           <div class="mode-switch" role="radiogroup" aria-label="Tipo de retorno financeiro">
             <label><input type="radio" name="investmentMode" value="nominal" /> Taxa nominal</label>
             <label><input type="radio" name="investmentMode" value="ipcaPlus" /> Inflação + taxa real</label>

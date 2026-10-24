@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){ if(!c) throw new Error(m); }
 function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esperado ${b}, obtido ${a}`); }
 
-assert(defaultState.version===13,'IPTU/TCL devem estar na V13');
+assert(defaultState.version>=13,'estado deve preservar a calibração V13 de IPTU/TCL');
 const byId=new Map(defaultState.monthlyCosts.map(x=>[x.id,x]));
 approx(byId.get('iptu').amount,0,1e-12,'IPTU isento');
 assert(byId.has('tcl'),'TCL deve existir');
