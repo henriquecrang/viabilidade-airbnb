@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===23,'snapshot de evidência deve estar na V23');
+assert(defaultState.version>=23,'snapshot de evidência introduzido na V23 deve permanecer ativo');
 assert(defaultState.market.subject.elevator==='yes','elevador do Residencial Peixoto deve estar registrado');
 assert(defaultState.market.evidenceSnapshot.insideAirbnbSnapshotDate==='2026-09-22','data do snapshot Inside Airbnb');
 assert(defaultState.market.comparables.length===19,'snapshot deve conter 19 comparáveis públicos');
