@@ -37,6 +37,19 @@ Incluiu:
 - página ampliada com cinco resultados lado a lado;
 - testes da Rodada B0.
 
+### V10 — defaults de trabalho e sazonalidade
+Concluída em 24/10/2026.
+
+Premissas do cenário-base:
+- posição inicial: **já possui o imóvel**;
+- valor econômico da hora: R$ 100;
+- trabalho próprio distribuído por tarefa e por reserva;
+- ocupação recuperada da planilha original;
+- diárias calibradas pela proposta da administradora: R$ 750 Réveillon/Carnaval, R$ 400 verão e R$ 250 demais períodos;
+- tabela consolidada separa horas, custo econômico das horas e resultado econômico.
+
+A futura venda do imóvel para formar o benchmark financeiro líquido está na Issue #34.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
