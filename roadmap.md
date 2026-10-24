@@ -134,6 +134,17 @@ Concluída em 24/10/2026 — Epic #19 / Issues #20, #21 e #22.
 - caixa incremental, benefício de consumo e patrimônio mantidos em lentes distintas;
 - defaults neutros; cenário-base permanece numericamente idêntico.
 
+### V23 — evidência real do mercado do imóvel-base
+Concluída em 24/10/2026.
+
+- snapshot de 19 comparáveis públicos no Bairro Peixoto e entorno;
+- 14 diárias verificáveis, ainda abaixo do mínimo operacional de 15;
+- links e datas de evidência expostos na interface;
+- P25/mediana/P75 de preço mantidos como sugestão, nunca sobrescritos silenciosamente;
+- ocupação permanece sem estimativa por falta de booked/available confiável;
+- migração do cenário-base V22 vazio carrega o snapshot;
+- resultados econômicos default permanecem inalterados até ação explícita de aplicar uma sugestão.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
