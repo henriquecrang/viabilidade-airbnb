@@ -31,7 +31,7 @@ legacy.market.comparables=[];
 legacy.market.subject.elevator='unknown';
 delete legacy.market.evidenceSnapshot;
 const migrated=normalizeState(legacy);
-assert(migrated.version===23,'migração V22→V23');
+assert(migrated.version>=23,'migração V22→V23 deve permanecer compatível em versões posteriores');
 assert(migrated.market.comparables.length===19,'cenário-base V22 vazio deve receber snapshot V23');
 assert(migrated.market.subject.elevator==='yes','migração deve registrar elevador do prédio-base');
 
