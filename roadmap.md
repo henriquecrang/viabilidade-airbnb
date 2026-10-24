@@ -51,16 +51,17 @@ Issues:
 - #5 — calibração com proposta comercial real de administradora.
 
 ### Rodada C — métricas e interpretação
-**Delivery:** #6
+**Delivery:** #6 · **Concluída em 24/10/2026**
 
-Objetivo: melhorar leitura, comparabilidade com mercado e liquidez sem transformar ainda o motor em mensal.
-
-Issues:
-- #7 — diária média, ADR total e RevPAR;
-- #4 — conclusão da comparação financeira × econômica;
-- #8 — capital de giro manual;
+Entregou:
+- #7 — diária média, ADR total, RevPAR de diárias e RevPAR total;
+- #4 — comparação financeira × econômica;
+- #8 — capital de giro manual por estratégia;
 - #9 — equivalente mensal dos resultados anuais;
-- #10 — ampliar testes de regressão dos conceitos estabilizados.
+- #10 — suíte ampliada de regressão;
+- #31 — revisão da base tributável e dos defaults fiscais.
+
+Implementação principal: V9, commit `902acdbd2c6ce2d2abbc1185113638db00525399`.
 
 ### Rodada D — arquitetura dos cenários Airbnb
 **Delivery:** #11
@@ -186,7 +187,7 @@ Quando esses dois recursos forem configurados na interface do GitHub, a convenç
 - as Issues de `type:epic` continuam agrupando capacidades maiores, independentemente da rodada em que suas partes forem executadas.
 
 ### Evolução futura — mix de canais e taxas
-**Issue:** #undefined
+**Issue:** #30
 
 Hoje o modelo usa uma única taxa de plataforma. Futuramente, poderá representar um mix entre Airbnb, Booking, canal direto e outros, com taxas e participações diferentes. Essa evolução deve permanecer fora do motor principal até termos necessidade concreta e dados suficientes.
 
