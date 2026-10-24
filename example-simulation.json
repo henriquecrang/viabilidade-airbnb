@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 21,
+  "version": 22,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 21,
+    "version": 22,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -111,7 +111,10 @@
         "days": 4,
         "unavailableDays": 0,
         "nightlyRate": 750,
-        "occupancyPct": 100
+        "occupancyPct": 100,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       },
       {
         "id": "verao",
@@ -119,7 +122,10 @@
         "days": 81,
         "unavailableDays": 0,
         "nightlyRate": 400,
-        "occupancyPct": 90
+        "occupancyPct": 90,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       },
       {
         "id": "carnaval",
@@ -127,7 +133,10 @@
         "days": 7,
         "unavailableDays": 0,
         "nightlyRate": 750,
-        "occupancyPct": 100
+        "occupancyPct": 100,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       },
       {
         "id": "outono",
@@ -135,7 +144,10 @@
         "days": 91,
         "unavailableDays": 0,
         "nightlyRate": 250,
-        "occupancyPct": 70
+        "occupancyPct": 70,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       },
       {
         "id": "inverno",
@@ -143,7 +155,10 @@
         "days": 91,
         "unavailableDays": 0,
         "nightlyRate": 250,
-        "occupancyPct": 60
+        "occupancyPct": 60,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       },
       {
         "id": "primavera",
@@ -151,7 +166,10 @@
         "days": 91,
         "unavailableDays": 0,
         "nightlyRate": 250,
-        "occupancyPct": 70
+        "occupancyPct": 70,
+        "personalUseDays": 0,
+        "habitualUseDays": 0,
+        "operationalUnavailableDays": 0
       }
     ],
     "stayCosts": [
@@ -556,6 +574,18 @@
         "adminPays": false,
         "adminAssetBelongsToOwner": true
       }
-    ]
+    ],
+    "hybridUse": {
+      "avoidedLodgingPerDay": 0,
+      "personalUseIncrementalCostPerDay": 0,
+      "habitualHousingBenefitAnnual": 0,
+      "habitualUseIncrementalCostAnnual": 0,
+      "preparationAnnualCost": 0,
+      "storageAnnualCost": 0,
+      "otherIncrementalAnnualCost": 0,
+      "incrementalAirbnbCostsDeductibleIR": false,
+      "incrementalAirbnbCapex": 0,
+      "incrementalAirbnbCapexResidualPct": 0
+    }
   }
 }
