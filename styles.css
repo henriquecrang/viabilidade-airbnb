@@ -804,3 +804,13 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
   .wizard-form-grid { grid-template-columns: 1fr; }
   .wizard-dialog { width: calc(100vw - 18px); }
 }
+
+.wizard-section { display: grid; gap: 12px; }
+.wizard-section h3 { margin: 0; font-size: 1rem; }
+.wizard-section > .helper { margin: -4px 0 0; }
+.wizard-season-table { min-width: 640px; }
+.wizard-season-table td:first-child strong,
+.wizard-season-table td:first-child small { display: block; }
+.wizard-season-table td:first-child small { color: var(--muted); margin-top: 2px; }
+.wizard-season-table input { min-width: 90px; }
+.wizard-warning { color: var(--warning-text, #8a4b00); }
