@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 11,
+  "version": 12,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 11,
+    "version": 12,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -275,8 +275,8 @@
       },
       {
         "id": "agua",
-        "name": "Água",
-        "amount": 30,
+        "name": "Água + esgoto",
+        "amount": 200,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -287,8 +287,8 @@
       },
       {
         "id": "luz",
-        "name": "Luz",
-        "amount": 250,
+        "name": "Energia elétrica",
+        "amount": 400,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,
@@ -300,7 +300,7 @@
       {
         "id": "gas",
         "name": "Gás",
-        "amount": 40,
+        "amount": 100,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": true,

@@ -204,3 +204,21 @@ A primeira etapa da Issue #36 torna o cenário de arbitragem contratualmente mai
 - resumo do contrato mostra aluguel, encargos, CAPEX, entrada e caução.
 
 A ausência de autorização contratual gera alerta, mas não impede a simulação financeira. Custos de saída, reajustes e horizonte contratual continuam para a modelagem plurianual (#35).
+
+
+## V12 — utilities do cenário-base
+
+Os defaults mensais do apartamento-base no Rio foram recalibrados para uma operação de temporada em um quarto e sala com dois aparelhos de ar-condicionado:
+
+- **Água + esgoto: R$ 200/mês.** A Águas do Rio usa conta mínima residencial associada a 15 m³; nas áreas centrais/Zona Sul da Região 1 a tarifa vigente desde dezembro/2025 coloca água + esgoto próximos de R$ 195 na primeira faixa. A cobrança de esgoto é equivalente à de água.
+- **Gás: R$ 100/mês.** Pela tabela residencial da Naturgy vigente desde 01/06/2026, a conta mínima de 7 m³ é R$ 51,07 e consumos de 10–12 m³/mês ficam aproximadamente na faixa de R$ 79–97.
+- **Energia elétrica: R$ 400/mês.** A Light publica tarifa residencial acima de R$ 1/kWh com tributos, além de bandeira e COSIP. O default assume uso de temporada com dois splits, acima do perfil residencial médio, sem tentar modelar equipamento/hora de uso individualmente.
+
+Referências:
+- Águas do Rio — Legislação e Tarifas: https://www.aguasdorio.com.br/legislacao-e-tarifas/
+- Regulamento de saneamento / cobrança de esgoto: https://aguasdorio.com.br/wp-content/uploads/2025/10/RegulamentoServicosSaneamento.pdf
+- Naturgy — tarifas RJ: https://www.naturgy.com.br/atendimento/tarifas/tarifa_rio_de_janeiro/
+- Light — tarifas de baixa tensão: https://www.light.com.br/Documentos%20Compartilhados/Entenda-Conta-Casa-Arquivos-Relacionados/Tarifas%20Baixa%20Tens%C3%A3o.pdf
+- Inmetro — condicionadores de ar: https://www.gov.br/inmetro/pt-br/assuntos/regulamentacao/avaliacao-da-conformidade/programa-brasileiro-de-etiquetagem/tabelas-de-eficiencia-energetica/condicionadores-de-ar
+
+A migração V11 → V12 só altera automaticamente o antigo cenário-base quando água, luz e gás ainda conservam exatamente os defaults anteriores.

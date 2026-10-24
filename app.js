@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 11;
+  const APP_VERSION = 12;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -103,9 +103,9 @@
       { id: 'seguro', name: 'Seguro do imóvel / incêndio', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'seguro-garantia', name: 'Seguro-fiança / garantia locatícia', amount: 0, ownerHoursMonthly: 0, airbnb: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
-      { id: 'agua', name: 'Água', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'luz', name: 'Luz', amount: 250, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'gas', name: 'Gás', amount: 40, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'agua', name: 'Água + esgoto', amount: 200, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'luz', name: 'Energia elétrica', amount: 400, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'gas', name: 'Gás', amount: 100, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'condominio', name: 'Condomínio ordinário', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
@@ -374,6 +374,31 @@
       if (!merged.monthlyCosts.some((x) => String(x.id) === 'seguro-garantia')) {
         const guarantee = defaultState.monthlyCosts.find((x) => String(x.id) === 'seguro-garantia');
         if (guarantee) merged.monthlyCosts.push(structuredCloneSafe(guarantee));
+      }
+    }
+
+    // V12: recalibração de utilities do antigo cenário-base V11.
+    // Só migra quando os três valores ainda são exatamente os defaults antigos
+    // e as principais premissas do cenário-base permanecem intactas.
+    const sourceMonthlyByIdV12 = new Map((Array.isArray(source.monthlyCosts) ? source.monthlyCosts : []).map((x) => [String(x.id), x]));
+    const looksLikeV11UtilityDefault = incomingVersion === 11
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && n(source.globals?.propertyValue) === 636000
+      && n(source.globals?.ownerHourlyValue) === 100
+      && n(source.rentedAirbnb?.monthlyLeaseRent) === 3500
+      && n(source.traditional?.monthlyRent) === 3500
+      && Array.isArray(source.seasons) && source.seasons.length === 6
+      && sourceMonthlyByIdV12.get('agua')?.amount === 30
+      && sourceMonthlyByIdV12.get('luz')?.amount === 250
+      && sourceMonthlyByIdV12.get('gas')?.amount === 40;
+    if (looksLikeV11UtilityDefault) {
+      for (const id of ['agua','luz','gas']) {
+        const target = merged.monthlyCosts.find((x) => String(x.id) === id);
+        const def = defaultState.monthlyCosts.find((x) => String(x.id) === id);
+        if (target && def) {
+          target.amount = def.amount;
+          target.name = def.name;
+        }
       }
     }
 
