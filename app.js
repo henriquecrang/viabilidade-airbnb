@@ -429,11 +429,17 @@
       'second-home': ['airbnb-self','airbnb-admin','traditional']
     };
     const enabledScenarios = [...baseMap[situation]];
-    if (compareFinancial || situation === 'capital-buy') enabledScenarios.push('investment');
+    const standaloneInvestmentComparable = ['owned','primary-home','second-home'].includes(situation);
+    if (compareFinancial && standaloneInvestmentComparable) enabledScenarios.push('investment');
+
     const incompleteEconomicPath = situation === 'capital-buy';
+    const errors = incompleteEconomicPath
+      ? ['O caminho “tenho capital e penso em comprar” depende da Issue #42: o motor ainda não incorpora capital inicial e custos de aquisição. Nenhuma comparação será aplicada até essa regra existir.']
+      : [];
+
     return {
-      valid: true,
-      errors: [],
+      valid: errors.length === 0,
+      errors,
       values: {
         'guidedSetup.main': {
           configured: true,
@@ -445,7 +451,14 @@
         }
       },
       arrayValues: {},
-      normalized: { situation, compareFinancial, enabledScenarios, incompleteEconomicPath }
+      normalized: {
+        situation,
+        compareFinancial,
+        enabledScenarios,
+        incompleteEconomicPath,
+        standaloneInvestmentComparable,
+        rentedBenchmarkEmbedded: situation === 'rent-third-party'
+      }
     };
   }
 
@@ -3090,7 +3103,7 @@
           <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="second-home" ${draft.situation==='second-home'?'checked':''} /><span><strong>É segunda residência / lazer</strong><small>Compara Airbnb, aluguel tradicional e uso híbrido.</small></span></label>
         </div>
       </div>
-      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir benchmark financeiro na comparação</strong><small>No caminho “tenho capital”, ele permanece visível porque é o único cenário economicamente completo até a #42.</small></span></label>
+      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir investimento financeiro standalone quando comparável</strong><small>Para imóvel já possuído, ele usa a venda líquida. No Airbnb de imóvel alugado, o benchmark financeiro já aparece dentro do próprio cenário; para “tenho capital”, a comparação standalone depende da #42.</small></span></label>
       <div class="concept-note"><strong>O modelo detalhado continua inteiro:</strong> este wizard só filtra os cenários exibidos nos resultados. Ele não apaga premissas nem desativa cálculos internos.</div>`;
   }
 
@@ -3491,6 +3504,7 @@
         <ul class="wizard-change-list">
           <li>Cenários exibidos: <strong>${x.enabledScenarios.map((id)=>labels[id]||id).map(escapeHtml).join(', ')}</strong>.</li>
           <li>O filtro afeta apenas a apresentação dos resultados; todas as premissas detalhadas permanecem salvas e editáveis.</li>
+          ${x.rentedBenchmarkEmbedded ? '<li>No Airbnb em imóvel alugado, a comparação financeira permanece embutida no Δ benchmark do próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido.</li>' : ''}
           ${incomplete}
         </ul>`;
       setWizardReviewMode(true);
