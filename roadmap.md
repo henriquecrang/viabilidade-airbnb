@@ -76,6 +76,11 @@ Entregou:
 
 Implementação principal: V9, commit `902acdbd2c6ce2d2abbc1185113638db00525399`.
 
+### Pré-Rodada D — cenário Airbnb em imóvel alugado
+**Issue:** #36
+
+Revisar encargos contratuais, custos fixos, CAPEX e a distinção entre imóvel mobiliado e não mobiliado antes de consolidar a matriz posse × gestão.
+
 ### Rodada D — arquitetura dos cenários Airbnb
 **Delivery:** #11
 
