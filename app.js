@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 22;
+  const APP_VERSION = 23;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -24,12 +24,171 @@
         guests: 0,
         beds: 0,
         acUnits: 2,
-        elevator: 'unknown',
+        elevator: 'yes',
         parking: 'unknown',
         qualityGrade: 3,
         minStayNights: 0
       },
-      comparables: []
+      evidenceSnapshot: {
+        collectedAt: '2026-10-24',
+        insideAirbnbSnapshotDate: '2026-09-22',
+        methodology: 'local-public-evidence',
+        note: 'Comparáveis públicos de curta duração no Bairro Peixoto e entorno. Preços são diárias anunciadas/de referência em datas diferentes; ocupação não é inferida de calendário público.'
+      },
+      comparables: [
+        {
+          id: 'maestro76-juano', name: 'Maestro Francisco Braga 76 — Juano Tours', source: 'operator-direct',
+          sourceRef: 'https://juanotours.com.br/tours/apartamentos/copacabana/maestro-francisco-braga-76/',
+          collectedAt: '2026-10-24', evidenceNote: 'Mesmo prédio. Operador informa R$ 380/noite + R$ 180 de taxa de serviço; cabeçalho exibe R$ 450/dia. Usada a diária textual de R$ 380.',
+          distanceKm: 0.01, roomType: 'entire_home', bedrooms: 1, guests: 4, beds: 2, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'unknown', qualityGrade: 4, rating: 0, reviewCount: 0,
+          activeRecently: true, minStayNights: 0, nightlyRate: 380, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'maestro-oasis-airbnb', name: 'Oásis em Copacabana — Residencial Peixoto', source: 'airbnb-manual',
+          sourceRef: 'https://www.airbnb.com.br/rooms/1617000716467540808',
+          collectedAt: '2026-10-24', evidenceNote: 'Mesmo Residencial Peixoto; 51 m², 1 quarto, 2 hóspedes, 2 camas, rating 5,0. Airbnb não expôs preço sem datas.',
+          distanceKm: 0.01, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 2, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'unknown', qualityGrade: 4, rating: 5, reviewCount: 2,
+          activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'maestro-brisa-airbnb', name: 'Brisa do Peixoto!', source: 'airbnb-manual',
+          sourceRef: 'https://www.airbnb.com.br/rooms/1425439030218835876',
+          collectedAt: '2026-10-24', evidenceNote: 'Rua Maestro Francisco Braga; 1 quarto, 2 hóspedes, 1 cama, rating 5,0 com 13 avaliações. Número do prédio não exposto.',
+          distanceKm: 0.15, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 1, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 5, reviewCount: 13,
+          activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'peixoto-luiz-airbnb', name: 'Copacabana Bairro Peixoto — Luiz', source: 'airbnb-manual',
+          sourceRef: 'https://www.airbnb.com.br/rooms/822933221852279797',
+          collectedAt: '2026-10-24', evidenceNote: 'Bairro Peixoto; 1 quarto, 2 hóspedes, rating 4,98 com 65 avaliações. Localização exata não pública.',
+          distanceKm: 0.5, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 1, bathrooms: 2,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.98, reviewCount: 65,
+          activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'peixoto-aconchego-airbnb', name: 'Aconchego no Bairro Peixoto', source: 'airbnb-manual',
+          sourceRef: 'https://www.airbnb.com.br/rooms/1799361479339616502',
+          collectedAt: '2026-10-24', evidenceNote: 'Em frente à Praça Edmundo Bittencourt; 1 quarto, 2 hóspedes. Novo anúncio; preço não exposto sem datas.',
+          distanceKm: 0.35, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 1, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 3, rating: 0, reviewCount: 1,
+          activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'peixoto-refugio-airbnb', name: 'Refúgio charmoso no Bairro Peixoto', source: 'airbnb-manual',
+          sourceRef: 'https://www.airbnb.com.br/rooms/1772689317426025304',
+          collectedAt: '2026-10-24', evidenceNote: 'Bairro Peixoto; 1 quarto, 2 hóspedes, anúncio novo. Localização e preço exatos não públicos.',
+          distanceKm: 0.5, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 1, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 0, reviewCount: 0,
+          activeRecently: true, minStayNights: 0, nightlyRate: 0, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara98-yes', name: 'Santa Clara 98 — Yes Temporada', source: 'operator-direct',
+          sourceRef: 'https://www.yestemporada.com/pt/apartment/PP19J/vacation-rental-in-copacabana-sleeps-2',
+          collectedAt: '2026-10-24', evidenceNote: 'Rua Santa Clara 98; página pública anuncia a partir de R$ 297,50/noite.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 1, bathrooms: 1,
+          acUnits: 1, elevator: 'unknown', parking: 'unknown', qualityGrade: 3, rating: 0, reviewCount: 0,
+          activeRecently: true, minStayNights: 0, nightlyRate: 297.5, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'anita22-kitnet', name: 'Anita Garibaldi 22 — kitnet', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/kitnet-em-copacabana-no-po',
+          collectedAt: '2026-09-11', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 213 para 26/10; 1 quarto e ar-condicionado.',
+          distanceKm: 0.45, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.1, reviewCount: 26,
+          activeRecently: true, minStayNights: 0, nightlyRate: 213, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'anita22-studio306', name: 'Anita Garibaldi 22 apto 306 — Studio for 2', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/studio-for-2-people-steps-from-copacabana-beach',
+          collectedAt: '2026-10-21', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 552 para 22/11; 1 quarto, ar-condicionado, 48 avaliações.',
+          distanceKm: 0.45, roomType: 'entire_home', bedrooms: 1, guests: 2, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.75, reviewCount: 48,
+          activeRecently: true, minStayNights: 0, nightlyRate: 552, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara142-adoravel', name: 'Santa Clara 142 apto 406 — Adorável Estúdio', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/adoravel-studio-copacabana',
+          collectedAt: '2026-10-23', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 508 para 24/10; 1 quarto e ar-condicionado.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.7, reviewCount: 16,
+          activeRecently: true, minStayNights: 0, nightlyRate: 508, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara142-studio807', name: 'Santa Clara 142 apto 807 — Studio Santa Clara', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/studio-santa-clara-rio-de-janeiro12',
+          collectedAt: '2026-10-10', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 315 para 14/10.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.8, reviewCount: 12,
+          activeRecently: true, minStayNights: 0, nightlyRate: 315, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara142-bemvindo', name: 'Santa Clara 142 apto 705 — Bemvindo', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/bemvindo',
+          collectedAt: '2026-10-12', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 356 para 02/12; ar-condicionado e elevador.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'no', qualityGrade: 4, rating: 4.65, reviewCount: 79,
+          activeRecently: true, minStayNights: 0, nightlyRate: 356, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara98-brisa', name: 'Santa Clara 98 — Brisa de Copa', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/brisa-de-copa',
+          collectedAt: '2026-10-05', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 523 para 13/10.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 4, rating: 4.65, reviewCount: 70,
+          activeRecently: true, minStayNights: 0, nightlyRate: 523, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara98-heart', name: 'Santa Clara 98 apto 820 — Apartment in the heart', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/apartment-in-the-heart-of-copacabana-beach-street',
+          collectedAt: '2026-10-15', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 200 para 19/10.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 3, rating: 4.3, reviewCount: 5,
+          activeRecently: true, minStayNights: 0, nightlyRate: 200, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'santaclara98-studio720', name: 'Santa Clara 98 apto 720 — Studio Copacabana', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/studio-copacabana-rio-de-janeiro1234',
+          collectedAt: '2026-09-25', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 272; classificação de qualidade 3/5.',
+          distanceKm: 0.8, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 0, elevator: 'unknown', parking: 'unknown', qualityGrade: 3, rating: 4.95, reviewCount: 24,
+          activeRecently: true, minStayNights: 0, nightlyRate: 272, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'pompeu99-oneflat', name: 'Pompeu Loureiro 99 — One Flat Garagem Copa', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/laris-rio-copacabana-apto-1-quarto-e-piscina-no-oneflat',
+          collectedAt: '2026-10-23', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 721 para 04/11; 1 quarto, piscina, academia e estacionamento.',
+          distanceKm: 1.14, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'yes', qualityGrade: 4, rating: 4.9, reviewCount: 12,
+          activeRecently: true, minStayNights: 0, nightlyRate: 721, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'pompeu99-hospeda', name: 'Pompeu Loureiro 99 — Flat piscina/sauna/garagem', source: 'operator-direct',
+          sourceRef: 'https://www.hospedapluss.com.br/pt/apartment/GK06J',
+          collectedAt: '2026-10-24', evidenceNote: 'Operador direto; página pública recente exibe a partir de R$ 230/noite. 38 m², 1 quarto, piscina, sauna, elevador e garagem.',
+          distanceKm: 1.14, roomType: 'entire_home', bedrooms: 1, guests: 4, beds: 2, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'yes', qualityGrade: 4, rating: 0, reviewCount: 0,
+          activeRecently: true, minStayNights: 0, nightlyRate: 230, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'pompeu99-flat208', name: 'Pompeu Loureiro 99 apto 208 — Flat One', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/flat-2-quadras-praia-2-min-metro-com-garagem',
+          collectedAt: '2026-10-11', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 341 para 13/10; piscina e estacionamento.',
+          distanceKm: 1.14, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 0, elevator: 'yes', parking: 'yes', qualityGrade: 4, rating: 4.2, reviewCount: 34,
+          activeRecently: true, minStayNights: 0, nightlyRate: 341, occupancyPct: 0, occupancyEvidence: 'none'
+        },
+        {
+          id: 'pompeu99-flat104', name: 'Pompeu Loureiro 99 apto 104 — Flat Copa Mar', source: 'booking-reference',
+          sourceRef: 'https://www.exploraai.com.br/hotel/flat-copacabana-rio-de-janeiro19',
+          collectedAt: '2026-09-27', evidenceNote: 'ExploraAI/Booking; diária de referência R$ 761; piscina, sauna e estacionamento pago.',
+          distanceKm: 1.14, roomType: 'entire_home', bedrooms: 1, guests: 0, beds: 0, bathrooms: 1,
+          acUnits: 1, elevator: 'yes', parking: 'yes', qualityGrade: 4, rating: 4.9, reviewCount: 85,
+          activeRecently: true, minStayNights: 0, nightlyRate: 761, occupancyPct: 0, occupancyEvidence: 'none'
+        }
+      ]
     },
     globals: {
       propertyValue: 636000,
@@ -528,12 +687,25 @@
 
     merged.market = merged.market || structuredCloneSafe(defaultState.market);
     merged.market.subject = mergeDefaults(defaultState.market.subject, source.market?.subject || merged.market.subject);
-    const marketComparableSource = Array.isArray(source.market?.comparables) ? source.market.comparables : [];
+    const shouldSeedBaseMarketEvidence = incomingVersion === 22
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && Array.isArray(source.market?.comparables)
+      && source.market.comparables.length === 0
+      && source.market?.subject?.address === 'Rua Maestro Francisco Braga, 76, apto 405';
+    const marketComparableSource = shouldSeedBaseMarketEvidence
+      ? defaultState.market.comparables
+      : (Array.isArray(source.market?.comparables) ? source.market.comparables : []);
+    if (shouldSeedBaseMarketEvidence) {
+      merged.market.subject.elevator = 'yes';
+      merged.market.evidenceSnapshot = structuredCloneSafe(defaultState.market.evidenceSnapshot);
+    }
     merged.market.comparables = marketComparableSource.map((item) => ({
       id: String(item.id || uid('comp')),
       name: String(item.name || 'Comparável'),
       source: String(item.source || 'other'),
       sourceRef: String(item.sourceRef || ''),
+      collectedAt: String(item.collectedAt || ''),
+      evidenceNote: String(item.evidenceNote || ''),
       distanceKm: Math.max(0, n(item.distanceKm)),
       roomType: String(item.roomType || ''),
       bedrooms: Math.max(0, n(item.bedrooms)),
@@ -568,6 +740,8 @@
 
     // V22: indisponibilidade anual passa a ser classificada por motivo.
     // JSONs antigos migram "unavailableDays" para indisponibilidade operacional.
+    // V23: o cenário-base recebe um snapshot auditável de comparáveis públicos.
+    // Nenhum valor de mercado é aplicado automaticamente às premissas.
     merged.version = APP_VERSION;
     return merged;
   }
@@ -853,7 +1027,8 @@
       return `
       <tr data-market-id="${escapeAttr(item.id)}">
         <td><input class="row-name" data-market-field="name" data-market-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
-        <td><select data-market-field="source" data-market-id="${escapeAttr(item.id)}"><option value="inside-airbnb" ${item.source==='inside-airbnb'?'selected':''}>Inside Airbnb</option><option value="airdna" ${item.source==='airdna'?'selected':''}>AirDNA</option><option value="airbnb-manual" ${item.source==='airbnb-manual'?'selected':''}>Airbnb manual</option><option value="other" ${item.source==='other'?'selected':''}>Outra</option></select></td>
+        <td><select data-market-field="source" data-market-id="${escapeAttr(item.id)}"><option value="inside-airbnb" ${item.source==='inside-airbnb'?'selected':''}>Inside Airbnb</option><option value="airdna" ${item.source==='airdna'?'selected':''}>AirDNA</option><option value="airbnb-manual" ${item.source==='airbnb-manual'?'selected':''}>Airbnb manual</option><option value="booking-reference" ${item.source==='booking-reference'?'selected':''}>Booking / referência</option><option value="operator-direct" ${item.source==='operator-direct'?'selected':''}>Operador direto</option><option value="other" ${item.source==='other'?'selected':''}>Outra</option></select></td>
+        <td class="center-cell">${item.sourceRef ? `<a class="evidence-link" href="${escapeAttr(item.sourceRef)}" target="_blank" rel="noopener" title="${escapeAttr(item.evidenceNote || item.sourceRef)}">Abrir</a><small>${escapeHtml(item.collectedAt || '')}</small>` : '—'}</td>
         <td><input data-market-field="distanceKm" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.distanceKm)}" /></td>
         <td><select data-market-field="roomType" data-market-id="${escapeAttr(item.id)}"><option value="entire_home" ${item.roomType==='entire_home'?'selected':''}>Imóvel inteiro</option><option value="private_room" ${item.roomType==='private_room'?'selected':''}>Quarto privado</option><option value="" ${!item.roomType?'selected':''}>?</option></select></td>
         <td><input data-market-field="bedrooms" data-market-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.bedrooms)}" /></td>
@@ -876,8 +1051,9 @@
       ? `${number1.format(result.occupancyMedian)}% · P25 ${number1.format(result.occupancyP25)}% / P75 ${number1.format(result.occupancyP75)}%`
       : 'sem evidência confiável';
     summary.innerHTML = `
-      <article><span>Comparáveis elegíveis</span><strong>${result.eligibleCount}</strong><small>${result.eligibleCount >= result.minimumCount ? 'amostra mínima atingida' : `mínimo operacional: ${result.minimumCount}`}</small></article>
-      <article><span>Diária anunciada mediana</span><strong>${result.priceCount ? money.format(result.priceMedian) : '—'}</strong><small>${result.priceCount ? `P25 ${money.format(result.priceP25)} · P75 ${money.format(result.priceP75)}` : 'adicione preços aos comparáveis'}</small></article>
+      <article><span>Comparáveis elegíveis</span><strong>${result.eligibleCount}</strong><small>${result.eligibleCount} linhas passam pelos filtros duros; preço é avaliado separadamente</small></article>
+      <article><span>Comparáveis com diária</span><strong>${result.priceCount}</strong><small>${result.priceCount >= result.minimumCount ? 'amostra mínima de preço atingida' : `abaixo do mínimo operacional de ${result.minimumCount}`}</small></article>
+      <article><span>Diária anunciada mediana</span><strong>${result.priceCount ? money.format(result.priceMedian) : '—'}</strong><small>${result.priceCount ? `P25 ${money.format(result.priceP25)} · P75 ${money.format(result.priceP75)} · confiança de preço ${result.priceSampleStatus === 'adequate' ? 'operacional' : 'baixa'}` : 'adicione preços aos comparáveis'}</small></article>
       <article><span>Ocupação com evidência</span><strong>${occText}</strong><small>${result.occupancyCount} comparáveis com booked/available sustentado</small></article>
       <article><span>Maior distância elegível</span><strong>${number1.format(result.maxEligibleDistanceKm)} km</strong><small>acima de 2 km é excluído pelo método atual</small></article>`;
     renderMarketSuggestion();
@@ -917,7 +1093,7 @@
 
   function addMarketComparable() {
     state.market.comparables.push({
-      id: uid('comp'), name: 'Novo comparável', source: 'other', sourceRef: '',
+      id: uid('comp'), name: 'Novo comparável', source: 'other', sourceRef: '', collectedAt: '', evidenceNote: '',
       distanceKm: 0, roomType: state.market.subject.roomType || 'entire_home',
       bedrooms: n(state.market.subject.bedrooms), guests: 0, beds: 0, bathrooms: n(state.market.subject.bathrooms),
       acUnits: n(state.market.subject.acUnits), elevator: 'unknown', parking: 'unknown',
@@ -1079,6 +1255,7 @@
       eligible,
       eligibleCount: eligible.length,
       sampleStatus: eligible.length >= 15 ? 'adequate' : 'insufficient',
+      priceSampleStatus: prices.length >= 15 ? 'adequate' : 'insufficient',
       targetCount: 25,
       minimumCount: 15,
       priceCount: prices.length,
