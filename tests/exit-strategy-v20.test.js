@@ -6,7 +6,7 @@ const {defaultState,normalizeState,calculateHorizonProjection}=window.SimulatorA
 const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 
-assert(defaultState.version===20,'política de fim deve estar na V20');
+assert(defaultState.version>=20,'estado deve preservar política de fim da V20');
 assert(defaultState.rentedAirbnb.contractEndStrategy==='renew','default deve assumir renovação');
 
 for(const h of [1,3,5]){

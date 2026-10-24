@@ -377,3 +377,35 @@ O Airbnb em imóvel alugado passa a declarar explicitamente o que acontece ao fi
 A opção de encerramento permanece desabilitada até a implementação da Issue #40, que tratará distrato, custos de saída, recuperação de caução e realização/reutilização de ativos. A mesma Issue foi desenhada para futuramente permitir estratégias de saída coerentes nos demais cenários.
 
 Enquanto isso, as projeções de 1, 3 e 5 anos assumem continuidade operacional.
+
+
+## V21 — motor anual e média mensal equivalente
+
+Por decisão de produto, o simulador trabalha exclusivamente em **passos anuais** neste estágio.
+
+### Regra atual
+
+- simulações-base são anuais;
+- horizontes de 1/3/5 anos são compostos por anos completos;
+- receitas, custos, inflação e valorização evoluem ano a ano;
+- déficits futuros são reconhecidos por ano, não por mês;
+- CAPEX e venda continuam eventos únicos;
+- valores mensais são apenas **médias mensais equivalentes**.
+
+Para 1 ano:
+
+```
+média mensal equivalente = valor anual / 12
+```
+
+Para 3/5 anos:
+
+```
+média mensal equivalente = valor acumulado / (anos × 12)
+```
+
+A média mensal equivalente é usada apenas para métricas de fluxo. Ganho patrimonial, patrimônio final e retornos compostos permanecem métricas do horizonte.
+
+### V18 aposentada do motor ativo
+
+A aproximação de timing mensal de aportes introduzida na V18 foi retirada. A lógica mensal real — incluindo calendário sazonal, aportes por mês, picos de caixa e reajustes em datas específicas — foi movida para a Issue #41, de prioridade futura.

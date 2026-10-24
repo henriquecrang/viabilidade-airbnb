@@ -83,18 +83,15 @@ O cenário-base parte de alguém que já possui o imóvel. O benchmark financeir
 
 Default de corretagem: 5%, editável.
 
-### V17/V18 — horizontes e timing de aportes
-Concluídas em 24/10/2026 nas Issues #35 e #14.
+### V17 — horizontes 1/3/5 anos
+Concluída em 24/10/2026 na Issue #35.
 
 - comparação 1/3/5 anos;
 - horizonte principal default de 5 anos;
 - CAPEX e venda entram uma única vez;
-- inflação e valorização compostas;
-- aportes para déficits entram no mês em que são necessários;
-- capital de giro automático = maior déficit acumulado;
-- benchmark considera o tempo efetivo de cada aporte.
+- inflação e valorização compostas.
 
-A sazonalidade intranual detalhada continua na Rodada E (#13).
+A tentativa V18 de aproximar timing mensal foi posteriormente retirada por decisão de produto. O motor ativo permanece anual.
 
 ### V16/V19 — comparáveis e aplicação de mercado
 Epic #15 concluído em 24/10/2026.
@@ -114,6 +111,15 @@ Concluída em 24/10/2026.
 - alternativa futura "encerrar a operação" já aparece na interface, mas permanece desabilitada;
 - estratégia de saída multi-cenário foi separada na Issue #40;
 - Issue #36 encerrada.
+
+### V21 — motor anual e média mensal equivalente
+Concluída em 24/10/2026.
+
+- cálculo em passos anuais;
+- déficits e aportes reconhecidos por ano;
+- valores mensais são apenas média mensal equivalente;
+- nenhum calendário/fluxo mensal é inferido;
+- motor mensal real adiado para a Issue #41.
 
 ## Rodadas de execução
 
@@ -166,25 +172,17 @@ Objetivo: refatorar o motor para a matriz **posse × gestão** depois de estabil
 Issue:
 - #12 — próprio/alugado × autogestão/administradora.
 
-### Rodada E — modelo mensal e horizonte 3/5 anos
+### Rodada E — horizonte anual 1/3/5 anos
 **Delivery:** #13
 
-Objetivo: levar o modelo anual para uma linha do tempo capaz de representar timing, capital de giro e evolução patrimonial.
+Escopo atual concluído:
+- projeções anuais em 1/3/5 anos;
+- inflação e valorização compostas;
+- CAPEX inicial e payback;
+- patrimônio nominal/real;
+- média mensal equivalente apenas como apresentação.
 
-Issue já aberta:
-- #14 — timing dos aportes no benchmark financeiro.
-
-Escopo macro futuro:
-- fluxo mensal;
-- capital de giro automático;
-- reservas ao longo do tempo;
-- depreciação/reposição;
-- reajustes de aluguel;
-- valorização do imóvel;
-- patrimônio nominal/real em 1, 3 e 5 anos;
-- payback do CAPEX.
-
-Novas Issues desse bloco devem ser abertas apenas quando a Rodada E estiver próxima, evitando detalhamento prematuro.
+O motor mensal real foi retirado do escopo atual e movido para a Issue #41, de horizonte distante.
 
 ## Frentes e epics paralelos
 
