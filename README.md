@@ -33,7 +33,7 @@ Além do cenário financeiro isolado, cada estratégia operacional possui seu pr
 
 Assim, dinheiro usado para mobiliar o imóvel ou cobrir prejuízo operacional não desaparece da comparação de custo de oportunidade.
 
-Na versão atual, o aporte negativo anual é tratado como se estivesse disponível para investimento durante o período inteiro. Quando a simulação plurianual/mensal for implementada, o benchmark poderá respeitar o momento exato de cada aporte.
+Na versão atual, déficits e aportes são reconhecidos em **passos anuais**. O benchmark considera o ano em que cada aporte é necessário; não existe ponderação intranual. O timing mensal real foi deliberadamente adiado para a Issue #41.
 
 
 ## Delegação para administradora
@@ -137,9 +137,10 @@ Publique os arquivos na raiz de um repositório e habilite **Settings → Pages 
 
 ## Limitações atuais
 
-- Horizonte principal ainda é de um ano.
-- Custos de compra/venda e a escolha inicial “já tenho imóvel” × “já tenho dinheiro” ainda serão modelados.
-- O benchmark de aportes ocorridos ao longo do ano ainda não faz ponderação temporal mensal.
+- O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
+- Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
+- A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
+- Os wizards de situação inicial, aquisição/venda e configuração guiada ainda serão implementados (#23–#29).
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
@@ -332,22 +333,14 @@ A primeira camada plurianual da Issue #35 adiciona:
 
 A V17 usa passos **anuais**. Isso já resolve a distorção principal de diluir custos iniciais em horizontes maiores sem simplesmente dividir CAPEX por N.
 
-O timing intramês de aportes, capital de giro automático e custo de oportunidade pelo mês efetivo continuam deliberadamente na Issue #14 / Rodada E.
+O timing intramês, o capital de giro por pico mensal e o custo de oportunidade pelo mês efetivo não fazem parte do motor ativo; foram adiados para a Issue #41.
 
 
-## V18 — timing mensal dos aportes
+## V18 — timing mensal dos aportes (histórico; aposentada)
 
-A Issue #14 corrige a aproximação que tratava todo déficit futuro como capital disponível desde o início da análise.
+A V18 chegou a introduzir uma aproximação mensal para o timing de aportes e capital de giro. Essa implementação foi **retirada do motor ativo na V21** por decisão de produto.
 
-Para cada cenário e horizonte:
-- o caixa recorrente de cada ano é distribuído em 12 meses;
-- o modelo identifica quando o saldo ficaria negativo;
-- o aporte externo ocorre apenas naquele mês;
-- calcula-se o maior déficit acumulado como **capital de giro automático requerido**;
-- cada aporte entra no benchmark financeiro apenas pelo tempo restante até o fim do horizonte;
-- a base real do capital aportado é trazida ao mês zero antes de calcular ganho patrimonial real.
-
-Essa granularidade mensal trata o **timing do financiamento da operação**, mas ainda não redistribui Réveillon/verão/Carnaval/outono/inverno/primavera por meses específicos. Essa sazonalidade mensal completa permanece na Rodada E (#13).
+O comportamento vigente é anual: déficits e aportes são reconhecidos por ano, e qualquer valor apresentado por mês é apenas **média mensal equivalente**. O calendário mensal real permanece como evolução futura na Issue #41.
 
 
 ## V19 — aplicar sugestões do mercado
