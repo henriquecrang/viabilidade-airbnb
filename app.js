@@ -853,7 +853,7 @@
     }, { capex: 0, residual: 0, paidByAdmin: 0 });
     const rentedSetupData = setupFor(
       (x) => x.rentedAirbnb && (!currentState.rentedAirbnb.furnished || !x.rentedOnlyIfUnfurnished),
-      (x) => x.rentedAmount
+      (x) => x.rentedAmount == null ? x.amount : x.rentedAmount
     );
     const traditionalSetupData = setupFor((x) => x.traditional);
     const selfSetup = selfSetupData.capex;
