@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 18;
+  const APP_VERSION = 19;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -693,6 +693,114 @@
     }).join('');
   }
 
+  function calculateMarketSuggestion(inputState = state) {
+    const market = calculateMarketComparables(inputState.market);
+    const calc = calculateModel(inputState);
+    const currentRate = Math.max(0, n(calc.averageNightlyRate));
+    const currentOccupancyPct = clamp(n(calc.weightedOccupancy) * 100, 0, 100);
+
+    const confidence = market.eligibleCount >= 25 && market.occupancyCount >= 15
+      ? 'high'
+      : market.eligibleCount >= 15 && market.occupancyCount >= 5
+        ? 'medium'
+        : 'low';
+
+    const build = (key, priceValue, occupancyValue) => {
+      const hasPrice = market.priceCount > 0 && priceValue > 0;
+      const hasOccupancy = market.occupancyCount > 0 && occupancyValue > 0;
+      const rateScale = hasPrice && currentRate > 0 ? priceValue / currentRate : 1;
+      const occupancyDeltaPp = hasOccupancy ? occupancyValue - currentOccupancyPct : 0;
+      return {
+        key,
+        hasPrice,
+        hasOccupancy,
+        targetNightlyRate: hasPrice ? priceValue : currentRate,
+        targetOccupancyPct: hasOccupancy ? occupancyValue : currentOccupancyPct,
+        rateScale,
+        occupancyDeltaPp,
+        seasons: inputState.seasons.map((season) => ({
+          id: season.id,
+          name: season.name,
+          currentNightlyRate: n(season.nightlyRate),
+          currentOccupancyPct: n(season.occupancyPct),
+          nightlyRate: hasPrice ? Math.max(0, n(season.nightlyRate) * rateScale) : n(season.nightlyRate),
+          occupancyPct: hasOccupancy ? clamp(n(season.occupancyPct) + occupancyDeltaPp, 0, 100) : n(season.occupancyPct)
+        }))
+      };
+    };
+
+    return {
+      confidence,
+      market,
+      currentRate,
+      currentOccupancyPct,
+      pessimistic: build('pessimistic', market.priceP25, market.occupancyP25),
+      base: build('base', market.priceMedian, market.occupancyMedian),
+      optimistic: build('optimistic', market.priceP75, market.occupancyP75)
+    };
+  }
+
+  function renderMarketSuggestion() {
+    const root = $('#marketSuggestionPanel');
+    if (!root) return;
+    const suggestion = calculateMarketSuggestion(state);
+    const levelLabel = { pessimistic: 'Pessimista · P25', base: 'Base · mediana', optimistic: 'Otimista · P75' };
+    const confidenceLabel = { low: 'baixa', medium: 'média', high: 'alta' };
+    const cards = ['pessimistic','base','optimistic'].map((key) => {
+      const item = suggestion[key];
+      return `
+        <article class="market-suggestion-card">
+          <span>${levelLabel[key]}</span>
+          <strong>${item.hasPrice ? money.format(item.targetNightlyRate) : '—'} / noite</strong>
+          <small>${item.hasOccupancy ? `${number1.format(item.targetOccupancyPct)}% ocupação` : 'ocupação sem evidência suficiente'}</small>
+          <button class="button ${key==='base'?'primary':'secondary'} small-button" type="button" data-apply-market-level="${key}" ${(!item.hasPrice && !item.hasOccupancy) ? 'disabled' : ''}>Aplicar ${key==='base'?'cenário base':levelLabel[key].split(' · ')[0].toLowerCase()}</button>
+        </article>`;
+    }).join('');
+
+    const baseRows = suggestion.base.seasons.map((season) => `
+      <tr>
+        <td>${escapeHtml(season.name)}</td>
+        <td class="money-cell">${money.format(season.currentNightlyRate)}</td>
+        <td class="money-cell"><strong>${money.format(season.nightlyRate)}</strong></td>
+        <td class="percent-cell">${number1.format(season.currentOccupancyPct)}%</td>
+        <td class="percent-cell"><strong>${number1.format(season.occupancyPct)}%</strong></td>
+      </tr>`).join('');
+
+    root.innerHTML = `
+      <div class="market-suggestion-heading">
+        <div><strong>Sugestão de mercado</strong><small>Confiança ${confidenceLabel[suggestion.confidence]} · ${suggestion.market.eligibleCount} comparáveis elegíveis · ${suggestion.market.occupancyCount} com evidência de ocupação.</small></div>
+      </div>
+      <div class="market-suggestion-grid">${cards}</div>
+      <div class="table-card compact-table-card"><div class="table-scroll"><table class="market-suggestion-table">
+        <thead><tr><th>Período</th><th>Diária atual</th><th>Diária base sugerida</th><th>Ocupação atual</th><th>Ocupação base sugerida</th></tr></thead>
+        <tbody>${baseRows}</tbody>
+      </table></div></div>
+      <p class="helper">A transformação preserva o desenho sazonal atual: diária é multiplicada por um fator comum e ocupação recebe o mesmo Δ em pontos percentuais. Sem evidência confiável de ocupação, apenas a diária é sugerida.</p>`;
+  }
+
+  function applyMarketSuggestion(level = 'base') {
+    const suggestion = calculateMarketSuggestion(state);
+    const chosen = suggestion[level] || suggestion.base;
+    state.seasons = state.seasons.map((season) => {
+      const proposed = chosen.seasons.find((x) => String(x.id) === String(season.id));
+      if (!proposed) return season;
+      return {
+        ...season,
+        nightlyRate: chosen.hasPrice ? Number(proposed.nightlyRate.toFixed(2)) : season.nightlyRate,
+        occupancyPct: chosen.hasOccupancy ? Number(proposed.occupancyPct.toFixed(2)) : season.occupancyPct
+      };
+    });
+    state.market.lastApplied = {
+      level: chosen.key,
+      appliedAt: new Date().toISOString(),
+      eligibleComparables: suggestion.market.eligibleCount,
+      occupancyEvidenceCount: suggestion.market.occupancyCount
+    };
+    autosave();
+    renderAll();
+    showNotice(`Sugestão de mercado “${chosen.key}” aplicada explicitamente à sazonalidade.`);
+  }
+
   function renderMarketComparables() {
     const root = $('#marketComparableRows');
     const summary = $('#marketComparableSummary');
@@ -730,6 +838,7 @@
       <article><span>Diária anunciada mediana</span><strong>${result.priceCount ? money.format(result.priceMedian) : '—'}</strong><small>${result.priceCount ? `P25 ${money.format(result.priceP25)} · P75 ${money.format(result.priceP75)}` : 'adicione preços aos comparáveis'}</small></article>
       <article><span>Ocupação com evidência</span><strong>${occText}</strong><small>${result.occupancyCount} comparáveis com booked/available sustentado</small></article>
       <article><span>Maior distância elegível</span><strong>${number1.format(result.maxEligibleDistanceKm)} km</strong><small>acima de 2 km é excluído pelo método atual</small></article>`;
+    renderMarketSuggestion();
   }
 
   function bindMarketComparables() {
@@ -756,6 +865,11 @@
       state.market.comparables = state.market.comparables.filter((x) => String(x.id) !== button.dataset.removeMarketId);
       autosave();
       renderMarketComparables();
+    });
+    $('#marketSuggestionPanel')?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-apply-market-level]');
+      if (!button) return;
+      applyMarketSuggestion(button.dataset.applyMarketLevel);
     });
   }
 
@@ -2244,6 +2358,6 @@
     renderAll();
   }
 
-  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, calculateHorizonProjection, defaultState: structuredCloneSafe(defaultState), normalizeState };
+  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection, defaultState: structuredCloneSafe(defaultState), normalizeState };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();

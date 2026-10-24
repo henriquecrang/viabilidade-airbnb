@@ -348,3 +348,20 @@ Para cada cenário e horizonte:
 - a base real do capital aportado é trazida ao mês zero antes de calcular ganho patrimonial real.
 
 Essa granularidade mensal trata o **timing do financiamento da operação**, mas ainda não redistribui Réveillon/verão/Carnaval/outono/inverno/primavera por meses específicos. Essa sazonalidade mensal completa permanece na Rodada E (#13).
+
+
+## V19 — aplicar sugestões do mercado
+
+A Issue #18 conecta o conjunto de comparáveis à sazonalidade sem sobrescrever premissas silenciosamente.
+
+O módulo calcula:
+- P25, mediana e P75 de diária anunciada;
+- P25, mediana e P75 de ocupação apenas quando a fonte sustenta booked/available;
+- confiança baixa/média/alta conforme tamanho e qualidade da amostra.
+
+Para preservar o formato sazonal já configurado:
+- a diária de cada período recebe um **fator multiplicativo comum** para levar a média ponderada ao alvo de mercado;
+- a ocupação de cada período recebe um **Δ comum em pontos percentuais** para levar a ocupação média ao alvo;
+- limites 0–100% continuam valendo.
+
+Há três ações explícitas: aplicar cenário pessimista, base ou otimista. Sem clique do usuário, nada muda na simulação.

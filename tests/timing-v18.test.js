@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===18,'timing mensal deve estar na V18');
+assert(defaultState.version>=18,'estado deve preservar timing mensal da V18');
 
 // Cenário artificial com déficit anual: aporte deve ocorrer ao longo dos meses,
 // não ser considerado capital do mês zero.

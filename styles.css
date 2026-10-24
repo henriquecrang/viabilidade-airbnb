@@ -708,3 +708,14 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 .horizon-table td span { display: block; margin-bottom: 4px; }
 .horizon-table td small { color: var(--muted); }
 .horizon-table .selected-horizon { background: var(--surface-strong, var(--surface)); }
+
+/* V19 — sugestões de mercado */
+.market-suggestion-panel { margin: 18px 0; display: grid; gap: 12px; }
+.market-suggestion-heading { display: flex; justify-content: space-between; gap: 12px; }
+.market-suggestion-heading small { display: block; color: var(--muted); margin-top: 4px; }
+.market-suggestion-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.market-suggestion-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 7px; }
+.market-suggestion-card > span,
+.market-suggestion-card small { color: var(--muted); }
+.market-suggestion-table { min-width: 760px; width: 100%; }
+@media (max-width:760px){ .market-suggestion-grid{grid-template-columns:1fr;} }
