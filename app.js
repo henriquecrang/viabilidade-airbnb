@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 23;
+  const APP_VERSION = 24;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -11,6 +11,18 @@
     analysis: {
       startingPosition: 'property',
       horizonYears: 5
+    },
+    guidedSetup: {
+      financial: {
+        applicationType: 'cdb',
+        rateKind: 'nominal-gross',
+        ratePct: 13.65,
+        taxPct: 17.5,
+        feesPct: 0,
+        termMonths: 12,
+        liquidity: 'daily',
+        role: 'benchmark'
+      }
     },
     market: {
       subject: {
@@ -365,6 +377,94 @@
       ref = ref[key];
     });
     ref[parts.at(-1)] = value;
+  }
+
+  function applyWizardPatch(inputState, patch) {
+    const next = structuredCloneSafe(inputState || defaultState);
+    for (const [path, value] of Object.entries(patch?.values || {})) setPath(next, path, structuredCloneSafe(value));
+    for (const [arrayName, updates] of Object.entries(patch?.arrayValues || {})) {
+      if (!Array.isArray(next[arrayName])) continue;
+      next[arrayName] = next[arrayName].map((item) => {
+        const change = updates?.[String(item.id)];
+        return change ? { ...item, ...structuredCloneSafe(change) } : item;
+      });
+    }
+    return next;
+  }
+
+  function buildFinancialWizardPatch(draft = {}, inputState = defaultState) {
+    const applicationType = String(draft.applicationType || 'other');
+    const rateKind = ['nominal-gross', 'nominal-net', 'real-gross'].includes(draft.rateKind)
+      ? draft.rateKind
+      : 'nominal-gross';
+    const ratePct = Math.max(0, n(draft.ratePct));
+    const taxPct = clamp(n(draft.taxPct), 0, 100);
+    const feesPct = Math.max(0, n(draft.feesPct));
+    const termMonths = Math.max(1, Math.round(n(draft.termMonths, 12)));
+    const liquidity = String(draft.liquidity || 'unknown');
+    const role = ['benchmark', 'actual', 'both'].includes(draft.role) ? draft.role : 'benchmark';
+    const errors = [];
+
+    let mode = 'nominal';
+    let nominalRatePct = Math.max(0, n(inputState?.investment?.nominalRatePct));
+    let realRatePct = Math.max(0, n(inputState?.investment?.realRatePct));
+    let convertedGrossNominalPct = null;
+
+    if (rateKind === 'real-gross') {
+      mode = 'ipcaPlus';
+      realRatePct = ratePct;
+    } else if (rateKind === 'nominal-net') {
+      mode = 'nominal';
+      if (taxPct >= 100 && ratePct > 0) {
+        errors.push('Uma taxa líquida positiva não pode ser convertida quando o IR informado é 100%.');
+      } else {
+        const afterTaxFactor = Math.max(1e-9, 1 - taxPct / 100);
+        nominalRatePct = ratePct / afterTaxFactor + feesPct;
+        convertedGrossNominalPct = nominalRatePct;
+      }
+    } else {
+      mode = 'nominal';
+      nominalRatePct = ratePct;
+    }
+
+    const financialMeta = {
+      applicationType,
+      rateKind,
+      ratePct,
+      taxPct,
+      feesPct,
+      termMonths,
+      liquidity,
+      role
+    };
+
+    const values = {
+      'investment.mode': mode,
+      'investment.taxPct': taxPct,
+      'investment.feesPct': feesPct,
+      'guidedSetup.financial': financialMeta
+    };
+    if (mode === 'ipcaPlus') values['investment.realRatePct'] = realRatePct;
+    else values['investment.nominalRatePct'] = nominalRatePct;
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      values,
+      arrayValues: {},
+      normalized: {
+        mode,
+        nominalRatePct,
+        realRatePct,
+        taxPct,
+        feesPct,
+        convertedGrossNominalPct,
+        termMonths,
+        liquidity,
+        role,
+        applicationType
+      }
+    };
   }
 
   function mergeDefaults(base, incoming) {
@@ -742,6 +842,7 @@
     // JSONs antigos migram "unavailableDays" para indisponibilidade operacional.
     // V23: o cenário-base recebe um snapshot auditável de comparáveis públicos.
     // Nenhum valor de mercado é aplicado automaticamente às premissas.
+    // V24: wizards passam a guardar metadados de configuração sem criar regras econômicas paralelas.
     merged.version = APP_VERSION;
     return merged;
   }
@@ -2666,6 +2767,153 @@
     $('#collapseAllSections')?.addEventListener('click', () => setAllAccordions(false));
   }
 
+  let activeWizard = null;
+  let activeWizardPatch = null;
+
+  function financialWizardDraftFromState() {
+    const saved = state.guidedSetup?.financial || {};
+    const inferredRateKind = saved.rateKind
+      || (state.investment.mode === 'ipcaPlus' ? 'real-gross' : 'nominal-gross');
+    const inferredRate = saved.ratePct != null
+      ? n(saved.ratePct)
+      : (inferredRateKind === 'real-gross' ? n(state.investment.realRatePct) : n(state.investment.nominalRatePct));
+    return {
+      applicationType: saved.applicationType || 'other',
+      rateKind: inferredRateKind,
+      ratePct: inferredRate,
+      taxPct: saved.taxPct != null ? n(saved.taxPct) : n(state.investment.taxPct),
+      feesPct: saved.feesPct != null ? n(saved.feesPct) : n(state.investment.feesPct),
+      termMonths: saved.termMonths != null ? n(saved.termMonths) : 12,
+      liquidity: saved.liquidity || 'unknown',
+      role: saved.role || 'benchmark'
+    };
+  }
+
+  function financialWizardFormHtml(draft) {
+    return `
+      <div class="wizard-form-grid">
+        <label class="field-group"><span class="field-label">Tipo de aplicação</span>
+          <select data-wizard-field="applicationType">
+            <option value="cdb" ${draft.applicationType==='cdb'?'selected':''}>CDB / renda fixa bancária</option>
+            <option value="treasury" ${draft.applicationType==='treasury'?'selected':''}>Tesouro / título público</option>
+            <option value="fund" ${draft.applicationType==='fund'?'selected':''}>Fundo</option>
+            <option value="etf" ${draft.applicationType==='etf'?'selected':''}>ETF / carteira de mercado</option>
+            <option value="other" ${draft.applicationType==='other'?'selected':''}>Outra</option>
+          </select>
+        </label>
+        <label class="field-group"><span class="field-label">Como a taxa está expressa?</span>
+          <select data-wizard-field="rateKind">
+            <option value="nominal-gross" ${draft.rateKind==='nominal-gross'?'selected':''}>Nominal bruta a.a.</option>
+            <option value="nominal-net" ${draft.rateKind==='nominal-net'?'selected':''}>Nominal líquida a.a. (após IR e taxas)</option>
+            <option value="real-gross" ${draft.rateKind==='real-gross'?'selected':''}>Real bruta acima da inflação</option>
+          </select>
+        </label>
+        <label class="field-group"><span class="field-label">Taxa informada</span><div class="input-suffix compact-control"><input data-wizard-field="ratePct" type="number" min="0" step="0.01" value="${escapeAttr(draft.ratePct)}" /><span>% a.a.</span></div></label>
+        <label class="field-group"><span class="field-label">IR sobre rendimentos</span><div class="input-suffix compact-control"><input data-wizard-field="taxPct" type="number" min="0" max="100" step="0.1" value="${escapeAttr(draft.taxPct)}" /><span>%</span></div></label>
+        <label class="field-group"><span class="field-label">Taxas / custos anuais</span><div class="input-suffix compact-control"><input data-wizard-field="feesPct" type="number" min="0" step="0.01" value="${escapeAttr(draft.feesPct)}" /><span>% capital</span></div></label>
+        <label class="field-group"><span class="field-label">Prazo de referência</span><div class="input-suffix compact-control"><input data-wizard-field="termMonths" type="number" min="1" step="1" value="${escapeAttr(draft.termMonths)}" /><span>meses</span></div></label>
+        <label class="field-group"><span class="field-label">Liquidez</span>
+          <select data-wizard-field="liquidity">
+            <option value="daily" ${draft.liquidity==='daily'?'selected':''}>Diária / imediata</option>
+            <option value="term" ${draft.liquidity==='term'?'selected':''}>No vencimento / com carência</option>
+            <option value="market" ${draft.liquidity==='market'?'selected':''}>Venda a mercado</option>
+            <option value="unknown" ${draft.liquidity==='unknown'?'selected':''}>Não informada</option>
+          </select>
+        </label>
+        <label class="field-group"><span class="field-label">Papel na análise</span>
+          <select data-wizard-field="role">
+            <option value="benchmark" ${draft.role==='benchmark'?'selected':''}>Benchmark / custo de oportunidade</option>
+            <option value="actual" ${draft.role==='actual'?'selected':''}>Aplicação real que possuo/pretendo fazer</option>
+            <option value="both" ${draft.role==='both'?'selected':''}>Ambos</option>
+          </select>
+        </label>
+      </div>
+      <div class="concept-note"><strong>Sem regra escondida:</strong> prazo, liquidez e tipo ficam documentados, mas não alteram o retorno por conta própria. O motor anual usa somente taxa, IR e custos. Se você informar uma taxa nominal líquida, o assistente calcula a taxa bruta equivalente necessária para reproduzi-la com o IR e os custos informados.</div>`;
+  }
+
+  function readWizardDraft() {
+    const out = {};
+    $('#wizardBody [data-wizard-field]').forEach((input) => {
+      out[input.dataset.wizardField] = input.type === 'number' ? n(input.value) : input.value;
+    });
+    return out;
+  }
+
+  function setWizardReviewMode(reviewing) {
+    $('#wizardBody')?.classList.toggle('wizard-reviewing', reviewing);
+    $('#wizardPreview')?.classList.toggle('hidden', !reviewing);
+    $('#wizardBackButton')?.classList.toggle('hidden', !reviewing);
+    $('#wizardReviewButton')?.classList.toggle('hidden', reviewing);
+    $('#wizardApplyButton')?.classList.toggle('hidden', !reviewing);
+  }
+
+  function openFinancialWizard() {
+    activeWizard = 'financial';
+    activeWizardPatch = null;
+    const draft = financialWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Benchmark financeiro';
+    $('#wizardDescription').textContent = 'Converta a descrição da aplicação nas variáveis financeiras já usadas pelo simulador.';
+    $('#wizardBody').innerHTML = financialWizardFormHtml(draft);
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
+  function reviewActiveWizard() {
+    if (activeWizard !== 'financial') return;
+    const draft = readWizardDraft();
+    const patch = buildFinancialWizardPatch(draft, state);
+    activeWizardPatch = patch;
+    const preview = $('#wizardPreview');
+    if (!patch.valid) {
+      preview.innerHTML = `<div class="notice wizard-error"><strong>Não é possível aplicar:</strong> ${patch.errors.map(escapeHtml).join(' ')}</div>`;
+      setWizardReviewMode(true);
+      $('#wizardApplyButton').disabled = true;
+      return;
+    }
+    $('#wizardApplyButton').disabled = false;
+    const x = patch.normalized;
+    const rateLine = x.mode === 'ipcaPlus'
+      ? `Inflação + <strong>${number1.format(x.realRatePct)}%</strong> real bruto a.a.`
+      : `Taxa nominal bruta aplicada ao motor: <strong>${number1.format(x.nominalRatePct)}% a.a.</strong>`;
+    const conversionLine = x.convertedGrossNominalPct == null
+      ? ''
+      : `<li>Taxa líquida informada convertida para <strong>${number1.format(x.convertedGrossNominalPct)}% a.a. brutos</strong>, para que IR e custos não sejam descontados duas vezes.</li>`;
+    preview.innerHTML = `
+      <h3>Revise antes de aplicar</h3>
+      <ul class="wizard-change-list">
+        <li>${rateLine}</li>
+        <li>IR: <strong>${number1.format(x.taxPct)}%</strong> · custos anuais: <strong>${number1.format(x.feesPct)}%</strong> do capital.</li>
+        ${conversionLine}
+        <li>Prazo registrado: <strong>${number1.format(x.termMonths)} meses</strong> · liquidez: <strong>${escapeHtml(x.liquidity)}</strong> · papel: <strong>${escapeHtml(x.role)}</strong>.</li>
+        <li>Tipo registrado: <strong>${escapeHtml(x.applicationType)}</strong>. Esses metadados não criam ajustes econômicos implícitos.</li>
+      </ul>`;
+    setWizardReviewMode(true);
+  }
+
+  function applyActiveWizard() {
+    if (!activeWizardPatch?.valid) return;
+    state = applyWizardPatch(state, activeWizardPatch);
+    autosave();
+    renderAll();
+    $('#wizardDialog').close();
+    showNotice('Premissas do benchmark financeiro aplicadas. Os campos detalhados continuam editáveis.');
+    activeWizard = null;
+    activeWizardPatch = null;
+  }
+
+  function bindWizards() {
+    $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
+    $('#wizardReviewButton')?.addEventListener('click', reviewActiveWizard);
+    $('#wizardBackButton')?.addEventListener('click', () => setWizardReviewMode(false));
+    $('#wizardApplyButton')?.addEventListener('click', applyActiveWizard);
+    $('#wizardDialog')?.addEventListener('close', () => {
+      activeWizard = null;
+      activeWizardPatch = null;
+      $('#wizardApplyButton').disabled = false;
+    });
+  }
+
   function renderAll() { hydrateStaticInputs(); renderDynamicTables(); renderMarketComparables(); calculateAndRender(); }
 
   function init() {
@@ -2673,6 +2921,7 @@
     bindDynamicTables();
     bindMarketComparables();
     bindAccordions();
+    bindWizards();
     $('#addSeasonButton').addEventListener('click', addSeason);
     $('#addStayCostButton').addEventListener('click', addStayCost);
     $('#addMonthlyCostButton').addEventListener('click', addMonthlyCost);
@@ -2687,6 +2936,10 @@
     renderAll();
   }
 
-  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection, defaultState: structuredCloneSafe(defaultState), normalizeState };
+  if (typeof window !== 'undefined') window.SimulatorAirbnb = {
+    calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
+    defaultState: structuredCloneSafe(defaultState), normalizeState,
+    buildFinancialWizardPatch, applyWizardPatch
+  };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
