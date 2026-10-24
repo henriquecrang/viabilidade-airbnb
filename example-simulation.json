@@ -1113,6 +1113,19 @@
       "hybrid": {
         "configured": false,
         "granularity": "annual-periods"
+      },
+      "main": {
+        "configured": false,
+        "situation": "owned",
+        "compareFinancial": true,
+        "enabledScenarios": [
+          "airbnb-self",
+          "airbnb-admin",
+          "airbnb-rented",
+          "traditional",
+          "investment"
+        ],
+        "incompleteEconomicPath": false
       }
     }
   }
