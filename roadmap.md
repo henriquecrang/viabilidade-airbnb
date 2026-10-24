@@ -149,9 +149,13 @@ Concluída em 24/10/2026.
 Iniciada em 24/10/2026.
 
 - #25 concluída: wizard de benchmark financeiro;
-- estrutura genérica de revisão/aplicação criada para os próximos wizards;
+- #27 concluída: wizard de operação Airbnb;
+- #29 concluída: wizard de uso parcial/híbrido;
+- #28 implementada para imóvel já possuído e parcialmente para aquisição;
+- #42 criada para a regra econômica ausente de capital → compra/custos de aquisição;
+- estrutura genérica de revisão/aplicação compartilhada entre os wizards;
 - metadados descritivos ficam separados das variáveis que afetam o motor;
-- nenhuma regra econômica é criada pela camada de onboarding.
+- nenhuma regra econômica é criada silenciosamente pela camada de onboarding.
 
 ## Rodadas de execução
 
