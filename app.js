@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 16;
+  const APP_VERSION = 17;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -10,7 +10,7 @@
     name: 'Rio de Janeiro — cenário-base de mercado (out/2026)',
     analysis: {
       startingPosition: 'property',
-      horizonYears: 1
+      horizonYears: 5
     },
     market: {
       subject: {
@@ -525,6 +525,13 @@
       occupancyPct: clamp(n(item.occupancyPct), 0, 100),
       occupancyEvidence: String(item.occupancyEvidence || 'none')
     }));
+
+    // V17: cenário-base passa a destacar 5 anos, mantendo 1/3/5 visíveis.
+    if (incomingVersion === 16
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && n(source.analysis?.horizonYears, 1) === 1) {
+      merged.analysis.horizonYears = 5;
+    }
 
     merged.version = APP_VERSION;
     return merged;
@@ -1507,6 +1514,293 @@
     };
   }
 
+  function inflateRecurringStateForYear(baseState, yearIndex) {
+    const projected = structuredCloneSafe(baseState);
+    const inflation = n(baseState.globals.inflationPct) / 100;
+    const realAppreciation = n(baseState.globals.propertyRealAppreciationPct) / 100;
+    const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
+    const inflationFactor = Math.pow(1 + inflation, yearIndex);
+    const propertyFactor = Math.pow(1 + nominalAppreciation, yearIndex);
+
+    projected.globals.propertyValue = Math.max(0, n(baseState.globals.propertyValue)) * propertyFactor;
+    projected.globals.ownerHourlyValue = Math.max(0, n(baseState.globals.ownerHourlyValue)) * inflationFactor;
+
+    projected.seasons = projected.seasons.map((x) => ({ ...x, nightlyRate: Math.max(0, n(x.nightlyRate)) * inflationFactor }));
+    projected.airbnb.cleaningFeeRevenue = Math.max(0, n(baseState.airbnb.cleaningFeeRevenue)) * inflationFactor;
+    projected.airbnb.otherGuestFeeRevenue = Math.max(0, n(baseState.airbnb.otherGuestFeeRevenue)) * inflationFactor;
+    projected.airbnb.adminMonthlyFee = Math.max(0, n(baseState.airbnb.adminMonthlyFee)) * inflationFactor;
+    projected.airbnb.adminOnboardingFee = yearIndex === 0 ? Math.max(0, n(baseState.airbnb.adminOnboardingFee)) : 0;
+
+    projected.stayCosts = projected.stayCosts.map((x) => ({ ...x, amount: Math.max(0, n(x.amount)) * inflationFactor }));
+    projected.monthlyCosts = projected.monthlyCosts.map((x) => ({ ...x, amount: Math.max(0, n(x.amount)) * inflationFactor }));
+
+    projected.rentedAirbnb.monthlyLeaseRent = Math.max(0, n(baseState.rentedAirbnb.monthlyLeaseRent)) * inflationFactor;
+    projected.rentedAirbnb.annualLeaseCosts = Math.max(0, n(baseState.rentedAirbnb.annualLeaseCosts)) * inflationFactor;
+    projected.rentedAirbnb.initialLeaseCosts = yearIndex === 0 ? Math.max(0, n(baseState.rentedAirbnb.initialLeaseCosts)) : 0;
+
+    projected.traditional.monthlyRent = Math.max(0, n(baseState.traditional.monthlyRent)) * inflationFactor;
+    projected.traditional.annualOtherCosts = Math.max(0, n(baseState.traditional.annualOtherCosts)) * inflationFactor;
+
+    if (yearIndex > 0) {
+      projected.setupCosts = projected.setupCosts.map((x) => ({ ...x, amount: 0, rentedAmount: 0 }));
+    }
+    projected.reserveFunds = projected.reserveFunds.map((x) => ({ ...x, openingBalance: 0 }));
+    return projected;
+  }
+
+  function setupResidualForHorizon(baseState, scenarioId, years) {
+    const furnished = Boolean(baseState.rentedAirbnb?.furnished);
+    return (baseState.setupCosts || []).reduce((sum, x) => {
+      let amount = 0;
+      let belongs = false;
+      if (scenarioId === 'airbnb-self') {
+        belongs = Boolean(x.airbnb);
+        amount = n(x.amount);
+      } else if (scenarioId === 'airbnb-admin') {
+        belongs = Boolean(x.airbnb && x.adminAssetBelongsToOwner);
+        amount = n(x.amount);
+      } else if (scenarioId === 'airbnb-rented') {
+        belongs = Boolean(x.rentedAirbnb && (!furnished || !x.rentedOnlyIfUnfurnished));
+        amount = n(x.rentedAmount, x.amount);
+      } else if (scenarioId === 'traditional') {
+        belongs = Boolean(x.traditional);
+        amount = n(x.amount);
+      }
+      if (!belongs || amount <= 0) return sum;
+      const annualRetention = clamp(n(x.residualPct), 0, 100) / 100;
+      return sum + amount * Math.pow(annualRetention, years);
+    }, 0);
+  }
+
+  function projectInvestmentOverHorizon(baseState, years, investableCapital, wealthBasis) {
+    const inflation = n(baseState.globals.inflationPct) / 100;
+    const grossRate = baseState.investment.mode === 'ipcaPlus'
+      ? (1 + inflation) * (1 + n(baseState.investment.realRatePct) / 100) - 1
+      : n(baseState.investment.nominalRatePct) / 100;
+    const feeRate = Math.max(0, n(baseState.investment.feesPct)) / 100;
+    const taxRate = Math.max(0, n(baseState.investment.taxPct)) / 100;
+    const workHoursAnnual = Math.max(0, n(baseState.work.investmentHoursMonthly)) * 12;
+    const initialHourly = Math.max(0, n(baseState.globals.ownerHourlyValue));
+
+    let principal = Math.max(0, n(investableCapital));
+    const initialWealth = Math.max(0, n(wealthBasis, principal));
+    let cumulativeCash = 0;
+    let cumulativeGrossIncome = 0;
+    let cumulativeTax = 0;
+    let cumulativeFees = 0;
+    let realLaborCost = 0;
+    const yearsDetail = [];
+
+    for (let y = 0; y < years; y += 1) {
+      const grossIncome = principal * grossRate;
+      const fees = principal * feeRate;
+      const tax = Math.max(0, grossIncome - fees) * taxRate;
+      const netIncome = grossIncome - fees - tax;
+      const beforeDistribution = principal + netIncome;
+      const preservationTarget = initialWealth * Math.pow(1 + inflation, y + 1);
+      const distributable = Math.max(0, beforeDistribution - preservationTarget);
+      principal = beforeDistribution - distributable;
+      cumulativeCash += distributable;
+      cumulativeGrossIncome += grossIncome;
+      cumulativeTax += tax;
+      cumulativeFees += fees;
+      const nominalLabor = workHoursAnnual * initialHourly * Math.pow(1 + inflation, y);
+      realLaborCost += nominalLabor / Math.pow(1 + inflation, y);
+      yearsDetail.push({ year: y + 1, grossIncome, fees, tax, distributable, principalEnd: principal, preservationTarget });
+    }
+
+    const inflationFactor = Math.pow(1 + inflation, years);
+    const endNetWorth = principal + cumulativeCash;
+    const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
+    const realWealthCreation = realEndNetWorth - initialWealth;
+    return {
+      years,
+      initialWealth,
+      investableCapital: Math.max(0, n(investableCapital)),
+      endPrincipal: principal,
+      cumulativeCash,
+      cumulativeGrossIncome,
+      cumulativeTax,
+      cumulativeFees,
+      endNetWorth,
+      realEndNetWorth,
+      realWealthCreation,
+      nominalExcessOverPreservation: endNetWorth - initialWealth * inflationFactor,
+      realLaborCost,
+      economicRealWealthCreation: realWealthCreation - realLaborCost,
+      yearsDetail
+    };
+  }
+
+  function calculateHorizonProjection(inputState = state, horizonYears = 5) {
+    const years = [1,3,5].includes(Number(horizonYears)) ? Number(horizonYears) : Math.max(1, Math.round(n(horizonYears, 5)));
+    const baseState = structuredCloneSafe(inputState);
+    const baseCalc = calculateModel(baseState);
+    const inflation = n(baseState.globals.inflationPct) / 100;
+    const realAppreciation = n(baseState.globals.propertyRealAppreciationPct) / 100;
+    const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
+    const propertyValue = Math.max(0, n(baseState.globals.propertyValue));
+    const initialHourly = Math.max(0, n(baseState.globals.ownerHourlyValue));
+    const scenarioIds = ['airbnb-self','airbnb-admin','airbnb-rented','traditional'];
+
+    const projectedScenarios = scenarioIds.map((scenarioId) => {
+      const baseScenario = baseCalc.scenarios.find((x) => x.id === scenarioId);
+      let cashBalance = 0;
+      let cumulativeFreeCashBeforeFunding = 0;
+      let externalFundingRequired = 0;
+      let reserveBalance = Math.max(0, n(baseScenario.reserveOpening));
+      let realLaborCost = 0;
+      let paybackYear = baseScenario.capex <= 0 ? 0 : null;
+      const yearsDetail = [];
+
+      for (let y = 0; y < years; y += 1) {
+        const yearState = inflateRecurringStateForYear(baseState, y);
+        const yearCalc = calculateModel(yearState);
+        const sc = yearCalc.scenarios.find((x) => x.id === scenarioId);
+        cumulativeFreeCashBeforeFunding += sc.freeCash;
+        cashBalance += sc.freeCash;
+        if (cashBalance < 0) {
+          externalFundingRequired += -cashBalance;
+          cashBalance = 0;
+        }
+        reserveBalance += sc.reserveContribution;
+        realLaborCost += sc.laborCost / Math.pow(1 + inflation, y);
+        if (paybackYear == null && cumulativeFreeCashBeforeFunding >= baseScenario.capex) paybackYear = y + 1;
+        yearsDetail.push({
+          year: y + 1,
+          freeCash: sc.freeCash,
+          operatingCash: sc.operatingCash,
+          reserveContribution: sc.reserveContribution,
+          laborCost: sc.laborCost,
+          grossRevenue: sc.grossRevenue,
+          opCosts: sc.opCosts,
+          tax: sc.tax
+        });
+      }
+
+      const ownsProperty = scenarioId !== 'airbnb-rented';
+      const propertyEndValue = ownsProperty ? propertyValue * Math.pow(1 + nominalAppreciation, years) : 0;
+      const setupResidual = setupResidualForHorizon(baseState, scenarioId, years);
+      const workingCapital = Math.max(0, n(baseScenario.workingCapital));
+      const securityDeposit = scenarioId === 'airbnb-rented' ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
+      const initialCapital = Math.max(0, n(baseScenario.baseInitialCapital)) + externalFundingRequired;
+      const endNetWorth = propertyEndValue + setupResidual + cashBalance + reserveBalance + workingCapital + securityDeposit;
+      const inflationFactor = Math.pow(1 + inflation, years);
+      const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
+      const realWealthCreation = realEndNetWorth - initialCapital;
+      const nominalExcessOverPreservation = endNetWorth - initialCapital * inflationFactor;
+
+      let benchmark;
+      if (ownsProperty) {
+        const extraCapital = Math.max(0, initialCapital - propertyValue);
+        benchmark = projectInvestmentOverHorizon(
+          baseState,
+          years,
+          baseCalc.netSaleProceeds + extraCapital,
+          baseCalc.startingPropertyEquity + extraCapital
+        );
+      } else {
+        benchmark = projectInvestmentOverHorizon(baseState, years, initialCapital, initialCapital);
+      }
+
+      return {
+        id: scenarioId,
+        label: baseScenario.label,
+        years,
+        initialCapital,
+        initialCapex: baseScenario.capex,
+        setupResidual,
+        propertyEndValue,
+        reserveBalance,
+        workingCapital,
+        securityDeposit,
+        cumulativeCash: cashBalance,
+        cumulativeFreeCashBeforeFunding,
+        externalFundingRequired,
+        endNetWorth,
+        realEndNetWorth,
+        realWealthCreation,
+        nominalExcessOverPreservation,
+        realLaborCost,
+        economicRealWealthCreation: realWealthCreation - realLaborCost,
+        benchmarkRealWealthCreation: benchmark.realWealthCreation,
+        benchmarkEconomicRealWealthCreation: benchmark.economicRealWealthCreation,
+        financialGapVsBenchmark: realWealthCreation - benchmark.realWealthCreation,
+        economicGapVsBenchmark: (realWealthCreation - realLaborCost) - benchmark.economicRealWealthCreation,
+        paybackYear,
+        yearsDetail
+      };
+    });
+
+    const investment = projectInvestmentOverHorizon(
+      baseState,
+      years,
+      baseCalc.netSaleProceeds,
+      baseCalc.startingPropertyEquity
+    );
+    projectedScenarios.push({
+      id: 'investment',
+      label: 'Investimento financeiro',
+      years,
+      initialCapital: baseCalc.startingPropertyEquity,
+      initialCapex: 0,
+      setupResidual: 0,
+      propertyEndValue: 0,
+      reserveBalance: 0,
+      workingCapital: 0,
+      securityDeposit: 0,
+      cumulativeCash: investment.cumulativeCash,
+      cumulativeFreeCashBeforeFunding: investment.cumulativeCash,
+      externalFundingRequired: 0,
+      endNetWorth: investment.endNetWorth,
+      realEndNetWorth: investment.realEndNetWorth,
+      realWealthCreation: investment.realWealthCreation,
+      nominalExcessOverPreservation: investment.nominalExcessOverPreservation,
+      realLaborCost: investment.realLaborCost,
+      economicRealWealthCreation: investment.economicRealWealthCreation,
+      benchmarkRealWealthCreation: investment.realWealthCreation,
+      benchmarkEconomicRealWealthCreation: investment.economicRealWealthCreation,
+      financialGapVsBenchmark: 0,
+      economicGapVsBenchmark: 0,
+      paybackYear: 0,
+      yearsDetail: investment.yearsDetail
+    });
+
+    return {
+      years,
+      scenarios: projectedScenarios,
+      bestRealWealth: [...projectedScenarios].sort((a,b)=>b.realWealthCreation-a.realWealthCreation)[0],
+      bestEconomic: [...projectedScenarios].sort((a,b)=>b.economicRealWealthCreation-a.economicRealWealthCreation)[0],
+      inflation,
+      nominalAppreciation
+    };
+  }
+
+  function renderHorizonComparison() {
+    const root = $('#horizonComparison');
+    if (!root) return;
+    const selected = [1,3,5].includes(Number(state.analysis.horizonYears)) ? Number(state.analysis.horizonYears) : 5;
+    const projections = new Map([1,3,5].map((years)=>[years,calculateHorizonProjection(state,years)]));
+    const selectedProjection = projections.get(selected);
+    const ids = ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'];
+    const labelFor = (id) => projections.get(1).scenarios.find((x)=>x.id===id)?.label || id;
+    root.innerHTML = `
+      <div class="horizon-highlight">
+        <span>Horizonte em destaque: ${selected} ano${selected>1?'s':''}</span>
+        <strong>${escapeHtml(selectedProjection.bestRealWealth.label)}</strong>
+        <small>maior ganho patrimonial real: ${money.format(selectedProjection.bestRealWealth.realWealthCreation)}</small>
+      </div>
+      <div class="table-card horizon-table-card"><div class="table-scroll"><table class="horizon-table">
+        <thead><tr><th>Cenário</th>${[1,3,5].map((h)=>`<th class="${h===selected?'selected-horizon':''}">${h} ano${h>1?'s':''}</th>`).join('')}</tr></thead>
+        <tbody>${ids.map((id)=>`<tr><th>${escapeHtml(labelFor(id))}</th>${[1,3,5].map((h)=>{
+          const sc=projections.get(h).scenarios.find((x)=>x.id===id);
+          const payback=sc.paybackYear==null?'sem payback':sc.paybackYear===0?'sem CAPEX':`payback ano ${sc.paybackYear}`;
+          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa acumulado: ${money.format(sc.cumulativeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span><span>${payback}</span></td>`;
+        }).join('')}</tr>`).join('')}</tbody>
+      </table></div></div>
+      <p class="helper">Projeção anualizada: receitas, aluguel e custos monetários crescem com a inflação; valorização do imóvel é composta; CAPEX e custo de venda entram uma única vez. Timing intramês e aportes no mês efetivo permanecem para a #14.</p>`;
+  }
+
   function calculateAndRender() {
     const calc = calculateModel(state);
     lastCalculation = calc;
@@ -1575,6 +1869,7 @@
     renderBreakdowns(calc);
     renderDiagnostics(calc);
     renderFinalSummary(calc);
+    renderHorizonComparison();
   }
   function renderRentedContract(calc) {
     const root = $('#rentedContractSummary');
@@ -1865,6 +2160,6 @@
     renderAll();
   }
 
-  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, defaultState: structuredCloneSafe(defaultState), normalizeState };
+  if (typeof window !== 'undefined') window.SimulatorAirbnb = { calculateModel, calculateMarketComparables, calculateHorizonProjection, defaultState: structuredCloneSafe(defaultState), normalizeState };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();

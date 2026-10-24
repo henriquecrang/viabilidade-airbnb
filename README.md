@@ -307,3 +307,29 @@ A Issue #17 adiciona uma camada de mercado ainda **sem alterar as premissas da s
 O imóvel-base começa identificado como apartamento inteiro de 1 quarto, 33 m², em Copacabana, com dois aparelhos de ar-condicionado. Campos ainda não confirmados permanecem desconhecidos/zero e não entram no score.
 
 A metodologia está em `docs/market-methodology.md`.
+
+
+## V17 — horizontes 1/3/5 anos
+
+A primeira camada plurianual da Issue #35 adiciona:
+
+- horizonte principal selecionável em 1, 3 ou 5 anos (default: 5);
+- comparação 1 × 3 × 5 sempre visível no resumo;
+- CAPEX inicial aplicado apenas no início;
+- custo de venda do imóvel aplicado apenas na conversão para investimento;
+- inflação composta;
+- valorização imobiliária composta;
+- receitas, aluguel e custos monetários recorrentes corrigidos pela inflação;
+- caixa acumulado;
+- aportes externos acumulados para déficits;
+- reservas acumuladas;
+- valor residual do CAPEX ao longo do horizonte;
+- ganho patrimonial real;
+- Δ contra benchmark financeiro;
+- payback de caixa do CAPEX quando ocorre.
+
+### Granularidade
+
+A V17 usa passos **anuais**. Isso já resolve a distorção principal de diluir custos iniciais em horizontes maiores sem simplesmente dividir CAPEX por N.
+
+O timing intramês de aportes, capital de giro automático e custo de oportunidade pelo mês efetivo continuam deliberadamente na Issue #14 / Rodada E.

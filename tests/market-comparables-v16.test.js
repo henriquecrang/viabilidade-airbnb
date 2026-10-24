@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===16,'comparáveis devem estar na V16');
+assert(defaultState.version>=16,'estado deve preservar comparáveis da V16');
 assert(defaultState.market.subject.bedrooms===1,'imóvel-base deve ter 1 quarto');
 assert(defaultState.market.subject.areaM2===33,'área cadastral do imóvel-base');
 assert(Array.isArray(defaultState.market.comparables),'comparáveis devem ser array');

@@ -685,3 +685,26 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 .market-score strong { display: block; }
 .market-score small { display: block; color: var(--muted); margin-top: 2px; }
 .market-comparable-summary { margin: 16px 0; }
+
+/* V17 — horizontes 1/3/5 anos */
+.horizon-comparison-section { margin-top: 28px; }
+.horizon-highlight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: baseline;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.horizon-highlight span,
+.horizon-highlight small { color: var(--muted); }
+.horizon-table { min-width: 980px; width: 100%; border-collapse: collapse; }
+.horizon-table th,
+.horizon-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.horizon-table td strong,
+.horizon-table td small,
+.horizon-table td span { display: block; margin-bottom: 4px; }
+.horizon-table td small { color: var(--muted); }
+.horizon-table .selected-horizon { background: var(--surface-strong, var(--surface)); }
