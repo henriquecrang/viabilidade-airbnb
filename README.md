@@ -333,3 +333,18 @@ A primeira camada plurianual da Issue #35 adiciona:
 A V17 usa passos **anuais**. Isso já resolve a distorção principal de diluir custos iniciais em horizontes maiores sem simplesmente dividir CAPEX por N.
 
 O timing intramês de aportes, capital de giro automático e custo de oportunidade pelo mês efetivo continuam deliberadamente na Issue #14 / Rodada E.
+
+
+## V18 — timing mensal dos aportes
+
+A Issue #14 corrige a aproximação que tratava todo déficit futuro como capital disponível desde o início da análise.
+
+Para cada cenário e horizonte:
+- o caixa recorrente de cada ano é distribuído em 12 meses;
+- o modelo identifica quando o saldo ficaria negativo;
+- o aporte externo ocorre apenas naquele mês;
+- calcula-se o maior déficit acumulado como **capital de giro automático requerido**;
+- cada aporte entra no benchmark financeiro apenas pelo tempo restante até o fim do horizonte;
+- a base real do capital aportado é trazida ao mês zero antes de calcular ganho patrimonial real.
+
+Essa granularidade mensal trata o **timing do financiamento da operação**, mas ainda não redistribui Réveillon/verão/Carnaval/outono/inverno/primavera por meses específicos. Essa sazonalidade mensal completa permanece na Rodada E (#13).

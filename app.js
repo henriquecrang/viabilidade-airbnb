@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 17;
+  const APP_VERSION = 18;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -1632,6 +1632,82 @@
     };
   }
 
+  function buildMonthlyFundingSchedule(yearsDetail, inflation) {
+    let fundedCashBalance = 0;
+    let rawCumulativeCash = 0;
+    let peakDeficit = 0;
+    let realFundingBasis = 0;
+    let nominalPreservationAtHorizon = 0;
+    const fundingSchedule = [];
+    const totalMonths = yearsDetail.length * 12;
+
+    yearsDetail.forEach((yearRow, yearIndex) => {
+      const monthlyFlow = n(yearRow.freeCash) / 12;
+      for (let monthInYear = 0; monthInYear < 12; monthInYear += 1) {
+        const month = yearIndex * 12 + monthInYear + 1;
+        rawCumulativeCash += monthlyFlow;
+        peakDeficit = Math.max(peakDeficit, Math.max(0, -rawCumulativeCash));
+        fundedCashBalance += monthlyFlow;
+        if (fundedCashBalance < -1e-9) {
+          const amount = -fundedCashBalance;
+          fundingSchedule.push({ month, amount });
+          fundedCashBalance = 0;
+          const elapsedYears = month / 12;
+          const remainingYears = (totalMonths - month) / 12;
+          realFundingBasis += amount / Math.pow(1 + inflation, elapsedYears);
+          nominalPreservationAtHorizon += amount * Math.pow(1 + inflation, remainingYears);
+        }
+      }
+    });
+
+    return {
+      fundingSchedule,
+      externalFundingRequired: fundingSchedule.reduce((s,x)=>s+x.amount,0),
+      autoWorkingCapitalRequired: peakDeficit,
+      endingCashBalance: Math.max(0, fundedCashBalance),
+      realFundingBasis,
+      nominalPreservationAtHorizon
+    };
+  }
+
+  function projectTimedContribution(baseState, amount, contributionMonth, totalMonths) {
+    const inflation = n(baseState.globals.inflationPct) / 100;
+    const grossRate = baseState.investment.mode === 'ipcaPlus'
+      ? (1 + inflation) * (1 + n(baseState.investment.realRatePct) / 100) - 1
+      : n(baseState.investment.nominalRatePct) / 100;
+    const feeRate = Math.max(0, n(baseState.investment.feesPct)) / 100;
+    const taxRate = Math.max(0, n(baseState.investment.taxPct)) / 100;
+    const beforeTaxAfterFees = grossRate - feeRate;
+    const annualNetRate = beforeTaxAfterFees - Math.max(0, beforeTaxAfterFees) * taxRate;
+    const monthlyNetRate = Math.pow(Math.max(1e-9, 1 + annualNetRate), 1/12) - 1;
+    const monthlyInflation = Math.pow(1 + inflation, 1/12) - 1;
+    const remainingMonths = Math.max(0, totalMonths - contributionMonth);
+
+    let principal = Math.max(0, n(amount));
+    let cash = 0;
+    for (let m = 0; m < remainingMonths; m += 1) {
+      principal *= 1 + monthlyNetRate;
+      const target = amount * Math.pow(1 + monthlyInflation, m + 1);
+      const distributable = Math.max(0, principal - target);
+      principal -= distributable;
+      cash += distributable;
+    }
+
+    const endValue = principal + cash;
+    const horizonInflationFactor = Math.pow(1 + inflation, totalMonths / 12);
+    const contributionInflationFactor = Math.pow(1 + inflation, contributionMonth / 12);
+    const realEndAtT0 = endValue / horizonInflationFactor;
+    const realInitialAtT0 = amount / contributionInflationFactor;
+    return {
+      amount,
+      contributionMonth,
+      remainingMonths,
+      endValue,
+      realInitialAtT0,
+      realGainAtT0: realEndAtT0 - realInitialAtT0
+    };
+  }
+
   function calculateHorizonProjection(inputState = state, horizonYears = 5) {
     const years = [1,3,5].includes(Number(horizonYears)) ? Number(horizonYears) : Math.max(1, Math.round(n(horizonYears, 5)));
     const baseState = structuredCloneSafe(inputState);
@@ -1645,9 +1721,7 @@
 
     const projectedScenarios = scenarioIds.map((scenarioId) => {
       const baseScenario = baseCalc.scenarios.find((x) => x.id === scenarioId);
-      let cashBalance = 0;
       let cumulativeFreeCashBeforeFunding = 0;
-      let externalFundingRequired = 0;
       let reserveBalance = Math.max(0, n(baseScenario.reserveOpening));
       let realLaborCost = 0;
       let paybackYear = baseScenario.capex <= 0 ? 0 : null;
@@ -1658,11 +1732,6 @@
         const yearCalc = calculateModel(yearState);
         const sc = yearCalc.scenarios.find((x) => x.id === scenarioId);
         cumulativeFreeCashBeforeFunding += sc.freeCash;
-        cashBalance += sc.freeCash;
-        if (cashBalance < 0) {
-          externalFundingRequired += -cashBalance;
-          cashBalance = 0;
-        }
         reserveBalance += sc.reserveContribution;
         realLaborCost += sc.laborCost / Math.pow(1 + inflation, y);
         if (paybackYear == null && cumulativeFreeCashBeforeFunding >= baseScenario.capex) paybackYear = y + 1;
@@ -1678,21 +1747,26 @@
         });
       }
 
+      const timing = buildMonthlyFundingSchedule(yearsDetail, inflation);
+      const cashBalance = timing.endingCashBalance;
+      const externalFundingRequired = timing.externalFundingRequired;
       const ownsProperty = scenarioId !== 'airbnb-rented';
       const propertyEndValue = ownsProperty ? propertyValue * Math.pow(1 + nominalAppreciation, years) : 0;
       const setupResidual = setupResidualForHorizon(baseState, scenarioId, years);
       const workingCapital = Math.max(0, n(baseScenario.workingCapital));
       const securityDeposit = scenarioId === 'airbnb-rented' ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
-      const initialCapital = Math.max(0, n(baseScenario.baseInitialCapital)) + externalFundingRequired;
+      const nominalCommittedCapital = Math.max(0, n(baseScenario.baseInitialCapital)) + externalFundingRequired;
+      const realInitialCapitalAtT0 = Math.max(0, n(baseScenario.baseInitialCapital)) + timing.realFundingBasis;
       const endNetWorth = propertyEndValue + setupResidual + cashBalance + reserveBalance + workingCapital + securityDeposit;
       const inflationFactor = Math.pow(1 + inflation, years);
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
-      const realWealthCreation = realEndNetWorth - initialCapital;
-      const nominalExcessOverPreservation = endNetWorth - initialCapital * inflationFactor;
+      const realWealthCreation = realEndNetWorth - realInitialCapitalAtT0;
+      const nominalPreservationTarget = Math.max(0, n(baseScenario.baseInitialCapital)) * inflationFactor + timing.nominalPreservationAtHorizon;
+      const nominalExcessOverPreservation = endNetWorth - nominalPreservationTarget;
 
       let benchmark;
       if (ownsProperty) {
-        const extraCapital = Math.max(0, initialCapital - propertyValue);
+        const extraCapital = Math.max(0, n(baseScenario.baseInitialCapital) - propertyValue);
         benchmark = projectInvestmentOverHorizon(
           baseState,
           years,
@@ -1700,14 +1774,20 @@
           baseCalc.startingPropertyEquity + extraCapital
         );
       } else {
-        benchmark = projectInvestmentOverHorizon(baseState, years, initialCapital, initialCapital);
+        benchmark = projectInvestmentOverHorizon(baseState, years, Math.max(0, n(baseScenario.baseInitialCapital)), Math.max(0, n(baseScenario.baseInitialCapital)));
       }
+      const totalMonths = years * 12;
+      const timedBenchmarkContributions = timing.fundingSchedule.map((x) => projectTimedContribution(baseState, x.amount, x.month, totalMonths));
+      const timedBenchmarkRealGain = timedBenchmarkContributions.reduce((s,x)=>s+x.realGainAtT0,0);
+      const benchmarkRealWealthCreation = benchmark.realWealthCreation + timedBenchmarkRealGain;
+      const benchmarkEconomicRealWealthCreation = benchmarkRealWealthCreation - benchmark.realLaborCost;
 
       return {
         id: scenarioId,
         label: baseScenario.label,
         years,
-        initialCapital,
+        initialCapital: nominalCommittedCapital,
+        realInitialCapitalAtT0,
         initialCapex: baseScenario.capex,
         setupResidual,
         propertyEndValue,
@@ -1717,16 +1797,18 @@
         cumulativeCash: cashBalance,
         cumulativeFreeCashBeforeFunding,
         externalFundingRequired,
+        autoWorkingCapitalRequired: timing.autoWorkingCapitalRequired,
+        fundingSchedule: timing.fundingSchedule,
         endNetWorth,
         realEndNetWorth,
         realWealthCreation,
         nominalExcessOverPreservation,
         realLaborCost,
         economicRealWealthCreation: realWealthCreation - realLaborCost,
-        benchmarkRealWealthCreation: benchmark.realWealthCreation,
-        benchmarkEconomicRealWealthCreation: benchmark.economicRealWealthCreation,
-        financialGapVsBenchmark: realWealthCreation - benchmark.realWealthCreation,
-        economicGapVsBenchmark: (realWealthCreation - realLaborCost) - benchmark.economicRealWealthCreation,
+        benchmarkRealWealthCreation,
+        benchmarkEconomicRealWealthCreation,
+        financialGapVsBenchmark: realWealthCreation - benchmarkRealWealthCreation,
+        economicGapVsBenchmark: (realWealthCreation - realLaborCost) - benchmarkEconomicRealWealthCreation,
         paybackYear,
         yearsDetail
       };
@@ -1752,6 +1834,8 @@
       cumulativeCash: investment.cumulativeCash,
       cumulativeFreeCashBeforeFunding: investment.cumulativeCash,
       externalFundingRequired: 0,
+      autoWorkingCapitalRequired: 0,
+      fundingSchedule: [],
       endNetWorth: investment.endNetWorth,
       realEndNetWorth: investment.realEndNetWorth,
       realWealthCreation: investment.realWealthCreation,
@@ -1795,10 +1879,10 @@
         <tbody>${ids.map((id)=>`<tr><th>${escapeHtml(labelFor(id))}</th>${[1,3,5].map((h)=>{
           const sc=projections.get(h).scenarios.find((x)=>x.id===id);
           const payback=sc.paybackYear==null?'sem payback':sc.paybackYear===0?'sem CAPEX':`payback ano ${sc.paybackYear}`;
-          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa acumulado: ${money.format(sc.cumulativeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span><span>${payback}</span></td>`;
+          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa acumulado: ${money.format(sc.cumulativeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span><span>Giro auto.: ${money.format(sc.autoWorkingCapitalRequired || 0)} · ${(sc.fundingSchedule||[]).length} aporte(s)</span><span>${payback}</span></td>`;
         }).join('')}</tr>`).join('')}</tbody>
       </table></div></div>
-      <p class="helper">Projeção anualizada: receitas, aluguel e custos monetários crescem com a inflação; valorização do imóvel é composta; CAPEX e custo de venda entram uma única vez. Timing intramês e aportes no mês efetivo permanecem para a #14.</p>`;
+      <p class="helper">Receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. Para déficits, o fluxo anual é distribuído mensalmente para localizar o mês do aporte e calcular seu custo de oportunidade pelo tempo restante. A sazonalidade intranual detalhada continua para a Rodada E.</p>`;
   }
 
   function calculateAndRender() {

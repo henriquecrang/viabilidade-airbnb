@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===17,'horizontes devem estar na V17');
+assert(defaultState.version>=17,'estado deve preservar horizontes da V17');
 assert(defaultState.analysis.horizonYears===5,'default deve destacar 5 anos');
 
 const p1=calculateHorizonProjection(defaultState,1);
