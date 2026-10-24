@@ -130,18 +130,18 @@
           </div>
 
           <div class="section-actions-line">
-            <p class="helper">“Dias indisponíveis” são dias que nem entram na oferta: uso próprio, obra, bloqueio de calendário etc.</p>
+            <p class="helper">Classifique os dias que não entram na oferta. Uso pessoal e moradia não são vacância; indisponibilidade operacional cobre obra, manutenção e bloqueios técnicos.</p>
             <button class="button ghost small-button" id="addSeasonButton" type="button">+ Adicionar período</button>
           </div>
           <div class="table-card compact-table-card">
             <div class="table-scroll">
               <table class="season-table season-table-v2">
                 <thead>
-                  <tr><th>Período</th><th>Dias</th><th>Indisponíveis</th><th>Disponíveis</th><th>Diária</th><th>Ocupação</th><th>Receita diárias</th><th></th></tr>
+                  <tr><th>Período</th><th>Dias</th><th>Uso pessoal</th><th>Moradia</th><th>Indisp. operacional</th><th>Disponíveis</th><th>Diária</th><th>Ocupação</th><th>Receita diárias</th><th></th></tr>
                 </thead>
                 <tbody id="seasonRows"></tbody>
                 <tfoot>
-                  <tr><th>Total / média</th><th id="totalDays">—</th><th id="blockedDays">—</th><th id="availableDays">—</th><th id="weightedAdr">—</th><th id="weightedOccupancy">—</th><th id="seasonRevenue">—</th><th></th></tr>
+                  <tr><th>Total / média</th><th id="totalDays">—</th><th id="personalUseDays">—</th><th id="habitualUseDays">—</th><th id="operationalUnavailableDays">—</th><th id="availableDays">—</th><th id="weightedAdr">—</th><th id="weightedOccupancy">—</th><th id="seasonRevenue">—</th><th></th></tr>
                 </tfoot>
               </table>
             </div>
@@ -151,6 +151,26 @@
             <article><span>ADR total</span><strong id="metricTotalAdr">—</strong><small>diárias + taxas do hóspede ÷ noites ocupadas</small></article>
             <article><span>RevPAR de diárias</span><strong id="metricRevPar">—</strong><small>receita de diárias ÷ dias disponíveis</small></article>
             <article><span>RevPAR total</span><strong id="metricTotalRevPar">—</strong><small>receita total ÷ dias disponíveis</small></article>
+          </div>
+
+          <div class="subsection hybrid-use-subsection">
+            <div class="subsection-heading"><div><h3>Uso parcial / híbrido</h3><p>Analise separadamente o Airbnb eventual, o benefício de usar o imóvel e o patrimônio. Todos os novos defaults são neutros.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Hospedagem evitada por dia de uso pessoal</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.avoidedLodgingPerDay" type="number" min="0" step="10" /></div></label>
+              <label class="field-group"><span class="field-label">Custo incremental por dia de uso pessoal</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.personalUseIncrementalCostPerDay" type="number" min="0" step="10" /></div></label>
+              <label class="field-group"><span class="field-label">Benefício anual imputado de moradia</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.habitualHousingBenefitAnnual" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Custos incrementais anuais da moradia</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.habitualUseIncrementalCostAnnual" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Preparação anual para Airbnb eventual</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.preparationAnnualCost" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Armazenamento anual</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.storageAnnualCost" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Outros custos incrementais anuais</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.otherIncrementalAnnualCost" type="number" min="0" step="100" /></div></label>
+              <label class="field-group checkbox-field"><input data-path="hybridUse.incrementalAirbnbCostsDeductibleIR" type="checkbox" /><span><strong>Custos incrementais dedutíveis na base de IR</strong><small>Use apenas quando a regra fiscal aplicável sustentar a dedução.</small></span></label>
+              <label class="field-group"><span class="field-label">CAPEX adicional só para viabilizar Airbnb</span><div class="input-prefix money-control"><span>R$</span><input data-path="hybridUse.incrementalAirbnbCapex" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Residual desse CAPEX no fim do 1º ano</span><div class="input-suffix compact-control"><input data-path="hybridUse.incrementalAirbnbCapexResidualPct" type="number" min="0" max="100" step="1" /><span>%</span></div></label>
+            </div>
+            <div class="real-return-note">
+              <strong>Regra incremental:</strong> custos fixos que existiriam mesmo sem Airbnb ficam fora do retorno incremental. Hospedagem evitada e benefício de moradia são benefício de consumo, não receita Airbnb.
+            </div>
+            <div class="normalization-preview" id="hybridUseSummary" aria-label="Resumo econômico do uso parcial"></div>
           </div>
         </div>
       </details>
