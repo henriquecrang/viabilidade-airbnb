@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 21;
+  const APP_VERSION = 22;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -74,6 +74,18 @@
       adminFeeDeductibleIR: true,
       adminMonthlyFeeDeductibleIR: false
     },
+    hybridUse: {
+      avoidedLodgingPerDay: 0,
+      personalUseIncrementalCostPerDay: 0,
+      habitualHousingBenefitAnnual: 0,
+      habitualUseIncrementalCostAnnual: 0,
+      preparationAnnualCost: 0,
+      storageAnnualCost: 0,
+      otherIncrementalAnnualCost: 0,
+      incrementalAirbnbCostsDeductibleIR: false,
+      incrementalAirbnbCapex: 0,
+      incrementalAirbnbCapexResidualPct: 0
+    },
     rentedAirbnb: {
       furnished: false,
       subleaseAuthorized: false,
@@ -108,12 +120,12 @@
       feesPct: 0
     },
     seasons: [
-      { id: 'reveillon', name: 'Réveillon', days: 4, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
-      { id: 'verao', name: 'Verão', days: 81, unavailableDays: 0, nightlyRate: 400, occupancyPct: 90 },
-      { id: 'carnaval', name: 'Carnaval', days: 7, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
-      { id: 'outono', name: 'Outono', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 },
-      { id: 'inverno', name: 'Inverno', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 60 },
-      { id: 'primavera', name: 'Primavera', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 }
+      { id: 'reveillon', name: 'Réveillon', days: 4, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
+      { id: 'verao', name: 'Verão', days: 81, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 400, occupancyPct: 90 },
+      { id: 'carnaval', name: 'Carnaval', days: 7, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
+      { id: 'outono', name: 'Outono', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 },
+      { id: 'inverno', name: 'Inverno', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 60 },
+      { id: 'primavera', name: 'Primavera', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 }
     ],
     stayCosts: [
       { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 0.1, adminManages: true, adminIncluded: false, deductibleIR: false },
@@ -223,10 +235,23 @@
     const incomingVersion = Math.max(1, n(source.version, 1));
     const merged = mergeDefaults(defaultState, source);
 
-    merged.seasons = (Array.isArray(source.seasons) ? source.seasons : defaultState.seasons).map((item) => ({
-      ...item,
-      unavailableDays: n(item.unavailableDays, 0)
-    }));
+    merged.seasons = (Array.isArray(source.seasons) ? source.seasons : defaultState.seasons).map((item) => {
+      const hasClassifiedUnavailability = ['personalUseDays', 'habitualUseDays', 'operationalUnavailableDays']
+        .some((key) => item?.[key] != null);
+      const personalUseDays = Math.max(0, n(item.personalUseDays, 0));
+      const habitualUseDays = Math.max(0, n(item.habitualUseDays, 0));
+      const operationalUnavailableDays = Math.max(0, n(
+        hasClassifiedUnavailability ? item.operationalUnavailableDays : item.unavailableDays,
+        0
+      ));
+      return {
+        ...item,
+        personalUseDays,
+        habitualUseDays,
+        operationalUnavailableDays,
+        unavailableDays: personalUseDays + habitualUseDays + operationalUnavailableDays
+      };
+    });
 
     const staySource = incomingVersion >= 2 && Array.isArray(source.stayCosts) ? source.stayCosts : mergeArrayById(defaultState.stayCosts, source.stayCosts);
     const monthlySource = incomingVersion >= 2 && Array.isArray(source.monthlyCosts) ? source.monthlyCosts : mergeArrayById(defaultState.monthlyCosts, source.monthlyCosts);
@@ -540,6 +565,8 @@
       ? 'renew'
       : 'renew';
 
+    // V22: indisponibilidade anual passa a ser classificada por motivo.
+    // JSONs antigos migram "unavailableDays" para indisponibilidade operacional.
     merged.version = APP_VERSION;
     return merged;
   }
@@ -609,12 +636,18 @@
 
   function renderSeasons() {
     $('#seasonRows').innerHTML = state.seasons.map((item) => {
-      const available = Math.max(0, n(item.days) - n(item.unavailableDays));
+      const days = Math.max(0, n(item.days));
+      const personal = Math.max(0, n(item.personalUseDays));
+      const habitual = Math.max(0, n(item.habitualUseDays));
+      const operational = Math.max(0, n(item.operationalUnavailableDays));
+      const available = Math.max(0, days - personal - habitual - operational);
       return `
       <tr data-id="${escapeAttr(item.id)}">
         <td><input class="row-name" data-array="seasons" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
         <td><input data-array="seasons" data-field="days" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.days)}" /></td>
-        <td><input data-array="seasons" data-field="unavailableDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${n(item.unavailableDays)}" /></td>
+        <td><input data-array="seasons" data-field="personalUseDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${personal}" /></td>
+        <td><input data-array="seasons" data-field="habitualUseDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${habitual}" /></td>
+        <td><input data-array="seasons" data-field="operationalUnavailableDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${operational}" /></td>
         <td class="number-cell" data-season-available="${escapeAttr(item.id)}">${number1.format(available)}</td>
         <td><input data-array="seasons" data-field="nightlyRate" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.nightlyRate)}" /></td>
         <td><input data-array="seasons" data-field="occupancyPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.occupancyPct)}" /></td>
@@ -941,7 +974,7 @@
     calculateAndRender();
   }
 
-  function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
+  function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
   function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
@@ -1066,15 +1099,34 @@
     const nominalPropertyAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
     const hourlyValue = Math.max(0, n(currentState.globals.ownerHourlyValue));
 
-    const seasonDetails = currentState.seasons.map((season) => {
+    const classifySeasonAvailability = (season) => {
       const days = Math.max(0, n(season.days));
-      const unavailableDays = clamp(n(season.unavailableDays), 0, days);
+      const hasClassifiedUnavailability = ['personalUseDays', 'habitualUseDays', 'operationalUnavailableDays']
+        .some((key) => season?.[key] != null);
+      const rawPersonal = hasClassifiedUnavailability ? Math.max(0, n(season.personalUseDays)) : 0;
+      const rawHabitual = hasClassifiedUnavailability ? Math.max(0, n(season.habitualUseDays)) : 0;
+      const rawOperational = hasClassifiedUnavailability
+        ? Math.max(0, n(season.operationalUnavailableDays))
+        : Math.max(0, n(season.unavailableDays));
+      const personalUseDays = Math.min(days, rawPersonal);
+      const habitualUseDays = Math.min(Math.max(0, days - personalUseDays), rawHabitual);
+      const operationalUnavailableDays = Math.min(
+        Math.max(0, days - personalUseDays - habitualUseDays),
+        rawOperational
+      );
+      const unavailableDays = personalUseDays + habitualUseDays + operationalUnavailableDays;
       const availableDays = Math.max(0, days - unavailableDays);
+      const blockedOverflowDays = Math.max(0, rawPersonal + rawHabitual + rawOperational - days);
+      return { days, personalUseDays, habitualUseDays, operationalUnavailableDays, unavailableDays, availableDays, blockedOverflowDays };
+    };
+
+    const seasonDetails = currentState.seasons.map((season) => {
+      const availability = classifySeasonAvailability(season);
       const occupancy = clamp(n(season.occupancyPct), 0, 100) / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate));
-      const occupiedNights = availableDays * occupancy;
+      const occupiedNights = availability.availableDays * occupancy;
       const revenue = occupiedNights * nightlyRate;
-      return { ...season, days, unavailableDays, availableDays, occupancy, nightlyRate, occupiedNights, revenue };
+      return { ...season, ...availability, occupancy, nightlyRate, occupiedNights, revenue };
     });
 
     // Rodada B: o cenário administrado pode ter performance comercial distinta.
@@ -1082,18 +1134,20 @@
     const adminNightlyRateImpact = n(currentState.airbnb.adminNightlyRateImpactPct) / 100;
     const adminOccupancyImpactPp = n(currentState.airbnb.adminOccupancyImpactPp);
     const adminSeasonDetails = currentState.seasons.map((season) => {
-      const days = Math.max(0, n(season.days));
-      const unavailableDays = clamp(n(season.unavailableDays), 0, days);
-      const availableDays = Math.max(0, days - unavailableDays);
+      const availability = classifySeasonAvailability(season);
       const occupancy = clamp(n(season.occupancyPct) + adminOccupancyImpactPp, 0, 100) / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate)) * Math.max(0, 1 + adminNightlyRateImpact);
-      const occupiedNights = availableDays * occupancy;
+      const occupiedNights = availability.availableDays * occupancy;
       const revenue = occupiedNights * nightlyRate;
-      return { ...season, days, unavailableDays, availableDays, occupancy, nightlyRate, occupiedNights, revenue };
+      return { ...season, ...availability, occupancy, nightlyRate, occupiedNights, revenue };
     });
 
     const totalDays = seasonDetails.reduce((sum, x) => sum + x.days, 0);
-    const blockedDays = seasonDetails.reduce((sum, x) => sum + x.unavailableDays, 0);
+    const personalUseDays = seasonDetails.reduce((sum, x) => sum + x.personalUseDays, 0);
+    const habitualUseDays = seasonDetails.reduce((sum, x) => sum + x.habitualUseDays, 0);
+    const operationalUnavailableDays = seasonDetails.reduce((sum, x) => sum + x.operationalUnavailableDays, 0);
+    const blockedOverflowDays = seasonDetails.reduce((sum, x) => sum + x.blockedOverflowDays, 0);
+    const blockedDays = personalUseDays + habitualUseDays + operationalUnavailableDays;
     const availableDays = seasonDetails.reduce((sum, x) => sum + x.availableDays, 0);
     const occupiedNights = seasonDetails.reduce((sum, x) => sum + x.occupiedNights, 0);
     const accommodationRevenue = seasonDetails.reduce((sum, x) => sum + x.revenue, 0);
@@ -1182,6 +1236,57 @@
     const selfTaxBase = Math.max(0, airbnbRevenue - selfTaxDeductions);
     const selfTax = selfTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
     const selfOperatingCash = airbnbRevenue - selfOperatingCosts - selfTax;
+
+    // V22 / Epic #19: lente incremental para imóvel de uso misto.
+    // Custos fixos que existiriam sem Airbnb ficam fora desta conta.
+    const hybridConfig = currentState.hybridUse || {};
+    const hybridNumericKeys = [
+      'avoidedLodgingPerDay', 'personalUseIncrementalCostPerDay',
+      'habitualHousingBenefitAnnual', 'habitualUseIncrementalCostAnnual',
+      'preparationAnnualCost', 'storageAnnualCost', 'otherIncrementalAnnualCost',
+      'incrementalAirbnbCapex'
+    ];
+    const hybridActive = personalUseDays > 0 || habitualUseDays > 0
+      || hybridNumericKeys.some((key) => Math.max(0, n(hybridConfig[key])) > 0);
+    const hybridExplicitAnnualCosts = hybridActive
+      ? Math.max(0, n(hybridConfig.preparationAnnualCost))
+        + Math.max(0, n(hybridConfig.storageAnnualCost))
+        + Math.max(0, n(hybridConfig.otherIncrementalAnnualCost))
+      : 0;
+    const hybridAirbnbRevenue = hybridActive ? airbnbRevenue : 0;
+    const hybridVariableOperatingCosts = hybridActive
+      ? platformFee + selfStayCosts + selfPctCosts + hybridExplicitAnnualCosts
+      : 0;
+    const hybridExplicitTaxDeduction = hybridActive && hybridConfig.incrementalAirbnbCostsDeductibleIR
+      ? hybridExplicitAnnualCosts
+      : 0;
+    const hybridTaxDeductions = hybridActive
+      ? selfPlatformTaxDeduction + selfStayTaxDeductions + selfPctTaxDeductions + hybridExplicitTaxDeduction
+      : 0;
+    const hybridTaxBase = Math.max(0, hybridAirbnbRevenue - hybridTaxDeductions);
+    const hybridTax = hybridTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
+    const hybridOperatingCash = hybridAirbnbRevenue - hybridVariableOperatingCosts - hybridTax;
+    const hybridReserveContribution = hybridActive ? selfReserveContribution : 0;
+    const hybridFreeCash = hybridOperatingCash - hybridReserveContribution;
+
+    const personalUseBenefitGross = hybridActive
+      ? personalUseDays * Math.max(0, n(hybridConfig.avoidedLodgingPerDay))
+      : 0;
+    const personalUseIncrementalCosts = hybridActive
+      ? personalUseDays * Math.max(0, n(hybridConfig.personalUseIncrementalCostPerDay))
+      : 0;
+    const habitualHousingBenefitGross = hybridActive ? Math.max(0, n(hybridConfig.habitualHousingBenefitAnnual)) : 0;
+    const habitualUseIncrementalCosts = hybridActive ? Math.max(0, n(hybridConfig.habitualUseIncrementalCostAnnual)) : 0;
+    const hybridConsumptionBenefit = personalUseBenefitGross + habitualHousingBenefitGross
+      - personalUseIncrementalCosts - habitualUseIncrementalCosts;
+
+    const hybridIncrementalCapex = hybridActive ? Math.max(0, n(hybridConfig.incrementalAirbnbCapex)) : 0;
+    const hybridIncrementalCapexResidual = hybridIncrementalCapex
+      * clamp(n(hybridConfig.incrementalAirbnbCapexResidualPct), 0, 100) / 100;
+    const hybridIncrementalCapexDepreciation = hybridIncrementalCapex - hybridIncrementalCapexResidual;
+    const hybridFirstYearCashAfterCapex = hybridFreeCash - hybridIncrementalCapex;
+    const hybridLinkedPatrimony = hybridReserveContribution + hybridIncrementalCapexResidual;
+    const hybridEconomicIncrement = hybridFreeCash + hybridConsumptionBenefit - hybridIncrementalCapexDepreciation;
 
     const adminFee = adminAirbnbRevenue * Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
     const adminMonthlyFee = Math.max(0, n(currentState.airbnb.adminMonthlyFee)) * 12;
@@ -1608,7 +1713,8 @@
     currentState.setupCosts.filter((x) => x.airbnb && x.adminPays).forEach((x) => includedAdminItems.push(`${x.name} (implantação paga pela admin.)`));
 
     return {
-      seasonDetails, adminSeasonDetails, totalDays, blockedDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy,
+      seasonDetails, adminSeasonDetails, totalDays, blockedDays, personalUseDays, habitualUseDays,
+      operationalUnavailableDays, blockedOverflowDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy,
       averageNightlyRate, adr, totalAdr, revPar, totalRevPar,
       accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
@@ -1631,7 +1737,30 @@
       investmentGrossRate,
       investmentCapitalPreservationAmount: invCalc.capitalPreservationAmount,
       investmentNominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
-      investmentRealWealthCreation: invCalc.realWealthCreation, investmentSustainableCash: invCalc.sustainableCash, workHours, includedAdminItems, managedAdminItems
+      investmentRealWealthCreation: invCalc.realWealthCreation, investmentSustainableCash: invCalc.sustainableCash, workHours, includedAdminItems, managedAdminItems,
+      hybridUse: {
+        active: hybridActive,
+        airbnbRevenue: hybridAirbnbRevenue,
+        variableOperatingCosts: hybridVariableOperatingCosts,
+        fixedCostsExcluded: fixedAirbnb,
+        taxDeductions: hybridTaxDeductions,
+        taxBase: hybridTaxBase,
+        tax: hybridTax,
+        operatingCash: hybridOperatingCash,
+        reserveContribution: hybridReserveContribution,
+        freeCash: hybridFreeCash,
+        personalUseBenefitGross,
+        personalUseIncrementalCosts,
+        habitualHousingBenefitGross,
+        habitualUseIncrementalCosts,
+        consumptionBenefit: hybridConsumptionBenefit,
+        incrementalCapex: hybridIncrementalCapex,
+        incrementalCapexResidual: hybridIncrementalCapexResidual,
+        incrementalCapexDepreciation: hybridIncrementalCapexDepreciation,
+        firstYearCashAfterCapex: hybridFirstYearCashAfterCapex,
+        linkedPatrimony: hybridLinkedPatrimony,
+        economicIncrement: hybridEconomicIncrement
+      }
     };
   }
 
@@ -1661,6 +1790,15 @@
 
     projected.traditional.monthlyRent = Math.max(0, n(baseState.traditional.monthlyRent)) * inflationFactor;
     projected.traditional.annualOtherCosts = Math.max(0, n(baseState.traditional.annualOtherCosts)) * inflationFactor;
+
+    if (projected.hybridUse) {
+      for (const key of ['avoidedLodgingPerDay','personalUseIncrementalCostPerDay','habitualHousingBenefitAnnual','habitualUseIncrementalCostAnnual','preparationAnnualCost','storageAnnualCost','otherIncrementalAnnualCost']) {
+        projected.hybridUse[key] = Math.max(0, n(baseState.hybridUse?.[key])) * inflationFactor;
+      }
+      projected.hybridUse.incrementalAirbnbCapex = yearIndex === 0
+        ? Math.max(0, n(baseState.hybridUse?.incrementalAirbnbCapex))
+        : 0;
+    }
 
     if (yearIndex > 0) {
       projected.setupCosts = projected.setupCosts.map((x) => ({ ...x, amount: 0, rentedAmount: 0 }));
@@ -1976,6 +2114,25 @@
       <p class="helper">Motor anual: receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. “Média mensal equivalente” é apenas o valor anual/acumulado dividido pelos meses do horizonte — não é fluxo de caixa mensal.</p>`;
   }
 
+  function renderHybridUse(calc) {
+    const root = $('#hybridUseSummary');
+    if (!root) return;
+    const hybrid = calc.hybridUse;
+    if (!hybrid?.active) {
+      root.innerHTML = `
+        <article><span>Análise incremental</span><strong>Inativa</strong><small>Classifique dias como uso pessoal/moradia ou informe premissas de uso híbrido para ativar.</small></article>
+        <article><span>Dias Airbnb</span><strong>${number1.format(calc.availableDays)}</strong><small>disponíveis no ano; o cenário-base permanece inalterado</small></article>`;
+      return;
+    }
+    root.innerHTML = `
+      <article><span>Caixa incremental do Airbnb</span><strong>${money.format(hybrid.freeCash)}</strong><small>receita − custos incrementais − IR − reserva; custos fixos preexistentes ficam fora</small></article>
+      <article><span>Benefício líquido de consumo</span><strong>${money.format(hybrid.consumptionBenefit)}</strong><small>hospedagem evitada + moradia imputada − custos incrementais de uso próprio</small></article>
+      <article><span>CAPEX adicional</span><strong>${money.format(hybrid.incrementalCapex)}</strong><small>${money.format(hybrid.incrementalCapexResidual)} permanecem como residual estimado</small></article>
+      <article><span>Caixa do 1º ano após CAPEX</span><strong>${money.format(hybrid.firstYearCashAfterCapex)}</strong><small>liquidez; residual não é tratado como caixa</small></article>
+      <article><span>Patrimônio incremental vinculado</span><strong>${money.format(hybrid.linkedPatrimony)}</strong><small>reserva gerada + residual do CAPEX adicional</small></article>
+      <article><span>Resultado econômico incremental</span><strong>${money.format(hybrid.economicIncrement)}</strong><small>caixa Airbnb + benefício de consumo − depreciação do CAPEX adicional</small></article>`;
+  }
+
   function calculateAndRender() {
     const calc = calculateModel(state);
     lastCalculation = calc;
@@ -1988,7 +2145,9 @@
     });
 
     $('#totalDays').textContent = `${number1.format(calc.totalDays)} dias`;
-    $('#blockedDays').textContent = `${number1.format(calc.blockedDays)} dias`;
+    $('#personalUseDays').textContent = `${number1.format(calc.personalUseDays)} dias`;
+    $('#habitualUseDays').textContent = `${number1.format(calc.habitualUseDays)} dias`;
+    $('#operationalUnavailableDays').textContent = `${number1.format(calc.operationalUnavailableDays)} dias`;
     $('#availableDays').textContent = `${number1.format(calc.availableDays)} dias`;
     $('#weightedAdr').textContent = money2.format(calc.averageNightlyRate);
     $('#weightedOccupancy').textContent = percent.format(calc.weightedOccupancy);
@@ -2038,6 +2197,7 @@
 
     renderAdminPackage(calc);
     renderRentedContract(calc);
+    renderHybridUse(calc);
     renderDayStatus(calc.totalDays);
     renderKpis(calc);
     renderResultsTable(calc);
@@ -2157,7 +2317,9 @@
     const messages = [];
     if (Math.abs(calc.totalDays - 365) > 0.001) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
     if (n(state.airbnb.taxPct) === 0) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
-    if (calc.blockedDays > 0) messages.push({ text: `${number1.format(calc.blockedDays)} dias estão indisponíveis. A ocupação de ${percent.format(calc.weightedOccupancy)} é calculada apenas sobre os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
+    if (calc.blockedDays > 0) messages.push({ text: `${number1.format(calc.blockedDays)} dias não entram na oferta: ${number1.format(calc.personalUseDays)} de uso pessoal, ${number1.format(calc.habitualUseDays)} de moradia e ${number1.format(calc.operationalUnavailableDays)} de indisponibilidade operacional. A ocupação de ${percent.format(calc.weightedOccupancy)} usa apenas os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
+    if (calc.blockedOverflowDays > 0) messages.push({ warning: true, text: `A classificação de dias excede a duração dos períodos em ${number1.format(calc.blockedOverflowDays)} dia(s). O motor limitou automaticamente o bloqueio ao total de dias disponível; ajuste a tabela para eliminar a inconsistência.` });
+    if (calc.hybridUse?.active) messages.push({ text: `Na lente de uso híbrido, o Airbnb gera ${money.format(calc.hybridUse.freeCash)} de caixa incremental e o uso próprio/moradia gera ${money.format(calc.hybridUse.consumptionBenefit)} de benefício líquido de consumo. Esses valores permanecem separados de receita e patrimônio.` });
     if (calc.reservations > 0) messages.push({ text: `O modelo estima ${number1.format(calc.reservations)} reservas/ano. Cada R$ 10 adicionados ao custo por reserva reduzem o Airbnb autogerido em aproximadamente ${money.format(calc.reservations * 10)} ao ano.` });
     if (calc.selfReserveContribution > 0) messages.push({ text: `${money.format(calc.selfReserveContribution)} são transferidos para reservas vinculadas no Airbnb autogerido. Esse valor reduz o caixa livre, mas continua dentro do patrimônio.` });
     if (calc.selfSetup > 0) messages.push({ text: `Dos ${money.format(calc.selfSetup)} de CAPEX do Airbnb autogerido, ${money.format(calc.selfSetupResidual)} permanecem como valor residual estimado ao fim do 1º ano; a perda econômica estimada é ${money.format(calc.selfSetupDepreciation)}.` });
@@ -2289,7 +2451,10 @@
       '',
       ...calc.scenarios.map((s) => `${s.label}: excedente ${money.format(s.nominalExcessOverPreservation)}/ano (${money.format(s.monthlyEquivalentExcess)}/mês equivalente) · caixa livre ${money.format(s.freeCash)}/ano · trabalho ${number1.format(s.workHoursAnnual || 0)} h/ano = ${money.format(s.laborCost)} · resultado econômico ${money.format(s.economicResult)} · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ financeiro ${money.format(s.financialGapVsBenchmark)} · Δ econômico ${money.format(s.economicGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
       '',
-      `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · diária média ${money2.format(calc.averageNightlyRate)} · ADR total ${money2.format(calc.totalAdr)} · RevPAR diárias ${money2.format(calc.revPar)} · RevPAR total ${money2.format(calc.totalRevPar)} · ${number1.format(calc.reservations)} reservas/ano`
+      `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · diária média ${money2.format(calc.averageNightlyRate)} · ADR total ${money2.format(calc.totalAdr)} · RevPAR diárias ${money2.format(calc.revPar)} · RevPAR total ${money2.format(calc.totalRevPar)} · ${number1.format(calc.reservations)} reservas/ano`,
+      ...(calc.hybridUse?.active ? [
+        `Uso híbrido: ${number1.format(calc.personalUseDays)} dias pessoais + ${number1.format(calc.habitualUseDays)} dias de moradia + ${number1.format(calc.operationalUnavailableDays)} dias operacionais · caixa Airbnb incremental ${money.format(calc.hybridUse.freeCash)} · benefício de consumo ${money.format(calc.hybridUse.consumptionBenefit)} · resultado econômico incremental ${money.format(calc.hybridUse.economicIncrement)}`
+      ] : [])
     ];
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
