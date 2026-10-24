@@ -449,9 +449,16 @@ node tests/market-evidence-v23.test.js
 ```
 
 
-## V24 — configuração guiada
+## V24 — configuração guiada e auditoria
 
 A camada de onboarding guiado foi adicionada sem criar um segundo motor econômico. Todos os wizards partem das premissas atuais, mostram uma revisão e só então aplicam alterações aos mesmos campos detalhados já existentes.
+
+### #24 — situação inicial (parcial)
+
+- já possui imóvel, moradia principal, segunda residência e Airbnb em imóvel alugado filtram apenas os cenários exibidos;
+- premissas dos cenários ocultos continuam salvas e o motor detalhado não é apagado;
+- no Airbnb alugado, o benchmark financeiro permanece embutido no próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido;
+- o caminho **“tenho capital e penso em comprar” é bloqueado**, em vez de produzir uma comparação economicamente falsa, até a conclusão da #42.
 
 ### #25 — benchmark financeiro
 
@@ -480,11 +487,23 @@ A camada de onboarding guiado foi adicionada sem criar um segundo motor econômi
 - configura benefício de hospedagem evitada, moradia, custos incrementais e CAPEX adicional;
 - preserva a separação entre receita, benefício de consumo e patrimônio.
 
-Testes específicos:
+### Auditoria V24
+
+- os resultados default permanecem numericamente idênticos à V23, inclusive em 1/3/5 anos;
+- não há artefatos ativos do motor mensal aposentado;
+- diagnósticos e “melhores cenários” respeitam o filtro do wizard principal;
+- identidades de caixa, CAPEX, reservas, capital de giro, déficit/aportes, venda e benchmark são verificadas por teste permanente;
+- a suíte atual contém **24 testes** e passou integralmente na revisão da V24.
+
+Testes adicionados nesta versão:
 
 ```bash
+node tests/main-wizard-v24.test.js
 node tests/financial-wizard-v24.test.js
 node tests/property-wizard-v24.test.js
 node tests/airbnb-ops-wizard-v24.test.js
 node tests/hybrid-wizard-v24.test.js
+node tests/economic-invariants-v24.test.js
 ```
+
+A auditoria detalhada está em `docs/audit-v24.md`.
