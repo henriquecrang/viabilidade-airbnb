@@ -35,6 +35,10 @@
       },
       airbnbOps: {
         configured: false
+      },
+      hybrid: {
+        configured: false,
+        granularity: 'annual-periods'
       }
     },
     market: {
@@ -609,6 +613,70 @@
         }
       },
       normalized
+    };
+  }
+
+
+  function buildHybridWizardPatch(draft = {}, inputState = defaultState) {
+    const errors = [];
+    const seasonUpdates = {};
+    let personalUseDays = 0;
+    let habitualUseDays = 0;
+    let operationalUnavailableDays = 0;
+
+    for (const season of inputState.seasons || []) {
+      const personal = Math.max(0, n(draft[`personal_${season.id}`], season.personalUseDays));
+      const habitual = Math.max(0, n(draft[`habitual_${season.id}`], season.habitualUseDays));
+      const operational = Math.max(0, n(draft[`operational_${season.id}`], season.operationalUnavailableDays));
+      const days = Math.max(0, n(season.days));
+      if (personal + habitual + operational > days + 1e-9) {
+        errors.push(`${season.name}: uso pessoal + moradia + indisponibilidade (${number1.format(personal + habitual + operational)} dias) excedem os ${number1.format(days)} dias do período.`);
+      }
+      seasonUpdates[String(season.id)] = {
+        personalUseDays: personal,
+        habitualUseDays: habitual,
+        operationalUnavailableDays: operational,
+        unavailableDays: personal + habitual + operational
+      };
+      personalUseDays += personal;
+      habitualUseDays += habitual;
+      operationalUnavailableDays += operational;
+    }
+
+    const hybrid = {
+      avoidedLodgingPerDay: Math.max(0, n(draft.avoidedLodgingPerDay)),
+      personalUseIncrementalCostPerDay: Math.max(0, n(draft.personalUseIncrementalCostPerDay)),
+      habitualHousingBenefitAnnual: Math.max(0, n(draft.habitualHousingBenefitAnnual)),
+      habitualUseIncrementalCostAnnual: Math.max(0, n(draft.habitualUseIncrementalCostAnnual)),
+      preparationAnnualCost: Math.max(0, n(draft.preparationAnnualCost)),
+      storageAnnualCost: Math.max(0, n(draft.storageAnnualCost)),
+      otherIncrementalAnnualCost: Math.max(0, n(draft.otherIncrementalAnnualCost)),
+      incrementalAirbnbCostsDeductibleIR: Boolean(draft.incrementalAirbnbCostsDeductibleIR),
+      incrementalAirbnbCapex: Math.max(0, n(draft.incrementalAirbnbCapex)),
+      incrementalAirbnbCapexResidualPct: clamp(n(draft.incrementalAirbnbCapexResidualPct), 0, 100)
+    };
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      values: {
+        'hybridUse': hybrid,
+        'guidedSetup.hybrid': {
+          configured: true,
+          granularity: 'annual-periods',
+          personalUseDays,
+          habitualUseDays,
+          operationalUnavailableDays
+        }
+      },
+      arrayValues: { seasons: seasonUpdates },
+      normalized: {
+        ...hybrid,
+        personalUseDays,
+        habitualUseDays,
+        operationalUnavailableDays,
+        totalBlockedDays: personalUseDays + habitualUseDays + operationalUnavailableDays
+      }
     };
   }
 
@@ -3102,6 +3170,75 @@
       <div class="concept-note"><strong>Premissas editáveis:</strong> o assistente parte dos valores atualmente configurados. Ao aplicar, ele altera somente os mesmos itens de estadia, custos mensais, estadia média e taxa de limpeza já visíveis nas seções detalhadas.</div>`;
   }
 
+
+  function hybridWizardDraftFromState() {
+    const draft = {
+      avoidedLodgingPerDay: n(state.hybridUse.avoidedLodgingPerDay),
+      personalUseIncrementalCostPerDay: n(state.hybridUse.personalUseIncrementalCostPerDay),
+      habitualHousingBenefitAnnual: n(state.hybridUse.habitualHousingBenefitAnnual),
+      habitualUseIncrementalCostAnnual: n(state.hybridUse.habitualUseIncrementalCostAnnual),
+      preparationAnnualCost: n(state.hybridUse.preparationAnnualCost),
+      storageAnnualCost: n(state.hybridUse.storageAnnualCost),
+      otherIncrementalAnnualCost: n(state.hybridUse.otherIncrementalAnnualCost),
+      incrementalAirbnbCostsDeductibleIR: Boolean(state.hybridUse.incrementalAirbnbCostsDeductibleIR),
+      incrementalAirbnbCapex: n(state.hybridUse.incrementalAirbnbCapex),
+      incrementalAirbnbCapexResidualPct: n(state.hybridUse.incrementalAirbnbCapexResidualPct)
+    };
+    for (const season of state.seasons) {
+      draft[`personal_${season.id}`] = n(season.personalUseDays);
+      draft[`habitual_${season.id}`] = n(season.habitualUseDays);
+      draft[`operational_${season.id}`] = n(season.operationalUnavailableDays);
+    }
+    return draft;
+  }
+
+  function hybridWizardFormHtml(draft) {
+    const moneyInput = (field, label, value, suffix='') => `
+      <label class="field-group"><span class="field-label">${escapeHtml(label)}</span>
+        <div class="input-prefix money-control"><span>R$</span><input data-wizard-field="${escapeAttr(field)}" type="number" min="0" step="10" value="${escapeAttr(value)}" /></div>
+        ${suffix ? `<small class="field-help">${escapeHtml(suffix)}</small>` : ''}
+      </label>`;
+    const seasonRows = state.seasons.map((season) => `
+      <tr>
+        <td><strong>${escapeHtml(season.name)}</strong><small>${number1.format(season.days)} dias no período</small></td>
+        <td><input data-wizard-field="personal_${escapeAttr(season.id)}" type="number" min="0" max="${escapeAttr(season.days)}" step="1" value="${escapeAttr(draft[`personal_${season.id}`])}" /></td>
+        <td><input data-wizard-field="habitual_${escapeAttr(season.id)}" type="number" min="0" max="${escapeAttr(season.days)}" step="1" value="${escapeAttr(draft[`habitual_${season.id}`])}" /></td>
+        <td><input data-wizard-field="operational_${escapeAttr(season.id)}" type="number" min="0" max="${escapeAttr(season.days)}" step="1" value="${escapeAttr(draft[`operational_${season.id}`])}" /></td>
+      </tr>`).join('');
+    return `
+      <div class="wizard-section">
+        <h3>Calendário anual por períodos</h3>
+        <p class="helper">Não existe calendário mensal: distribua apenas quantos dias de cada período ficam reservados para uso pessoal, moradia ou indisponibilidade operacional. O restante fica disponível para Airbnb.</p>
+        <div class="table-card"><div class="table-scroll">
+          <table class="wizard-season-table">
+            <thead><tr><th>Período</th><th>Uso pessoal</th><th>Moradia</th><th>Indisp. operacional</th></tr></thead>
+            <tbody>${seasonRows}</tbody>
+          </table>
+        </div></div>
+      </div>
+      <div class="wizard-section">
+        <h3>Benefício de uso próprio</h3>
+        <div class="wizard-form-grid">
+          ${moneyInput('avoidedLodgingPerDay','Hospedagem evitada por dia de uso pessoal',draft.avoidedLodgingPerDay,'por dia')}
+          ${moneyInput('personalUseIncrementalCostPerDay','Custo incremental por dia de uso pessoal',draft.personalUseIncrementalCostPerDay,'por dia')}
+          ${moneyInput('habitualHousingBenefitAnnual','Benefício anual imputado de moradia',draft.habitualHousingBenefitAnnual,'por ano')}
+          ${moneyInput('habitualUseIncrementalCostAnnual','Custos incrementais anuais da moradia',draft.habitualUseIncrementalCostAnnual,'por ano')}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Custos incrementais do Airbnb eventual</h3>
+        <div class="wizard-form-grid">
+          ${moneyInput('preparationAnnualCost','Preparação anual',draft.preparationAnnualCost,'por ano')}
+          ${moneyInput('storageAnnualCost','Armazenamento',draft.storageAnnualCost,'por ano')}
+          ${moneyInput('otherIncrementalAnnualCost','Outros custos incrementais',draft.otherIncrementalAnnualCost,'por ano')}
+          ${moneyInput('incrementalAirbnbCapex','CAPEX adicional só para Airbnb',draft.incrementalAirbnbCapex)}
+          <label class="field-group"><span class="field-label">Residual do CAPEX</span><div class="input-suffix compact-control"><input data-wizard-field="incrementalAirbnbCapexResidualPct" type="number" min="0" max="100" step="1" value="${escapeAttr(draft.incrementalAirbnbCapexResidualPct)}" /><span>%</span></div></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="incrementalAirbnbCostsDeductibleIR" type="checkbox" ${draft.incrementalAirbnbCostsDeductibleIR?'checked':''} /><span><strong>Custos incrementais dedutíveis na base de IR</strong><small>Use somente quando a regra fiscal aplicável sustentar a dedução.</small></span></label>
+        </div>
+      </div>
+      <div class="concept-note"><strong>Separação preservada:</strong> uso pessoal/moradia é benefício de consumo; Airbnb é receita; residual e reservas continuam patrimônio. O wizard não transforma uso próprio em “receita” nem em “vacância”.</div>`;
+  }
+
   function financialWizardFormHtml(draft) {
     return `
       <div class="wizard-form-grid">
@@ -3147,7 +3284,7 @@
   function readWizardDraft() {
     const out = {};
     $('#wizardBody [data-wizard-field]').forEach((input) => {
-      out[input.dataset.wizardField] = input.type === 'number' ? n(input.value) : input.value;
+      out[input.dataset.wizardField] = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? n(input.value) : input.value);
     });
     return out;
   }
@@ -3198,6 +3335,19 @@
     $('#wizardDialog').showModal();
   }
 
+
+  function openHybridWizard() {
+    activeWizard = 'hybrid';
+    activeWizardPatch = null;
+    const draft = hybridWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Uso parcial / híbrido';
+    $('#wizardDescription').textContent = 'Separe dias de uso próprio, moradia e Airbnb e configure apenas os custos e benefícios incrementais.';
+    $('#wizardBody').innerHTML = hybridWizardFormHtml(draft);
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
   function reviewActiveWizard() {
     const draft = readWizardDraft();
     const patch = activeWizard === 'financial'
@@ -3206,7 +3356,9 @@
         ? buildPropertyWizardPatch(draft, state)
         : activeWizard === 'airbnbOps'
           ? buildAirbnbOpsWizardPatch(draft, state)
-          : null;
+          : activeWizard === 'hybrid'
+            ? buildHybridWizardPatch(draft, state)
+            : null;
     if (!patch) return;
     activeWizardPatch = patch;
     const preview = $('#wizardPreview');
@@ -3258,6 +3410,26 @@
       return;
     }
 
+    if (activeWizard === 'hybrid') {
+      const x = patch.normalized;
+      const useBenefit = x.personalUseDays * x.avoidedLodgingPerDay
+        + x.habitualHousingBenefitAnnual
+        - x.personalUseDays * x.personalUseIncrementalCostPerDay
+        - x.habitualUseIncrementalCostAnnual;
+      const annualIncrementalCosts = x.preparationAnnualCost + x.storageAnnualCost + x.otherIncrementalAnnualCost;
+      preview.innerHTML = `
+        <h3>Revise antes de aplicar</h3>
+        <ul class="wizard-change-list">
+          <li>Dias fora da oferta: <strong>${number1.format(x.personalUseDays)}</strong> pessoais + <strong>${number1.format(x.habitualUseDays)}</strong> moradia + <strong>${number1.format(x.operationalUnavailableDays)}</strong> operacionais.</li>
+          <li>Benefício líquido anual de consumo nas premissas informadas: <strong>${money.format(useBenefit)}</strong>.</li>
+          <li>Custos anuais incrementais explícitos do Airbnb eventual: <strong>${money.format(annualIncrementalCosts)}</strong>.</li>
+          <li>CAPEX adicional: <strong>${money.format(x.incrementalAirbnbCapex)}</strong> · residual <strong>${number1.format(x.incrementalAirbnbCapexResidualPct)}%</strong>.</li>
+          <li>Ocupação e diária continuam sendo calculadas somente sobre os dias restantes disponíveis.</li>
+        </ul>`;
+      setWizardReviewMode(true);
+      return;
+    }
+
     const x = patch.normalized;
     const rateLine = x.mode === 'ipcaPlus'
       ? `Inflação + <strong>${number1.format(x.realRatePct)}%</strong> real bruto a.a.`
@@ -3292,6 +3464,7 @@
     $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
     $('#openPropertyWizard')?.addEventListener('click', openPropertyWizard);
     $('#openAirbnbOpsWizard')?.addEventListener('click', openAirbnbOpsWizard);
+    $('#openHybridWizard')?.addEventListener('click', openHybridWizard);
     $('#wizardReviewButton')?.addEventListener('click', reviewActiveWizard);
     $('#wizardBackButton')?.addEventListener('click', () => setWizardReviewMode(false));
     $('#wizardApplyButton')?.addEventListener('click', applyActiveWizard);
@@ -3327,7 +3500,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, applyWizardPatch
+    buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
