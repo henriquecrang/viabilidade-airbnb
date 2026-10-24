@@ -402,3 +402,25 @@ A média mensal equivalente é usada apenas para métricas de fluxo. Ganho patri
 ### V18 aposentada do motor ativo
 
 A aproximação de timing mensal de aportes introduzida na V18 foi retirada. A lógica mensal real — incluindo calendário sazonal, aportes por mês, picos de caixa e reajustes em datas específicas — foi movida para a Issue #41, de prioridade futura.
+
+## V22 — uso parcial e disponibilidade híbrida
+
+A Epic #19 foi implementada mantendo a granularidade **anual** do motor.
+
+- cada período sazonal distingue **uso pessoal**, **moradia habitual** e **indisponibilidade operacional**;
+- uso pessoal e moradia deixam de ser tratados como vacância;
+- JSONs anteriores que possuíam apenas `unavailableDays` migram esse valor para indisponibilidade operacional;
+- a análise incremental do Airbnb eventual exclui por padrão custos fixos que existiriam sem Airbnb;
+- custos mensais podem ser marcados individualmente como **incrementais no uso híbrido**;
+- preparação, armazenamento e outros custos incrementais anuais podem ser informados separadamente;
+- hospedagem evitada e benefício imputado de moradia aparecem como **benefício de consumo**, nunca como receita;
+- CAPEX adicional do Airbnb eventual mantém desembolso, residual e depreciação separados;
+- a saída mostra separadamente **caixa incremental do Airbnb**, **benefício de consumo**, **patrimônio incremental vinculado** e **resultado econômico incremental**.
+
+Todos os novos defaults são zero/falso, portanto a V22 não altera os resultados do cenário-base até que o usuário configure uso híbrido.
+
+### Teste específico
+
+```bash
+node tests/hybrid-use-v22.test.js
+```
