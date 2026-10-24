@@ -121,6 +121,19 @@ Concluída em 24/10/2026.
 - nenhum calendário/fluxo mensal é inferido;
 - motor mensal real adiado para a Issue #41.
 
+### V22 — uso parcial e disponibilidade híbrida
+Concluída em 24/10/2026 — Epic #19 / Issues #20, #21 e #22.
+
+- classificação anual de uso pessoal, moradia e indisponibilidade operacional;
+- janelas de alta demanda continuam representadas pelos períodos sazonais existentes;
+- compatibilidade com `unavailableDays` legado;
+- benefício de hospedagem evitada e moradia separado de receita;
+- custos fixos preexistentes separados dos custos incrementais do Airbnb eventual;
+- custos mensais incrementais marcáveis item a item;
+- CAPEX adicional com residual/depreciação;
+- caixa incremental, benefício de consumo e patrimônio mantidos em lentes distintas;
+- defaults neutros; cenário-base permanece numericamente idêntico.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
@@ -199,19 +212,19 @@ Issues filhas:
 Esta frente pode avançar em paralelo às Rodadas B/C porque sua saída é uma **sugestão de premissas**, não uma alteração silenciosa do motor.
 
 ### Epic — uso parcial e disponibilidade híbrida
-**Epic:** #19
+**Epic:** #19 · **Concluída em 24/10/2026 — V22**
 
-Objetivo: suportar:
+Suporta, em granularidade anual:
 - investimento com uso pessoal ocasional;
 - segunda residência;
 - moradia principal com Airbnb eventual.
 
-Issues filhas:
+Issues concluídas:
 - #20 — classificar disponibilidade e bloqueios;
 - #21 — benefício econômico do uso pessoal;
 - #22 — retorno incremental da locação eventual.
 
-Preferencialmente executar depois do modelo mensal/plurianual, pois datas específicas têm grande impacto econômico.
+O calendário mensal continua deliberadamente fora desta Epic e permanece na Issue #41.
 
 ### Epic — wizards de onboarding e configuração
 **Epic:** #23
