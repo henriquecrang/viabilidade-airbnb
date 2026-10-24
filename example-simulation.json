@@ -1097,6 +1097,22 @@
         "termMonths": 12,
         "liquidity": "daily",
         "role": "benchmark"
+      },
+      "acquisitionSale": {
+        "configured": false,
+        "position": "owned",
+        "availableCapital": 0,
+        "purchasePrice": 636000,
+        "purchaseCosts": 0,
+        "workingCapitalTarget": "airbnbSelf",
+        "workingCapitalAmount": 0
+      },
+      "airbnbOps": {
+        "configured": false
+      },
+      "hybrid": {
+        "configured": false,
+        "granularity": "annual-periods"
       }
     }
   }
