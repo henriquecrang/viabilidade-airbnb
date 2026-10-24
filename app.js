@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 9;
+  const APP_VERSION = 10;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -16,7 +16,7 @@
       propertyValue: 636000,
       inflationPct: 4.3,
       propertyRealAppreciationPct: 0,
-      ownerHourlyValue: 0
+      ownerHourlyValue: 100
     },
     workingCapital: {
       airbnbSelf: 0,
@@ -25,11 +25,11 @@
       traditional: 0
     },
     work: {
-      selfHoursMonthly: 0,
-      supervisionAdminHoursMonthly: 0,
-      traditionalHoursMonthly: 0,
-      investmentHoursMonthly: 0,
-      rentedAirbnbHoursMonthly: 0
+      selfHoursMonthly: 1,
+      supervisionAdminHoursMonthly: 1,
+      traditionalHoursMonthly: 1.5,
+      investmentHoursMonthly: 0.5,
+      rentedAirbnbHoursMonthly: 1
     },
     airbnb: {
       platformFeePct: 16,
@@ -78,23 +78,26 @@
       feesPct: 0
     },
     seasons: [
-      { id: 'alta', name: 'Alta — dez a mar', days: 121, unavailableDays: 0, nightlyRate: 649, occupancyPct: 51 },
-      { id: 'ombro', name: 'Intermediária — jul e ago', days: 62, unavailableDays: 0, nightlyRate: 602, occupancyPct: 46 },
-      { id: 'baixa', name: 'Baixa — abr a jun + set a nov', days: 182, unavailableDays: 0, nightlyRate: 582, occupancyPct: 46 }
+      { id: 'reveillon', name: 'Réveillon', days: 4, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
+      { id: 'verao', name: 'Verão', days: 81, unavailableDays: 0, nightlyRate: 400, occupancyPct: 90 },
+      { id: 'carnaval', name: 'Carnaval', days: 7, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
+      { id: 'outono', name: 'Outono', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 },
+      { id: 'inverno', name: 'Inverno', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 60 },
+      { id: 'primavera', name: 'Primavera', days: 91, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 }
     ],
     stayCosts: [
-      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'limpeza', name: 'Limpeza', amount: 180, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 70, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0, adminManages: true, adminIncluded: false, deductibleIR: false }
+      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 0.1, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'limpeza', name: 'Limpeza', amount: 180, ownerHoursPerReservation: 0.25, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 70, ownerHoursPerReservation: 0.15, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0.25, adminManages: true, adminIncluded: false, deductibleIR: false }
     ],
     monthlyCosts: [
-      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 1.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
       { id: 'seguro', name: 'Seguro', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'agua', name: 'Água', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
@@ -314,6 +317,33 @@
     // V9 / Rodada C: capital de giro manual é patrimônio vinculado por estratégia.
     for (const key of ['airbnbSelf', 'airbnbAdmin', 'rentedAirbnb', 'traditional']) {
       merged.workingCapital[key] = Math.max(0, n(merged.workingCapital[key], 0));
+    }
+
+    // V10: se o arquivo/autosave for exatamente o antigo cenário-base V9
+    // (sazonalidade B0 + trabalho todo zerado), migramos para a nova calibração.
+    // Simulações customizadas preservam seus próprios valores.
+    const legacyV9SeasonIds = ['alta', 'ombro', 'baixa'];
+    const hasLegacyV9Seasons = incomingVersion === 9
+      && Array.isArray(source.seasons)
+      && source.seasons.length === 3
+      && source.seasons.every((x, index) => String(x.id) === legacyV9SeasonIds[index])
+      && n(source.seasons[0]?.nightlyRate) === 649 && n(source.seasons[0]?.occupancyPct) === 51
+      && n(source.seasons[1]?.nightlyRate) === 602 && n(source.seasons[1]?.occupancyPct) === 46
+      && n(source.seasons[2]?.nightlyRate) === 582 && n(source.seasons[2]?.occupancyPct) === 46;
+    const legacyWorkZeros = incomingVersion === 9
+      && n(source.globals?.ownerHourlyValue) === 0
+      && ['selfHoursMonthly','supervisionAdminHoursMonthly','traditionalHoursMonthly','investmentHoursMonthly','rentedAirbnbHoursMonthly']
+        .every((key) => n(source.work?.[key]) === 0)
+      && Array.isArray(source.stayCosts) && source.stayCosts.every((x) => n(x.ownerHoursPerReservation) === 0)
+      && Array.isArray(source.monthlyCosts) && source.monthlyCosts.every((x) => n(x.ownerHoursMonthly) === 0);
+    if (hasLegacyV9Seasons && legacyWorkZeros) {
+      merged.globals.ownerHourlyValue = defaultState.globals.ownerHourlyValue;
+      merged.work = structuredCloneSafe(defaultState.work);
+      merged.seasons = structuredCloneSafe(defaultState.seasons);
+      const stayHours = new Map(defaultState.stayCosts.map((x) => [String(x.id), x.ownerHoursPerReservation]));
+      merged.stayCosts.forEach((x) => { if (stayHours.has(String(x.id))) x.ownerHoursPerReservation = stayHours.get(String(x.id)); });
+      const monthlyHours = new Map(defaultState.monthlyCosts.map((x) => [String(x.id), x.ownerHoursMonthly]));
+      merged.monthlyCosts.forEach((x) => { if (monthlyHours.has(String(x.id))) x.ownerHoursMonthly = monthlyHours.get(String(x.id)); });
     }
 
     merged.version = APP_VERSION;
@@ -1168,7 +1198,9 @@
         <td class="money-cell ${scenario.economicGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}"><strong>${money.format(scenario.economicGapVsBenchmark)}</strong></td>
         <td class="money-cell">${money.format(scenario.endNetWorth)}</td>
         <td class="money-cell"><strong>${money.format(scenario.realEndNetWorth)}</strong></td>
-        <td class="money-cell">${number1.format(scenario.workHoursAnnual || 0)} h · ${money.format(scenario.laborCost)}</td>
+        <td class="money-cell">${number1.format(scenario.workHoursAnnual || 0)} h</td>
+        <td class="money-cell">${money.format(scenario.laborCost)}</td>
+        <td class="money-cell"><strong>${money.format(scenario.economicResult)}</strong></td>
         <td class="percent-cell">${percent.format(scenario.cashYield)}</td>
         <td class="percent-cell"><strong>${percent.format(scenario.realTotalReturn)}</strong></td>
       </tr>`).join('');
@@ -1257,7 +1289,8 @@
             <div><span>Preservação do poder de compra</span><strong>${money.format(scenario.capitalPreservationAmount)}</strong></div>
             <div><span>Excedente nominal sobre preservação</span><strong>${money.format(scenario.nominalExcessOverPreservation)}</strong></div>
             <div><span>Horas próprias / ano</span><strong>${number1.format(scenario.workHoursAnnual || 0)} h</strong></div>
-            <div><span>Custo do seu tempo</span><strong>${money.format(scenario.laborCost)}</strong></div>
+            <div><span>Custo econômico das horas</span><strong>${money.format(scenario.laborCost)}</strong></div>
+            <div><span>Resultado econômico (caixa − horas)</span><strong>${money.format(scenario.economicResult)}</strong></div>
             <div><span>Yield de caixa livre</span><strong>${percent.format(scenario.cashYield)}</strong></div>
             <div><span>Retorno patrimonial real</span><strong>${percent.format(scenario.realTotalReturn)}</strong></div>
           </div>
@@ -1311,7 +1344,7 @@
       `Valorização real esperada do imóvel: ${percent.format(calc.realAppreciation)}`,
       `Valorização nominal projetada do imóvel: ${percent.format(calc.nominalPropertyAppreciation)}`,
       '',
-      ...calc.scenarios.map((s) => `${s.label}: excedente ${money.format(s.nominalExcessOverPreservation)}/ano (${money.format(s.monthlyEquivalentExcess)}/mês equivalente) · caixa livre ${money.format(s.freeCash)}/ano · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ financeiro ${money.format(s.financialGapVsBenchmark)} · Δ econômico ${money.format(s.economicGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
+      ...calc.scenarios.map((s) => `${s.label}: excedente ${money.format(s.nominalExcessOverPreservation)}/ano (${money.format(s.monthlyEquivalentExcess)}/mês equivalente) · caixa livre ${money.format(s.freeCash)}/ano · trabalho ${number1.format(s.workHoursAnnual || 0)} h/ano = ${money.format(s.laborCost)} · resultado econômico ${money.format(s.economicResult)} · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ financeiro ${money.format(s.financialGapVsBenchmark)} · Δ econômico ${money.format(s.economicGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
       '',
       `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · diária média ${money2.format(calc.averageNightlyRate)} · ADR total ${money2.format(calc.totalAdr)} · RevPAR diárias ${money2.format(calc.revPar)} · RevPAR total ${money2.format(calc.totalRevPar)} · ${number1.format(calc.reservations)} reservas/ano`
     ];

@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 9,
+  "version": 10,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 9,
+    "version": 10,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -13,14 +13,20 @@
       "propertyValue": 636000,
       "inflationPct": 4.3,
       "propertyRealAppreciationPct": 0,
-      "ownerHourlyValue": 0
+      "ownerHourlyValue": 100
+    },
+    "workingCapital": {
+      "airbnbSelf": 0,
+      "airbnbAdmin": 0,
+      "rentedAirbnb": 0,
+      "traditional": 0
     },
     "work": {
-      "selfHoursMonthly": 0,
-      "supervisionAdminHoursMonthly": 0,
-      "traditionalHoursMonthly": 0,
-      "investmentHoursMonthly": 0,
-      "rentedAirbnbHoursMonthly": 0
+      "selfHoursMonthly": 1,
+      "supervisionAdminHoursMonthly": 1,
+      "traditionalHoursMonthly": 1.5,
+      "investmentHoursMonthly": 0.5,
+      "rentedAirbnbHoursMonthly": 1
     },
     "airbnb": {
       "platformFeePct": 16,
@@ -31,12 +37,12 @@
       "adminFeePct": 25,
       "adminMonthlyFee": 0,
       "adminOnboardingFee": 0,
+      "adminNightlyRateImpactPct": 0,
+      "adminOccupancyImpactPp": 0,
       "adminIncludesPlatformFee": false,
       "platformFeeDeductibleIR": true,
       "adminFeeDeductibleIR": true,
-      "adminMonthlyFeeDeductibleIR": false,
-      "adminNightlyRateImpactPct": 0,
-      "adminOccupancyImpactPp": 0
+      "adminMonthlyFeeDeductibleIR": false
     },
     "rentedAirbnb": {
       "monthlyLeaseRent": 3500,
@@ -70,28 +76,52 @@
     },
     "seasons": [
       {
-        "id": "alta",
-        "name": "Alta — dez a mar",
-        "days": 121,
+        "id": "reveillon",
+        "name": "Réveillon",
+        "days": 4,
         "unavailableDays": 0,
-        "nightlyRate": 649,
-        "occupancyPct": 51
+        "nightlyRate": 750,
+        "occupancyPct": 100
       },
       {
-        "id": "ombro",
-        "name": "Intermediária — jul e ago",
-        "days": 62,
+        "id": "verao",
+        "name": "Verão",
+        "days": 81,
         "unavailableDays": 0,
-        "nightlyRate": 602,
-        "occupancyPct": 46
+        "nightlyRate": 400,
+        "occupancyPct": 90
       },
       {
-        "id": "baixa",
-        "name": "Baixa — abr a jun + set a nov",
-        "days": 182,
+        "id": "carnaval",
+        "name": "Carnaval",
+        "days": 7,
         "unavailableDays": 0,
-        "nightlyRate": 582,
-        "occupancyPct": 46
+        "nightlyRate": 750,
+        "occupancyPct": 100
+      },
+      {
+        "id": "outono",
+        "name": "Outono",
+        "days": 91,
+        "unavailableDays": 0,
+        "nightlyRate": 250,
+        "occupancyPct": 70
+      },
+      {
+        "id": "inverno",
+        "name": "Inverno",
+        "days": 91,
+        "unavailableDays": 0,
+        "nightlyRate": 250,
+        "occupancyPct": 60
+      },
+      {
+        "id": "primavera",
+        "name": "Primavera",
+        "days": 91,
+        "unavailableDays": 0,
+        "nightlyRate": 250,
+        "occupancyPct": 70
       }
     ],
     "stayCosts": [
@@ -99,7 +129,7 @@
         "id": "lavanderia",
         "name": "Lavanderia de cama/banho",
         "amount": 60,
-        "ownerHoursPerReservation": 0,
+        "ownerHoursPerReservation": 0.1,
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
@@ -108,7 +138,7 @@
         "id": "limpeza",
         "name": "Limpeza",
         "amount": 180,
-        "ownerHoursPerReservation": 0,
+        "ownerHoursPerReservation": 0.25,
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
@@ -117,7 +147,7 @@
         "id": "amenidades",
         "name": "Amenidades e consumíveis",
         "amount": 70,
-        "ownerHoursPerReservation": 0,
+        "ownerHoursPerReservation": 0.15,
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
@@ -126,7 +156,7 @@
         "id": "checkin",
         "name": "Check-in / check-out presencial",
         "amount": 0,
-        "ownerHoursPerReservation": 0,
+        "ownerHoursPerReservation": 0.25,
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false
@@ -137,7 +167,7 @@
         "id": "marketing",
         "name": "Gestão comercial e marketing",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 1,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -149,7 +179,7 @@
         "id": "presales",
         "name": "Atendimento de reservas / pré-venda",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 2,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -161,7 +191,7 @@
         "id": "guest-support",
         "name": "Atendimento contínuo ao hóspede",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 2,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -173,7 +203,7 @@
         "id": "local-support",
         "name": "Suporte operacional / plantão local",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 1,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -185,7 +215,7 @@
         "id": "software",
         "name": "Software e automação",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 0.5,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -197,7 +227,7 @@
         "id": "pricing",
         "name": "Gestão de preços / dynamic pricing",
         "amount": 0,
-        "ownerHoursMonthly": 0,
+        "ownerHoursMonthly": 1.5,
         "airbnb": true,
         "rentedAirbnb": true,
         "traditional": false,
@@ -450,12 +480,6 @@
         "adminPays": false,
         "adminAssetBelongsToOwner": true
       }
-    ],
-    "workingCapital": {
-      "airbnbSelf": 0,
-      "airbnbAdmin": 0,
-      "rentedAirbnb": 0,
-      "traditional": 0
-    }
+    ]
   }
 }

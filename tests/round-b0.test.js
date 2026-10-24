@@ -23,7 +23,7 @@ approx(defaultState.investment.nominalRatePct, 13.65, 1e-9, 'CDI de referência'
 approx(defaultState.traditional.monthlyRent, 3500, 1e-9, 'aluguel tradicional');
 approx(defaultState.traditional.managementFeePct, 10, 1e-9, 'administração imobiliária');
 approx(defaultState.seasons.reduce((s,x)=>s+x.days,0),365,1e-9,'dias sazonais');
-assert(defaultState.seasons.length === 3, 'sazonalidade deveria ter três faixas');
+assert(defaultState.seasons.length === 6, 'sazonalidade calibrada deveria ter seis faixas');
 
 for (const id of ['lavanderia','limpeza','amenidades','checkin']) {
   const item = defaultState.stayCosts.find(x=>x.id===id);

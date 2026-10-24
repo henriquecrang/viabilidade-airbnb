@@ -173,3 +173,18 @@ node tests/round-b0.test.js
 node tests/round-b.test.js
 node tests/round-c.test.js
 ```
+
+
+## V10 — recalibração dos defaults
+
+O cenário-base passa a incorporar trabalho próprio e uma sazonalidade híbrida:
+
+- valor econômico da hora: **R$ 100**;
+- horas distribuídas por tarefa e por reserva, em vez de um único número opaco;
+- ocupação recuperada da planilha original: Réveillon 100%, verão 90%, Carnaval 100%, outono 70%, inverno 60% e primavera 70%;
+- diárias calibradas a partir da proposta comercial recebida: R$ 750 em Réveillon/Carnaval, R$ 400 no verão e R$ 250 nos demais períodos;
+- tabela consolidada separa horas, custo econômico das horas e resultado econômico após trabalho.
+
+O custo das horas **não é OPEX e não reduz o caixa**. Ele serve para comparar economicamente estratégias que consomem quantidades diferentes de trabalho do proprietário.
+
+A migração V9 → V10 só recalibra automaticamente o antigo cenário-base intacto (sazonalidade B0 e trabalho todo zerado). Simulações customizadas preservam suas próprias premissas.

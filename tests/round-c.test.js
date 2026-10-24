@@ -9,7 +9,7 @@ const scenario = (calc,id) => calc.scenarios.find(x=>x.id===id);
 function assert(c,m){ if(!c) throw new Error(m); }
 function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esperado ${b}, obtido ${a}`); }
 
-assert(defaultState.version === 9, 'Rodada C deve produzir estado V9');
+assert(defaultState.version >= 9, 'estado deve preservar as entregas da Rodada C');
 
 // #31 — defaults e separação OPEX x dedutibilidade
 assert(defaultState.airbnb.platformFeeDeductibleIR === true, 'plataforma deveria ser dedutível por default');
