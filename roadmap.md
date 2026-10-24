@@ -60,6 +60,17 @@ Defaults mensais:
 
 A calibração usa tarifas atuais de Águas do Rio, Naturgy e Light e assume um apartamento de 1 quarto e sala em operação de temporada com dois aparelhos de ar-condicionado.
 
+### V13 — IPTU e TCL do imóvel-base
+Concluída em 24/10/2026 na Issue #38.
+
+Imóvel-base identificado:
+- Rua Maestro Francisco Braga, 76, apto 405, Copacabana;
+- inscrição imobiliária 0916633-1;
+- IPTU: R$ 0 (isenção/cobrança suspensa);
+- TCL — Taxa de Coleta Domiciliar de Lixo: R$ 625/ano em 2026.
+
+O modelo mantém IPTU e TCL como itens separados.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
