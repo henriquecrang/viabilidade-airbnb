@@ -71,6 +71,18 @@ Imóvel-base identificado:
 
 O modelo mantém IPTU e TCL como itens separados.
 
+### V14 — benchmark financeiro após venda líquida
+Concluída em 24/10/2026 na Issue #34.
+
+O cenário-base parte de alguém que já possui o imóvel. O benchmark financeiro passa a modelar a decisão **vender + investir**, separando:
+- valor de mercado/patrimônio inicial;
+- valor esperado de venda;
+- corretagem e custos de liquidação;
+- eventual quitação de financiamento;
+- capital líquido efetivamente investido.
+
+Default de corretagem: 5%, editável.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
