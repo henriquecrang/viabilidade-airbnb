@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 19;
+  const APP_VERSION = 20;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -77,6 +77,7 @@
     rentedAirbnb: {
       furnished: false,
       subleaseAuthorized: false,
+      contractEndStrategy: 'renew',
       monthlyLeaseRent: 3500,
       securityDeposit: 0,
       initialLeaseCosts: 0,
@@ -532,6 +533,12 @@
       && n(source.analysis?.horizonYears, 1) === 1) {
       merged.analysis.horizonYears = 5;
     }
+
+    // V20: política explícita de fim do horizonte para o imóvel alugado.
+    // Até a Issue #40, apenas renovação/continuidade é calculada.
+    merged.rentedAirbnb.contractEndStrategy = source.rentedAirbnb?.contractEndStrategy === 'renew'
+      ? 'renew'
+      : 'renew';
 
     merged.version = APP_VERSION;
     return merged;
@@ -2087,6 +2094,7 @@
         <div><span>CAPEX de ativos aplicável</span><strong>${money.format(calc.rentedSetupAssets)}</strong></div>
         <div><span>Entrada do contrato</span><strong>${money.format(calc.rentedInitialLeaseCosts)}</strong></div>
         <div><span>Caução / garantia vinculada</span><strong>${money.format(calc.rentedSecurityDeposit)}</strong></div>
+        <div><span>Fim do horizonte</span><strong>Renovar / continuar</strong></div>
       </div>
       <div class="admin-tag-group"><strong>Custos mensais marcados para o locatário</strong>${itemTags}</div>
     `;

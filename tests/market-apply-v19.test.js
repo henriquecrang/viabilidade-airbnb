@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===19,'integração mercado deve estar na V19');
+assert(defaultState.version>=19,'estado deve preservar integração de mercado da V19');
 const s=clone(defaultState);
 s.market.subject.guests=4;
 s.market.subject.beds=2;

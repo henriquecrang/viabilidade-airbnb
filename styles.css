@@ -719,3 +719,30 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 .market-suggestion-card small { color: var(--muted); }
 .market-suggestion-table { min-width: 760px; width: 100%; }
 @media (max-width:760px){ .market-suggestion-grid{grid-template-columns:1fr;} }
+
+/* V20 — estratégia ao fim do horizonte */
+.exit-strategy-switch {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 10px;
+  max-width: 760px;
+}
+.exit-strategy-option {
+  text-align: left;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+.exit-strategy-option span { color: var(--muted); font-size: .76rem; line-height: 1.35; }
+.exit-strategy-option.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.exit-strategy-option:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+@media (max-width:760px){ .exit-strategy-switch{grid-template-columns:1fr;} }

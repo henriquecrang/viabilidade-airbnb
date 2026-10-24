@@ -365,3 +365,15 @@ Para preservar o formato sazonal já configurado:
 - limites 0–100% continuam valendo.
 
 Há três ações explícitas: aplicar cenário pessimista, base ou otimista. Sem clique do usuário, nada muda na simulação.
+
+
+## V20 — política de fim do horizonte
+
+O Airbnb em imóvel alugado passa a declarar explicitamente o que acontece ao fim do horizonte:
+
+- **default calculado: renovar / continuar**;
+- **alternativa visível, ainda não calculada: encerrar a operação**.
+
+A opção de encerramento permanece desabilitada até a implementação da Issue #40, que tratará distrato, custos de saída, recuperação de caução e realização/reutilização de ativos. A mesma Issue foi desenhada para futuramente permitir estratégias de saída coerentes nos demais cenários.
+
+Enquanto isso, as projeções de 1, 3 e 5 anos assumem continuidade operacional.
