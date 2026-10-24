@@ -96,6 +96,17 @@ Concluídas em 24/10/2026 nas Issues #35 e #14.
 
 A sazonalidade intranual detalhada continua na Rodada E (#13).
 
+### V16/V19 — comparáveis e aplicação de mercado
+Epic #15 concluído em 24/10/2026.
+
+- metodologia auditável em `docs/market-methodology.md`;
+- perfil do imóvel-alvo;
+- comparáveis com filtros e score explicável;
+- P25/mediana/P75;
+- ocupação só entra com evidência adequada;
+- cenários pessimista/base/otimista;
+- aplicação explícita, sem sobrescrita silenciosa.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
