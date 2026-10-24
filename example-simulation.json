@@ -221,7 +221,8 @@
         "traditional": false,
         "adminManages": true,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "presales",
@@ -233,7 +234,8 @@
         "traditional": false,
         "adminManages": true,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "guest-support",
@@ -245,7 +247,8 @@
         "traditional": false,
         "adminManages": true,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "local-support",
@@ -257,7 +260,8 @@
         "traditional": false,
         "adminManages": true,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "software",
@@ -269,7 +273,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "pricing",
@@ -281,7 +286,8 @@
         "traditional": false,
         "adminManages": true,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "seguro",
@@ -293,7 +299,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "seguro-garantia",
@@ -305,7 +312,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "iptu",
@@ -317,7 +325,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": true
+        "deductibleIR": true,
+        "hybridIncremental": false
       },
       {
         "id": "tcl",
@@ -329,7 +338,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": true
+        "deductibleIR": true,
+        "hybridIncremental": false
       },
       {
         "id": "agua",
@@ -341,7 +351,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "luz",
@@ -353,7 +364,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "gas",
@@ -365,7 +377,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "internet",
@@ -377,7 +390,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "condominio",
@@ -389,7 +403,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": true
+        "deductibleIR": true,
+        "hybridIncremental": false
       },
       {
         "id": "contabilidade",
@@ -401,7 +416,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       },
       {
         "id": "licencas",
@@ -413,7 +429,8 @@
         "traditional": false,
         "adminManages": false,
         "adminIncluded": false,
-        "deductibleIR": false
+        "deductibleIR": false,
+        "hybridIncremental": false
       }
     ],
     "percentageCosts": [
