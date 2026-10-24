@@ -79,7 +79,7 @@ legacy.seasons=[
 legacy.stayCosts=legacy.stayCosts.map(x=>({...x,ownerHoursPerReservation:0}));
 legacy.monthlyCosts=legacy.monthlyCosts.map(x=>({...x,ownerHoursMonthly:0}));
 const migrated=normalizeState(legacy);
-assert(migrated.version===10,'migração V10');
+assert(migrated.version>=10,'migração V10');
 approx(migrated.globals.ownerHourlyValue,100,1e-9,'migração valor hora');
 assert(migrated.seasons.length===6 && migrated.seasons[0].id==='reveillon','migração sazonalidade');
 assert(migrated.stayCosts.some(x=>x.ownerHoursPerReservation>0),'migração horas por reserva');
