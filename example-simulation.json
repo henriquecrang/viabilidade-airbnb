@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 23,
+  "version": 24,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 23,
+    "version": 24,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -1085,6 +1085,19 @@
       "incrementalAirbnbCostsDeductibleIR": false,
       "incrementalAirbnbCapex": 0,
       "incrementalAirbnbCapexResidualPct": 0
+    },
+    "guidedSetup": {
+      "financial": {
+        "configured": false,
+        "applicationType": "cdb",
+        "rateKind": "nominal-gross",
+        "ratePct": 13.65,
+        "taxPct": 17.5,
+        "feesPct": 0,
+        "termMonths": 12,
+        "liquidity": "daily",
+        "role": "benchmark"
+      }
     }
   }
 }
