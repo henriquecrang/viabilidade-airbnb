@@ -14,6 +14,7 @@
     },
     guidedSetup: {
       financial: {
+        configured: false,
         applicationType: 'cdb',
         rateKind: 'nominal-gross',
         ratePct: 13.65,
@@ -428,6 +429,7 @@
     }
 
     const financialMeta = {
+      configured: true,
       applicationType,
       rateKind,
       ratePct,
@@ -2772,20 +2774,22 @@
 
   function financialWizardDraftFromState() {
     const saved = state.guidedSetup?.financial || {};
-    const inferredRateKind = saved.rateKind
-      || (state.investment.mode === 'ipcaPlus' ? 'real-gross' : 'nominal-gross');
-    const inferredRate = saved.ratePct != null
+    const useSaved = Boolean(saved.configured);
+    const inferredRateKind = useSaved && saved.rateKind
+      ? saved.rateKind
+      : (state.investment.mode === 'ipcaPlus' ? 'real-gross' : 'nominal-gross');
+    const inferredRate = useSaved && saved.ratePct != null
       ? n(saved.ratePct)
       : (inferredRateKind === 'real-gross' ? n(state.investment.realRatePct) : n(state.investment.nominalRatePct));
     return {
-      applicationType: saved.applicationType || 'other',
+      applicationType: useSaved ? (saved.applicationType || 'other') : 'other',
       rateKind: inferredRateKind,
       ratePct: inferredRate,
-      taxPct: saved.taxPct != null ? n(saved.taxPct) : n(state.investment.taxPct),
-      feesPct: saved.feesPct != null ? n(saved.feesPct) : n(state.investment.feesPct),
-      termMonths: saved.termMonths != null ? n(saved.termMonths) : 12,
-      liquidity: saved.liquidity || 'unknown',
-      role: saved.role || 'benchmark'
+      taxPct: useSaved && saved.taxPct != null ? n(saved.taxPct) : n(state.investment.taxPct),
+      feesPct: useSaved && saved.feesPct != null ? n(saved.feesPct) : n(state.investment.feesPct),
+      termMonths: useSaved && saved.termMonths != null ? n(saved.termMonths) : 12,
+      liquidity: useSaved ? (saved.liquidity || 'unknown') : 'unknown',
+      role: useSaved ? (saved.role || 'benchmark') : 'benchmark'
     };
   }
 
