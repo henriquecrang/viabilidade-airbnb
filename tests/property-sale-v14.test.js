@@ -66,7 +66,7 @@ const customMigrated=normalizeState(custom);
 approx(customMigrated.propertySale.brokeragePct,0,1e-12,'custom legado preservado');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-assert(html.includes('Capital líquido investível'),'preview capital líquido ausente');
+assert(html.includes('saleConversionPreview'),'preview capital líquido ausente');
 assert(html.includes('Saldo de financiamento a quitar'),'input financiamento ausente');
 
 console.log('V14 venda líquida: todos os testes passaram.');

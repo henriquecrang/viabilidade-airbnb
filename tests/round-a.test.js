@@ -54,10 +54,10 @@ state.investment.taxPct = 0;
 state.investment.feesPct = 0;
 calc = calculateModel(state);
 let investment = scenario(calc, 'investment');
-approx(investment.operatingCash, 120_000, 0.01, 'rendimento nominal líquido');
+approx(investment.operatingCash, 114_000, 0.01, 'rendimento nominal líquido sobre capital pós-venda');
 approx(investment.capitalPreservationAmount, 60_000, 0.01, 'preservação do capital');
-approx(investment.freeCash, 60_000, 0.01, 'caixa sustentável');
-approx(investment.realWealthCreation, 56_603.77358490566, 0.02, 'ganho real');
+approx(investment.freeCash, 4_000, 0.01, 'caixa sustentável após custo de venda');
+approx(investment.realWealthCreation, 3_773.584905660362, 0.02, 'ganho real após custo de venda');
 
 // Bloco 3: saldo inicial da reserva nunca desaparece quando a admin cobre aportes futuros.
 state = clone(defaultState);
