@@ -23,6 +23,15 @@
         termMonths: 12,
         liquidity: 'daily',
         role: 'benchmark'
+      },
+      acquisitionSale: {
+        configured: false,
+        position: 'owned',
+        availableCapital: 0,
+        purchasePrice: 636000,
+        purchaseCosts: 0,
+        workingCapitalTarget: 'airbnbSelf',
+        workingCapitalAmount: 0
       }
     },
     market: {
@@ -465,6 +474,88 @@
         liquidity,
         role,
         applicationType
+      }
+    };
+  }
+
+
+  function buildPropertyWizardPatch(draft = {}, inputState = defaultState) {
+    const position = draft.position === 'buy' ? 'buy' : 'owned';
+    const availableCapital = Math.max(0, n(draft.availableCapital));
+    const currentMarketValue = Math.max(0, n(draft.currentMarketValue, inputState?.globals?.propertyValue));
+    const purchasePrice = Math.max(0, n(draft.purchasePrice, currentMarketValue));
+    const purchaseCosts = Math.max(0, n(draft.purchaseCosts));
+    const propertyValue = position === 'buy' ? purchasePrice : currentMarketValue;
+    const workingCapitalTarget = ['airbnbSelf','airbnbAdmin','traditional'].includes(draft.workingCapitalTarget)
+      ? draft.workingCapitalTarget
+      : 'airbnbSelf';
+    const workingCapitalAmount = Math.max(0, n(draft.workingCapitalAmount));
+    const salePriceAdjustmentPct = n(draft.salePriceAdjustmentPct);
+    const brokeragePct = Math.max(0, n(draft.brokeragePct));
+    const fixedCosts = Math.max(0, n(draft.fixedCosts));
+    const mortgageBalance = Math.max(0, n(draft.mortgageBalance));
+    const capitalGainsTax = Math.max(0, n(draft.capitalGainsTax));
+    const otherCosts = Math.max(0, n(draft.otherCosts));
+
+    const setupIds = ['reforma','mobilia','eletro','enxoval','utensilios','fechadura','decoracao','fotografia','setup-anuncio','cadastros'];
+    const arrayValues = { setupCosts: {} };
+    let setupTotal = 0;
+    for (const id of setupIds) {
+      const amount = Math.max(0, n(draft[`setup_${id}`]));
+      arrayValues.setupCosts[id] = { amount };
+      setupTotal += amount;
+    }
+
+    const purchaseCapitalNeedKnown = propertyValue + purchaseCosts + setupTotal + workingCapitalAmount;
+    const purchaseFundingGap = position === 'buy' && availableCapital > 0
+      ? Math.max(0, purchaseCapitalNeedKnown - availableCapital)
+      : 0;
+
+    const meta = {
+      configured: true,
+      position,
+      availableCapital,
+      purchasePrice,
+      purchaseCosts,
+      workingCapitalTarget,
+      workingCapitalAmount,
+      purchaseEconomicsComplete: position !== 'buy',
+      modelGapIssue: position === 'buy' ? 42 : null
+    };
+
+    return {
+      valid: true,
+      errors: [],
+      values: {
+        'globals.propertyValue': propertyValue,
+        'propertySale.salePriceAdjustmentPct': salePriceAdjustmentPct,
+        'propertySale.brokeragePct': brokeragePct,
+        'propertySale.fixedCosts': fixedCosts,
+        'propertySale.mortgageBalance': mortgageBalance,
+        'propertySale.capitalGainsTax': capitalGainsTax,
+        'propertySale.otherCosts': otherCosts,
+        [`workingCapital.${workingCapitalTarget}`]: workingCapitalAmount,
+        'guidedSetup.acquisitionSale': meta
+      },
+      arrayValues,
+      normalized: {
+        position,
+        availableCapital,
+        propertyValue,
+        purchasePrice,
+        purchaseCosts,
+        setupTotal,
+        workingCapitalTarget,
+        workingCapitalAmount,
+        purchaseCapitalNeedKnown,
+        purchaseFundingGap,
+        purchaseCostsModeled: false,
+        salePriceAdjustmentPct,
+        brokeragePct,
+        fixedCosts,
+        mortgageBalance,
+        capitalGainsTax,
+        otherCosts
       }
     };
   }
@@ -2793,6 +2884,103 @@
     };
   }
 
+
+  function propertyWizardDraftFromState() {
+    const saved = state.guidedSetup?.acquisitionSale || {};
+    const useSaved = Boolean(saved.configured);
+    const getSetup = (id) => Math.max(0, n(state.setupCosts.find((x) => x.id === id)?.amount));
+    return {
+      position: useSaved ? saved.position : 'owned',
+      availableCapital: useSaved ? n(saved.availableCapital) : 0,
+      currentMarketValue: n(state.globals.propertyValue),
+      purchasePrice: useSaved ? n(saved.purchasePrice, state.globals.propertyValue) : n(state.globals.propertyValue),
+      purchaseCosts: useSaved ? n(saved.purchaseCosts) : 0,
+      workingCapitalTarget: useSaved ? (saved.workingCapitalTarget || 'airbnbSelf') : 'airbnbSelf',
+      workingCapitalAmount: useSaved ? n(saved.workingCapitalAmount) : n(state.workingCapital.airbnbSelf),
+      salePriceAdjustmentPct: n(state.propertySale.salePriceAdjustmentPct),
+      brokeragePct: n(state.propertySale.brokeragePct),
+      fixedCosts: n(state.propertySale.fixedCosts),
+      mortgageBalance: n(state.propertySale.mortgageBalance),
+      capitalGainsTax: n(state.propertySale.capitalGainsTax),
+      otherCosts: n(state.propertySale.otherCosts),
+      setup_reforma: getSetup('reforma'),
+      setup_mobilia: getSetup('mobilia'),
+      setup_eletro: getSetup('eletro'),
+      setup_enxoval: getSetup('enxoval'),
+      setup_utensilios: getSetup('utensilios'),
+      setup_fechadura: getSetup('fechadura'),
+      setup_decoracao: getSetup('decoracao'),
+      setup_fotografia: getSetup('fotografia'),
+      setup_setup_anuncio: getSetup('setup-anuncio'),
+      setup_cadastros: getSetup('cadastros')
+    };
+  }
+
+  function propertyWizardFormHtml(draft) {
+    const moneyInput = (field, label, value, help = '') => `
+      <label class="field-group"><span class="field-label">${escapeHtml(label)}</span>
+        <div class="input-prefix money-control"><span>R$</span><input data-wizard-field="${escapeAttr(field)}" type="number" min="0" step="100" value="${escapeAttr(value)}" /></div>
+        ${help ? `<small class="field-help">${escapeHtml(help)}</small>` : ''}
+      </label>`;
+    return `
+      <div class="wizard-section">
+        <h3>Posição e imóvel</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Situação que quero descrever</span>
+            <select data-wizard-field="position">
+              <option value="owned" ${draft.position==='owned'?'selected':''}>Já possuo o imóvel</option>
+              <option value="buy" ${draft.position==='buy'?'selected':''}>Tenho capital e penso em comprar</option>
+            </select>
+          </label>
+          ${moneyInput('availableCapital','Capital disponível para compra',draft.availableCapital,'Registrado para o caminho de aquisição; a comparação capital → compra depende da Issue #42.')}
+          ${moneyInput('currentMarketValue','Valor de mercado atual do imóvel',draft.currentMarketValue)}
+          ${moneyInput('purchasePrice','Preço de compra',draft.purchasePrice,'Usado como valor do imóvel quando a situação escolhida é “tenho capital”.')}
+          ${moneyInput('purchaseCosts','Custos de aquisição (ITBI, escritura, registro etc.)',draft.purchaseCosts,'Registrados, mas ainda não entram no motor econômico; rastreado na Issue #42.')}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Reforma e montagem do imóvel próprio</h3>
+        <p class="helper">Cada valor é aplicado à categoria de CAPEX já existente, preservando seu residual/depreciação.</p>
+        <div class="wizard-form-grid">
+          ${moneyInput('setup_reforma','Reforma / adaptação',draft.setup_reforma)}
+          ${moneyInput('setup_mobilia','Mobiliário',draft.setup_mobilia)}
+          ${moneyInput('setup_eletro','Eletrodomésticos',draft.setup_eletro)}
+          ${moneyInput('setup_enxoval','Enxoval inicial',draft.setup_enxoval)}
+          ${moneyInput('setup_utensilios','Utensílios e equipamentos',draft.setup_utensilios)}
+          ${moneyInput('setup_fechadura','Fechadura / acesso',draft.setup_fechadura)}
+          ${moneyInput('setup_decoracao','Decoração',draft.setup_decoracao)}
+          ${moneyInput('setup_fotografia','Fotografia',draft.setup_fotografia)}
+          ${moneyInput('setup_setup_anuncio','Setup do anúncio',draft.setup_setup_anuncio)}
+          ${moneyInput('setup_cadastros','Licenças / cadastros iniciais',draft.setup_cadastros)}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Capital de giro</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Cenário que recebe o capital de giro</span>
+            <select data-wizard-field="workingCapitalTarget">
+              <option value="airbnbSelf" ${draft.workingCapitalTarget==='airbnbSelf'?'selected':''}>Airbnb próprio</option>
+              <option value="airbnbAdmin" ${draft.workingCapitalTarget==='airbnbAdmin'?'selected':''}>Airbnb com administradora</option>
+              <option value="traditional" ${draft.workingCapitalTarget==='traditional'?'selected':''}>Aluguel tradicional</option>
+            </select>
+          </label>
+          ${moneyInput('workingCapitalAmount','Capital de giro vinculado',draft.workingCapitalAmount)}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Venda / conversão em capital líquido</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Ajuste do preço esperado de venda</span><div class="input-suffix compact-control"><input data-wizard-field="salePriceAdjustmentPct" type="number" step="0.1" value="${escapeAttr(draft.salePriceAdjustmentPct)}" /><span>%</span></div></label>
+          <label class="field-group"><span class="field-label">Corretagem</span><div class="input-suffix compact-control"><input data-wizard-field="brokeragePct" type="number" min="0" step="0.1" value="${escapeAttr(draft.brokeragePct)}" /><span>%</span></div></label>
+          ${moneyInput('fixedCosts','Custos/documentação da venda',draft.fixedCosts)}
+          ${moneyInput('mortgageBalance','Saldo de financiamento a quitar',draft.mortgageBalance)}
+          ${moneyInput('capitalGainsTax','IR estimado sobre ganho de capital',draft.capitalGainsTax)}
+          ${moneyInput('otherCosts','Outros custos de liquidação',draft.otherCosts)}
+        </div>
+      </div>
+      <div class="concept-note"><strong>Limite atual:</strong> a venda líquida já afeta o benchmark financeiro. No caminho “tenho capital e penso em comprar”, preço, CAPEX e capital de giro podem ser aplicados, mas capital disponível e custos de aquisição ainda não entram no cálculo; essa modelagem está registrada na Issue #42.</div>`;
+  }
+
   function financialWizardFormHtml(draft) {
     return `
       <div class="wizard-form-grid">
@@ -2863,10 +3051,27 @@
     $('#wizardDialog').showModal();
   }
 
+
+  function openPropertyWizard() {
+    activeWizard = 'property';
+    activeWizardPatch = null;
+    const draft = propertyWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Aquisição e venda do imóvel';
+    $('#wizardDescription').textContent = 'Organize preço, CAPEX, capital de giro e premissas de venda sem criar custos ocultos.';
+    $('#wizardBody').innerHTML = propertyWizardFormHtml(draft);
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
   function reviewActiveWizard() {
-    if (activeWizard !== 'financial') return;
     const draft = readWizardDraft();
-    const patch = buildFinancialWizardPatch(draft, state);
+    const patch = activeWizard === 'financial'
+      ? buildFinancialWizardPatch(draft, state)
+      : activeWizard === 'property'
+        ? buildPropertyWizardPatch(draft, state)
+        : null;
+    if (!patch) return;
     activeWizardPatch = patch;
     const preview = $('#wizardPreview');
     if (!patch.valid) {
@@ -2876,6 +3081,29 @@
       return;
     }
     $('#wizardApplyButton').disabled = false;
+
+    if (activeWizard === 'property') {
+      const x = patch.normalized;
+      const purchaseWarning = x.position === 'buy'
+        ? `<li class="wizard-warning"><strong>Atenção:</strong> ${money.format(x.purchaseCosts)} de custos de aquisição e o capital disponível ficam registrados, mas ainda não entram no resultado econômico. A lacuna está na Issue #42.</li>`
+        : '';
+      const gapLine = x.position === 'buy' && x.availableCapital > 0
+        ? `<li>Necessidade conhecida (antes da modelagem dos custos de compra): <strong>${money.format(x.purchaseCapitalNeedKnown)}</strong>; diferença vs. capital informado: <strong>${money.format(x.purchaseFundingGap)}</strong>.</li>`
+        : '';
+      preview.innerHTML = `
+        <h3>Revise antes de aplicar</h3>
+        <ul class="wizard-change-list">
+          <li>Valor do imóvel aplicado ao motor: <strong>${money.format(x.propertyValue)}</strong>.</li>
+          <li>CAPEX inicial distribuído nas categorias existentes: <strong>${money.format(x.setupTotal)}</strong>.</li>
+          <li>Capital de giro: <strong>${money.format(x.workingCapitalAmount)}</strong> em <strong>${escapeHtml(x.workingCapitalTarget)}</strong>.</li>
+          <li>Venda: ajuste ${number1.format(x.salePriceAdjustmentPct)}% · corretagem ${number1.format(x.brokeragePct)}% · custos fixos ${money.format(x.fixedCosts)} · financiamento ${money.format(x.mortgageBalance)} · IR ${money.format(x.capitalGainsTax)} · outros ${money.format(x.otherCosts)}.</li>
+          ${gapLine}
+          ${purchaseWarning}
+        </ul>`;
+      setWizardReviewMode(true);
+      return;
+    }
+
     const x = patch.normalized;
     const rateLine = x.mode === 'ipcaPlus'
       ? `Inflação + <strong>${number1.format(x.realRatePct)}%</strong> real bruto a.a.`
@@ -2908,6 +3136,7 @@
 
   function bindWizards() {
     $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
+    $('#openPropertyWizard')?.addEventListener('click', openPropertyWizard);
     $('#wizardReviewButton')?.addEventListener('click', reviewActiveWizard);
     $('#wizardBackButton')?.addEventListener('click', () => setWizardReviewMode(false));
     $('#wizardApplyButton')?.addEventListener('click', applyActiveWizard);
@@ -2943,7 +3172,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildFinancialWizardPatch, applyWizardPatch
+    buildFinancialWizardPatch, buildPropertyWizardPatch, applyWizardPatch
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
