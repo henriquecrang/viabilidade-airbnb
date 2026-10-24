@@ -447,3 +447,22 @@ A evidência detalhada está em `docs/base-property-market-evidence-2026-10.md`.
 ```bash
 node tests/market-evidence-v23.test.js
 ```
+
+
+## V24 — configuração guiada do benchmark financeiro
+
+A primeira camada de onboarding guiado (#25) foi adicionada sem criar um segundo motor econômico.
+
+- o wizard pergunta tipo de aplicação, forma da taxa, IR, custos, prazo, liquidez e papel na análise;
+- prazo, liquidez, tipo e papel são guardados como metadados auditáveis, sem penalidades implícitas;
+- taxas nominais brutas são aplicadas diretamente ao motor existente;
+- taxas reais brutas usam o modo inflação + taxa real já existente;
+- taxas nominais líquidas são convertidas para a taxa bruta equivalente antes da aplicação, evitando dupla cobrança de IR/custos;
+- toda alteração passa por uma etapa explícita de revisão antes de ser aplicada;
+- os campos detalhados continuam visíveis e editáveis depois do wizard.
+
+Teste específico:
+
+```bash
+node tests/financial-wizard-v24.test.js
+```
