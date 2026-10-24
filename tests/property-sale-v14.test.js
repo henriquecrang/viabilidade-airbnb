@@ -10,7 +10,7 @@ const scenario=(c,id)=>c.scenarios.find(x=>x.id===id);
 function assert(c,m){ if(!c) throw new Error(m); }
 function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esperado ${b}, obtido ${a}`); }
 
-assert(defaultState.version===14,'venda líquida deve estar na V14');
+assert(defaultState.version>=14,'estado deve preservar a modelagem V14 de venda líquida');
 assert(defaultState.analysis.startingPosition==='property','default parte de imóvel já possuído');
 approx(defaultState.propertySale.brokeragePct,5,1e-12,'corretagem default');
 

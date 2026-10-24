@@ -269,3 +269,24 @@ A corretagem é editável. O CRECI-RJ informa que a remuneração é de livre ne
 
 ### Limitação atual
 Se houver saldo de financiamento, ele é quitado na conversão para caixa. Os cenários que mantêm o imóvel ainda não modelam juros e amortização da dívida; o aplicativo gera um alerta para essa assimetria.
+
+
+## V15 — CAPEX específico do Airbnb alugado
+
+O cenário de imóvel alugado passa a ter valores de montagem próprios, separados do CAPEX do imóvel que o usuário já possui.
+
+Default para um 1 quarto e sala **não mobiliado**:
+- adequação / frete / montagem: R$ 2.500;
+- mobiliário: R$ 6.000;
+- eletrodomésticos, dois splits e instalações: R$ 12.500;
+- enxoval: R$ 1.800;
+- utensílios/equipamentos: R$ 1.500;
+- fechadura/acesso: R$ 600;
+- decoração: R$ 1.500;
+- fotografia: R$ 700.
+
+Total: **R$ 27.100**.
+
+Se o imóvel vier **mobiliado**, mobiliário, eletrodomésticos e decoração são retirados automaticamente; permanecem R$ 7.100 em adequação/complementação operacional por default.
+
+Referências de varejo consultadas em outubro/2026 incluem Magazine Luiza para cama box, sofá-cama/retrátil, geladeira ~300 L, TV 43", lavadora 11 kg, cooktop, split 12 mil BTU, mesa com 4 cadeiras e guarda-roupa. Os valores são premissas centrais editáveis, não orçamento fechado de compra.

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 14;
+  const APP_VERSION = 15;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -128,16 +128,16 @@
       { id: 'replacement', name: 'Fundo de reposição de móveis e equipamentos', pct: 1, openingBalance: 0, adminIncluded: false }
     ],
     setupCosts: [
-      { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'mobilia', name: 'Mobiliário', amount: 0, residualPct: 40, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'eletro', name: 'Eletrodomésticos', amount: 0, residualPct: 35, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'enxoval', name: 'Roupa de cama e banho inicial', amount: 0, residualPct: 10, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'utensilios', name: 'Utensílios e equipamentos', amount: 0, residualPct: 20, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'fechadura', name: 'Fechadura eletrônica / acesso', amount: 0, residualPct: 30, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'decoracao', name: 'Decoração', amount: 0, residualPct: 25, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'fotografia', name: 'Fotografia profissional', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'setup-anuncio', name: 'Setup inicial do anúncio', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
-      { id: 'cadastros', name: 'Licenças / cadastros iniciais', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }
+      { id: 'reforma', name: 'Reforma / adaptação inicial', amount: 0, rentedAmount: 2500, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'mobilia', name: 'Mobiliário', amount: 0, rentedAmount: 6000, residualPct: 40, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'eletro', name: 'Eletrodomésticos', amount: 0, rentedAmount: 12500, residualPct: 35, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'enxoval', name: 'Roupa de cama e banho inicial', amount: 0, rentedAmount: 1800, residualPct: 10, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'utensilios', name: 'Utensílios e equipamentos', amount: 0, rentedAmount: 1500, residualPct: 20, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'fechadura', name: 'Fechadura eletrônica / acesso', amount: 0, rentedAmount: 600, residualPct: 30, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'decoracao', name: 'Decoração', amount: 0, rentedAmount: 1500, residualPct: 25, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: true, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'fotografia', name: 'Fotografia profissional', amount: 0, rentedAmount: 700, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'setup-anuncio', name: 'Setup inicial do anúncio', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true },
+      { id: 'cadastros', name: 'Licenças / cadastros iniciais', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }
     ]
   };
 
@@ -276,6 +276,7 @@
       return {
         ...item,
         residualPct: clamp(n(item.residualPct, defaultItem?.residualPct ?? 0), 0, 100),
+        rentedAmount: Math.max(0, n(item.rentedAmount, item.amount)),
         airbnb: item.airbnb !== false,
         rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
         rentedOnlyIfUnfurnished: item.rentedOnlyIfUnfurnished == null
@@ -456,6 +457,29 @@
       }
     }
 
+    // V15: o cenário-base passa a ter CAPEX específico para montar um
+    // imóvel alugado vazio. Arquivos customizados anteriores preservam a
+    // semântica antiga: se não tinham rentedAmount, usam o próprio amount.
+    if (incomingVersion < 15) {
+      const looksLikeV14Base = incomingVersion === 14
+        && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+        && n(source.globals?.propertyValue) === 636000
+        && source.analysis?.startingPosition === 'property'
+        && source.rentedAirbnb?.furnished === false
+        && Array.isArray(source.setupCosts)
+        && source.setupCosts.every((x) => n(x.amount) === 0 && x.rentedAmount == null);
+      if (looksLikeV14Base) {
+        const defaultsById = new Map(defaultState.setupCosts.map((x) => [String(x.id), x]));
+        merged.setupCosts.forEach((x) => {
+          const def = defaultsById.get(String(x.id));
+          if (def) {
+            x.rentedAmount = def.rentedAmount;
+            x.rentedOnlyIfUnfurnished = def.rentedOnlyIfUnfurnished;
+          }
+        });
+      }
+    }
+
     merged.version = APP_VERSION;
     return merged;
   }
@@ -593,13 +617,17 @@
 
   function renderSetupCosts() {
     $('#setupCostRows').innerHTML = state.setupCosts.map((item) => {
-      const residualValue = Math.max(0, n(item.amount)) * clamp(n(item.residualPct), 0, 100) / 100;
+      const residualPct = clamp(n(item.residualPct), 0, 100);
+      const residualValue = Math.max(0, n(item.amount)) * residualPct / 100;
+      const rentedResidualValue = Math.max(0, n(item.rentedAmount, item.amount)) * residualPct / 100;
       return `
       <tr>
         <td><input class="row-name" data-array="setupCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
         <td><input data-array="setupCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="50" value="${n(item.amount)}" /></td>
-        <td><input data-array="setupCosts" data-field="residualPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.residualPct)}" /></td>
+        <td><input data-array="setupCosts" data-field="rentedAmount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="50" value="${n(item.rentedAmount, item.amount)}" aria-label="Valor específico no Airbnb alugado" /></td>
+        <td><input data-array="setupCosts" data-field="residualPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${residualPct}" /></td>
         <td class="money-cell">${money.format(residualValue)}</td>
+        <td class="money-cell">${money.format(rentedResidualValue)}</td>
         <td class="center-cell"><input data-array="setupCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="rentedOnlyIfUnfurnished" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedOnlyIfUnfurnished ? 'checked' : ''} ${item.rentedAirbnb ? '' : 'disabled'} aria-label="Aplicar ao cenário alugado apenas se não mobiliado" /></td>
@@ -664,7 +692,7 @@
   function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
-  function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
+  function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
   function refreshDynamic() { autosave(); renderDynamicTables(); calculateAndRender(); }
 
   function calculateModel(inputState = state) {
@@ -804,9 +832,9 @@
     const adminTax = adminTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
     const adminOperatingCash = adminAirbnbRevenue - adminOperatingCosts - adminTax;
 
-    const setupFor = (predicate) => currentState.setupCosts.reduce((acc, x) => {
+    const setupFor = (predicate, amountSelector = (x) => x.amount) => currentState.setupCosts.reduce((acc, x) => {
       if (!predicate(x)) return acc;
-      const amount = Math.max(0, n(x.amount));
+      const amount = Math.max(0, n(amountSelector(x)));
       const residualValue = amount * clamp(n(x.residualPct), 0, 100) / 100;
       acc.capex += amount;
       acc.residual += residualValue;
@@ -823,7 +851,10 @@
       if (x.adminAssetBelongsToOwner) acc.residual += residualValue;
       return acc;
     }, { capex: 0, residual: 0, paidByAdmin: 0 });
-    const rentedSetupData = setupFor((x) => x.rentedAirbnb && (!currentState.rentedAirbnb.furnished || !x.rentedOnlyIfUnfurnished));
+    const rentedSetupData = setupFor(
+      (x) => x.rentedAirbnb && (!currentState.rentedAirbnb.furnished || !x.rentedOnlyIfUnfurnished),
+      (x) => x.rentedAmount
+    );
     const traditionalSetupData = setupFor((x) => x.traditional);
     const selfSetup = selfSetupData.capex;
     const adminOnboarding = Math.max(0, n(currentState.airbnb.adminOnboardingFee));
