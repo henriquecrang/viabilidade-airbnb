@@ -222,3 +222,17 @@ Referências:
 - Inmetro — condicionadores de ar: https://www.gov.br/inmetro/pt-br/assuntos/regulamentacao/avaliacao-da-conformidade/programa-brasileiro-de-etiquetagem/tabelas-de-eficiencia-energetica/condicionadores-de-ar
 
 A migração V11 → V12 só altera automaticamente o antigo cenário-base quando água, luz e gás ainda conservam exatamente os defaults anteriores.
+
+
+## V13 — IPTU e TCL do imóvel-base
+
+O cenário-base passa a refletir o imóvel específico usado na calibração:
+
+- **Rua Maestro Francisco Braga, 76, apto 405, Copacabana**
+- inscrição imobiliária **0916633-1**
+- IPTU: **R$ 0**, em razão da isenção/cobrança suspensa registrada no carnê;
+- TCL — Taxa de Coleta Domiciliar de Lixo: **R$ 625/ano** em 2026, equivalente a R$ 52,0833/mês no motor.
+
+O carnê municipal de 2026 registra 10 cotas de R$ 62,50 e cota única de R$ 581,25 com 7% de desconto. A Prefeitura identifica a TCL como taxa anual de coleta, recolhimento, transporte e destinação de resíduos, lançada junto com o IPTU.
+
+A TCL fica separada do IPTU no modelo e não é atribuída por default ao locatário do cenário de Airbnb alugado.

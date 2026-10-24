@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 12,
+  "version": 13,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 12,
+    "version": 13,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -264,7 +264,19 @@
       {
         "id": "iptu",
         "name": "IPTU",
-        "amount": 50,
+        "amount": 0,
+        "ownerHoursMonthly": 0,
+        "airbnb": true,
+        "rentedAirbnb": false,
+        "traditional": false,
+        "adminManages": false,
+        "adminIncluded": false,
+        "deductibleIR": true
+      },
+      {
+        "id": "tcl",
+        "name": "TCL — coleta de lixo (R$ 625/ano)",
+        "amount": 52.083333333333336,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": false,

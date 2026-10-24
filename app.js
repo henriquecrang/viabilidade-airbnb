@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 12;
+  const APP_VERSION = 13;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -102,7 +102,8 @@
       { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 1.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
       { id: 'seguro', name: 'Seguro do imóvel / incêndio', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'seguro-garantia', name: 'Seguro-fiança / garantia locatícia', amount: 0, ownerHoursMonthly: 0, airbnb: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'iptu', name: 'IPTU', amount: 50, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'iptu', name: 'IPTU', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'tcl', name: 'TCL — coleta de lixo (R$ 625/ano)', amount: 625 / 12, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
       { id: 'agua', name: 'Água + esgoto', amount: 200, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'luz', name: 'Energia elétrica', amount: 400, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
       { id: 'gas', name: 'Gás', amount: 100, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
@@ -402,6 +403,23 @@
       }
     }
 
+    // V13: calibração específica do imóvel-base da Rua Maestro Francisco Braga.
+    // O IPTU é isento e permanece apenas a TCL anual de R$ 625.
+    const sourceMonthlyByIdV13 = new Map((Array.isArray(source.monthlyCosts) ? source.monthlyCosts : []).map((x) => [String(x.id), x]));
+    const looksLikeV12PropertyDefault = incomingVersion === 12
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && n(source.globals?.propertyValue) === 636000
+      && sourceMonthlyByIdV13.get('iptu')?.amount === 50
+      && !sourceMonthlyByIdV13.has('tcl');
+    if (looksLikeV12PropertyDefault) {
+      const iptu = merged.monthlyCosts.find((x) => String(x.id) === 'iptu');
+      if (iptu) iptu.amount = 0;
+      const tcl = defaultState.monthlyCosts.find((x) => String(x.id) === 'tcl');
+      if (tcl && !merged.monthlyCosts.some((x) => String(x.id) === 'tcl')) {
+        merged.monthlyCosts.push(structuredCloneSafe(tcl));
+      }
+    }
+
     merged.version = APP_VERSION;
     return merged;
   }
@@ -502,7 +520,7 @@
     $('#monthlyCostRows').innerHTML = state.monthlyCosts.map((item) => `
       <tr>
         <td><input class="row-name" data-array="monthlyCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
-        <td><input data-array="monthlyCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.amount)}" /></td>
+        <td><input data-array="monthlyCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.01" value="${Number(n(item.amount).toFixed(2))}" /></td>
         <td><input data-array="monthlyCosts" data-field="ownerHoursMonthly" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.ownerHoursMonthly)}" aria-label="Horas suas por mês" /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>

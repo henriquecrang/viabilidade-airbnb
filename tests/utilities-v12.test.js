@@ -9,7 +9,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){ if(!c) throw new Error(m); }
 function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esperado ${b}, obtido ${a}`); }
 
-assert(defaultState.version===12,'utilities devem estar na V12');
+assert(defaultState.version>=12,'estado deve preservar a calibração V12 de utilities');
 const byId=new Map(defaultState.monthlyCosts.map(x=>[x.id,x]));
 approx(byId.get('agua').amount,200,1e-9,'água + esgoto');
 approx(byId.get('gas').amount,100,1e-9,'gás');
