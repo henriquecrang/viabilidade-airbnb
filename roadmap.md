@@ -83,6 +83,19 @@ O cenário-base parte de alguém que já possui o imóvel. O benchmark financeir
 
 Default de corretagem: 5%, editável.
 
+### V17/V18 — horizontes e timing de aportes
+Concluídas em 24/10/2026 nas Issues #35 e #14.
+
+- comparação 1/3/5 anos;
+- horizonte principal default de 5 anos;
+- CAPEX e venda entram uma única vez;
+- inflação e valorização compostas;
+- aportes para déficits entram no mês em que são necessários;
+- capital de giro automático = maior déficit acumulado;
+- benchmark considera o tempo efetivo de cada aporte.
+
+A sazonalidade intranual detalhada continua na Rodada E (#13).
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
