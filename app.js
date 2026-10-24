@@ -274,6 +274,7 @@
         ...item,
         ownerHoursMonthly: Math.max(0, n(item.ownerHoursMonthly, def?.ownerHoursMonthly ?? 0)),
         airbnb: item.airbnb !== false,
+        hybridIncremental: Boolean(item.hybridIncremental),
         rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
         traditional: Boolean(item.traditional),
         adminManages: Boolean(item.adminManages),
@@ -677,6 +678,7 @@
         <td><input data-array="monthlyCosts" data-field="amount" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.01" value="${Number(n(item.amount).toFixed(2))}" /></td>
         <td><input data-array="monthlyCosts" data-field="ownerHoursMonthly" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.ownerHoursMonthly)}" aria-label="Horas suas por mês" /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="airbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.airbnb ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="hybridIncremental" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.hybridIncremental ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} aria-label="Custo incremental no uso híbrido" /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="adminManages" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminManages ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
@@ -976,7 +978,7 @@
 
   function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
   function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
-  function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, hybridIncremental: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
   function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
@@ -1253,15 +1255,21 @@
         + Math.max(0, n(hybridConfig.storageAnnualCost))
         + Math.max(0, n(hybridConfig.otherIncrementalAnnualCost))
       : 0;
+    const hybridMonthlyCosts = hybridActive
+      ? currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.hybridIncremental ? Math.max(0, n(x.amount)) * 12 : 0), 0)
+      : 0;
+    const hybridMonthlyTaxDeductions = hybridActive
+      ? currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.hybridIncremental && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0)
+      : 0;
     const hybridAirbnbRevenue = hybridActive ? airbnbRevenue : 0;
     const hybridVariableOperatingCosts = hybridActive
-      ? platformFee + selfStayCosts + selfPctCosts + hybridExplicitAnnualCosts
+      ? platformFee + selfStayCosts + selfPctCosts + hybridMonthlyCosts + hybridExplicitAnnualCosts
       : 0;
     const hybridExplicitTaxDeduction = hybridActive && hybridConfig.incrementalAirbnbCostsDeductibleIR
       ? hybridExplicitAnnualCosts
       : 0;
     const hybridTaxDeductions = hybridActive
-      ? selfPlatformTaxDeduction + selfStayTaxDeductions + selfPctTaxDeductions + hybridExplicitTaxDeduction
+      ? selfPlatformTaxDeduction + selfStayTaxDeductions + selfPctTaxDeductions + hybridMonthlyTaxDeductions + hybridExplicitTaxDeduction
       : 0;
     const hybridTaxBase = Math.max(0, hybridAirbnbRevenue - hybridTaxDeductions);
     const hybridTax = hybridTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
@@ -1742,7 +1750,8 @@
         active: hybridActive,
         airbnbRevenue: hybridAirbnbRevenue,
         variableOperatingCosts: hybridVariableOperatingCosts,
-        fixedCostsExcluded: fixedAirbnb,
+        incrementalMonthlyCosts: hybridMonthlyCosts,
+        fixedCostsExcluded: Math.max(0, fixedAirbnb - hybridMonthlyCosts),
         taxDeductions: hybridTaxDeductions,
         taxBase: hybridTaxBase,
         tax: hybridTax,
