@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 8;
+  const APP_VERSION = 9;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -17,6 +17,12 @@
       inflationPct: 4.3,
       propertyRealAppreciationPct: 0,
       ownerHourlyValue: 0
+    },
+    workingCapital: {
+      airbnbSelf: 0,
+      airbnbAdmin: 0,
+      rentedAirbnb: 0,
+      traditional: 0
     },
     work: {
       selfHoursMonthly: 0,
@@ -38,7 +44,7 @@
       adminOccupancyImpactPp: 0,
       adminIncludesPlatformFee: false,
       platformFeeDeductibleIR: true,
-      adminFeeDeductibleIR: false,
+      adminFeeDeductibleIR: true,
       adminMonthlyFeeDeductibleIR: false
     },
     rentedAirbnb: {
@@ -58,7 +64,7 @@
       newLeaseCommissionMonths: 1,
       avgContractMonths: 30,
       annualOtherCosts: 0,
-      managementFeeDeductibleIR: false,
+      managementFeeDeductibleIR: true,
       maintenanceDeductibleIR: false,
       lossDeductibleIR: false,
       newLeaseCommissionDeductibleIR: false,
@@ -304,6 +310,11 @@
     merged.setupCosts.forEach((item) => {
       if (Object.prototype.hasOwnProperty.call(item, 'adminIncluded')) delete item.adminIncluded;
     });
+
+    // V9 / Rodada C: capital de giro manual é patrimônio vinculado por estratégia.
+    for (const key of ['airbnbSelf', 'airbnbAdmin', 'rentedAirbnb', 'traditional']) {
+      merged.workingCapital[key] = Math.max(0, n(merged.workingCapital[key], 0));
+    }
 
     merged.version = APP_VERSION;
     return merged;
@@ -554,20 +565,27 @@
     const accommodationRevenue = seasonDetails.reduce((sum, x) => sum + x.revenue, 0);
     const weightedOccupancy = availableDays > 0 ? occupiedNights / availableDays : 0;
     const calendarOccupancy = totalDays > 0 ? occupiedNights / totalDays : 0;
-    const adr = occupiedNights > 0 ? accommodationRevenue / occupiedNights : 0;
+    const averageNightlyRate = occupiedNights > 0 ? accommodationRevenue / occupiedNights : 0;
+    const adr = averageNightlyRate; // alias legado: ADR de diárias, sem taxas por reserva
     const revPar = availableDays > 0 ? accommodationRevenue / availableDays : 0;
     const avgStay = Math.max(0.1, n(currentState.airbnb.avgStayNights, 1));
     const reservations = occupiedNights / avgStay;
     const guestFeeRevenue = reservations * (Math.max(0, n(currentState.airbnb.cleaningFeeRevenue)) + Math.max(0, n(currentState.airbnb.otherGuestFeeRevenue)));
     const airbnbRevenue = accommodationRevenue + guestFeeRevenue;
+    const totalAdr = occupiedNights > 0 ? airbnbRevenue / occupiedNights : 0;
+    const totalRevPar = availableDays > 0 ? airbnbRevenue / availableDays : 0;
 
     const adminOccupiedNights = adminSeasonDetails.reduce((sum, x) => sum + x.occupiedNights, 0);
     const adminAccommodationRevenue = adminSeasonDetails.reduce((sum, x) => sum + x.revenue, 0);
     const adminWeightedOccupancy = availableDays > 0 ? adminOccupiedNights / availableDays : 0;
-    const adminAdr = adminOccupiedNights > 0 ? adminAccommodationRevenue / adminOccupiedNights : 0;
+    const adminAverageNightlyRate = adminOccupiedNights > 0 ? adminAccommodationRevenue / adminOccupiedNights : 0;
+    const adminAdr = adminAverageNightlyRate;
     const adminReservations = adminOccupiedNights / avgStay;
     const adminGuestFeeRevenue = adminReservations * (Math.max(0, n(currentState.airbnb.cleaningFeeRevenue)) + Math.max(0, n(currentState.airbnb.otherGuestFeeRevenue)));
     const adminAirbnbRevenue = adminAccommodationRevenue + adminGuestFeeRevenue;
+    const adminTotalAdr = adminOccupiedNights > 0 ? adminAirbnbRevenue / adminOccupiedNights : 0;
+    const adminRevPar = availableDays > 0 ? adminAccommodationRevenue / availableDays : 0;
+    const adminTotalRevPar = availableDays > 0 ? adminAirbnbRevenue / availableDays : 0;
 
     const stayCostPerReservation = currentState.stayCosts.reduce((sum, x) => sum + Math.max(0, n(x.amount)), 0);
     const selfStayCosts = reservations * stayCostPerReservation;
@@ -750,6 +768,13 @@
     };
     const workCost = Object.fromEntries(Object.entries(workHours).map(([key, hours]) => [key, hours * hourlyValue]));
 
+    const workingCapital = {
+      self: Math.max(0, n(currentState.workingCapital.airbnbSelf)),
+      admin: Math.max(0, n(currentState.workingCapital.airbnbAdmin)),
+      rented: Math.max(0, n(currentState.workingCapital.rentedAirbnb)),
+      traditional: Math.max(0, n(currentState.workingCapital.traditional))
+    };
+
     const propertyEndValue = propertyValue * (1 + nominalPropertyAppreciation);
     const propertyInflationPreservation = propertyValue * inflation;
     const propertyNominalGain = propertyEndValue - propertyValue;
@@ -769,17 +794,20 @@
         economicRealWealthCreation: scenario.realWealthCreation - Math.max(0, n(scenario.laborCost)),
         benchmarkEconomicRealGain: benchmark.realWealthCreation - workCost.investment,
         economicGapVsBenchmark: (scenario.realWealthCreation - Math.max(0, n(scenario.laborCost)))
-          - (benchmark.realWealthCreation - workCost.investment)
+          - (benchmark.realWealthCreation - workCost.investment),
+        monthlyEquivalentExcess: scenario.nominalExcessOverPreservation / 12,
+        monthlyEquivalentFreeCash: scenario.freeCash / 12
       };
     };
 
-    const makePropertyScenario = ({ id, label, grossRevenue, opCosts, tax, operatingCash, reserveContribution = 0, reserveOpening = 0, linkedReserve = 0, capex = 0, setupResidual = 0, setupDepreciation = 0, laborCost = 0, workHoursAnnual = 0, details = {} }) => {
+    const makePropertyScenario = ({ id, label, grossRevenue, opCosts, tax, operatingCash, reserveContribution = 0, reserveOpening = 0, linkedReserve = 0, workingCapitalAmount = 0, capex = 0, setupResidual = 0, setupDepreciation = 0, laborCost = 0, workHoursAnnual = 0, details = {} }) => {
       const freeCash = operatingCash - reserveContribution;
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
-      const baseInitialCapital = propertyValue + capex + reserveOpening;
+      const workingCapitalValue = Math.max(0, n(workingCapitalAmount));
+      const baseInitialCapital = propertyValue + capex + reserveOpening + workingCapitalValue;
       const initialCapital = baseInitialCapital + externalFundingRequired;
-      const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve;
+      const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue;
       const wealthCreation = endNetWorth - initialCapital;
       const inflationFactor = 1 + inflation;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
@@ -792,7 +820,8 @@
       const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
       return enrichScenarioWithBenchmark({
         id, label, grossRevenue, opCosts, tax, operatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve,
-        tiedCapital: linkedReserve, freeCash, netCash: freeCash, distributableCash, externalFundingRequired,
+        workingCapital: workingCapitalValue, tiedCapital: linkedReserve + workingCapitalValue,
+        freeCash, netCash: freeCash, distributableCash, externalFundingRequired,
         monthlyNet: freeCash / 12, capex, setupResidual, setupDepreciation, firstYearCash: freeCash - capex,
         laborCost, workHoursAnnual, economicResult: freeCash - laborCost, firstYearEconomic: freeCash - capex - laborCost,
         baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
@@ -807,10 +836,11 @@
       const freeCash = rentedOperatingCash - reserveContribution;
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
-      const baseInitialCapital = rentedSetup + reserveOpening + rentedSecurityDeposit;
+      const workingCapitalValue = workingCapital.rented;
+      const baseInitialCapital = rentedSetup + reserveOpening + rentedSecurityDeposit + workingCapitalValue;
       const initialCapital = baseInitialCapital + externalFundingRequired;
-      const tiedCapital = linkedReserve + rentedSecurityDeposit;
-      const endNetWorth = rentedSetupResidual + distributableCash + linkedReserve + rentedSecurityDeposit;
+      const tiedCapital = linkedReserve + rentedSecurityDeposit + workingCapitalValue;
+      const endNetWorth = rentedSetupResidual + distributableCash + linkedReserve + rentedSecurityDeposit + workingCapitalValue;
       const wealthCreation = endNetWorth - initialCapital;
       const inflationFactor = 1 + inflation;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
@@ -821,7 +851,8 @@
       const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
       return enrichScenarioWithBenchmark({
         id: 'airbnb-rented', label: 'Airbnb em imóvel alugado', grossRevenue: airbnbRevenue, opCosts: rentedOperatingCosts, tax: rentedTax,
-        operatingCash: rentedOperatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve, tiedCapital,
+        operatingCash: rentedOperatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve,
+        workingCapital: workingCapitalValue, tiedCapital,
         freeCash, netCash: freeCash, distributableCash, externalFundingRequired, monthlyNet: freeCash / 12,
         capex: rentedSetup, setupResidual: rentedSetupResidual, setupDepreciation: rentedSetupDepreciation,
         firstYearCash: freeCash - rentedSetup, laborCost: workCost.rented, workHoursAnnual: workHours.rented,
@@ -836,6 +867,10 @@
           'Aluguel pago ao proprietário': rentedLeaseRent,
           'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts,
           'Taxa da plataforma': platformFee,
+          'Diária média das noites vendidas': averageNightlyRate,
+          'ADR total': totalAdr,
+          'RevPAR de diárias': revPar,
+          'RevPAR total': totalRevPar,
           'Custos por reservas': selfStayCosts,
           'Custos mensais da operação': fixedRentedAirbnb,
           'OPEX percentual': selfPctCosts,
@@ -845,6 +880,7 @@
           'Caixa antes das reservas': rentedOperatingCash,
           'Aporte às reservas vinculadas': reserveContribution,
           'Caução/garantia reembolsável': rentedSecurityDeposit,
+          'Capital de giro vinculado': workingCapitalValue,
           'Capital vinculado final': tiedCapital,
           'CAPEX + custos iniciais do contrato': rentedSetup,
           'Valor residual do CAPEX': rentedSetupResidual,
@@ -861,13 +897,16 @@
     const self = makePropertyScenario({
       id: 'airbnb-self', label: 'Airbnb autogerido', grossRevenue: airbnbRevenue, opCosts: selfOperatingCosts, tax: selfTax,
       operatingCash: selfOperatingCash, reserveContribution: selfReserveContribution, reserveOpening, linkedReserve: selfLinkedReserveEnd,
-      capex: selfSetup, setupResidual: selfSetupResidual, setupDepreciation: selfSetupDepreciation, laborCost: workCost.self, workHoursAnnual: workHours.self,
+      workingCapitalAmount: workingCapital.self, capex: selfSetup, setupResidual: selfSetupResidual, setupDepreciation: selfSetupDepreciation, laborCost: workCost.self, workHoursAnnual: workHours.self,
       details: {
         'Receita de diárias': accommodationRevenue, 'Taxas cobradas do hóspede': guestFeeRevenue,
         'Taxa da plataforma': platformFee, 'Custos por reservas': selfStayCosts, 'Custos mensais': fixedAirbnb,
         'OPEX percentual': selfPctCosts, 'Deduções consideradas na base de IR': selfTaxDeductions,
         'Base tributável estimada': selfTaxBase, 'IR estimado': selfTax, 'Caixa antes das reservas': selfOperatingCash,
         'Aporte às reservas vinculadas': selfReserveContribution, 'Reserva vinculada final': selfLinkedReserveEnd,
+        'Capital de giro vinculado': workingCapital.self,
+        'Diária média das noites vendidas': averageNightlyRate, 'ADR total': totalAdr,
+        'RevPAR de diárias': revPar, 'RevPAR total': totalRevPar,
         'CAPEX inicial': selfSetup, 'Valor residual do CAPEX': selfSetupResidual, 'Depreciação econômica do CAPEX': selfSetupDepreciation,
         'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
         'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
@@ -878,7 +917,7 @@
     const admin = makePropertyScenario({
       id: 'airbnb-admin', label: 'Airbnb com administradora', grossRevenue: adminAirbnbRevenue, opCosts: adminOperatingCosts, tax: adminTax,
       operatingCash: adminOperatingCash, reserveContribution: adminReserveContribution, reserveOpening: adminReserveOpening, linkedReserve: adminLinkedReserveEnd,
-      capex: adminSetup, setupResidual: adminSetupResidual, setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
+      workingCapitalAmount: workingCapital.admin, capex: adminSetup, setupResidual: adminSetupResidual, setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
       details: {
         'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
         'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
@@ -887,7 +926,10 @@
         'Custos mensais não incluídos': adminFixedAirbnb, 'OPEX % não incluído': adminPctCosts,
         'Deduções consideradas na base de IR': adminTaxDeductions, 'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax,
         'Caixa antes das reservas': adminOperatingCash, 'Aporte às reservas vinculadas': adminReserveContribution,
-        'Reserva vinculada final': adminLinkedReserveEnd, 'CAPEX + onboarding pago por você': adminSetup,
+        'Reserva vinculada final': adminLinkedReserveEnd, 'Capital de giro vinculado': workingCapital.admin,
+        'Diária média das noites vendidas': adminAverageNightlyRate, 'ADR total': adminTotalAdr,
+        'RevPAR de diárias': adminRevPar, 'RevPAR total': adminTotalRevPar,
+        'CAPEX + onboarding pago por você': adminSetup,
         'CAPEX pago pela administradora': adminSetupData.paidByAdmin,
         'Valor residual do CAPEX que permanece seu': adminSetupResidual, 'Custo econômico líquido do CAPEX': adminSetupDepreciation,
         'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
@@ -901,13 +943,14 @@
     const traditional = makePropertyScenario({
       id: 'traditional', label: 'Aluguel tradicional', grossRevenue: tradRevenue, opCosts: tradOperatingCosts, tax: tradTax,
       operatingCash: tradOperatingCash, reserveContribution: 0, reserveOpening: 0, linkedReserve: 0,
-      capex: traditionalSetup, setupResidual: traditionalSetupResidual, setupDepreciation: traditionalSetupDepreciation, laborCost: workCost.traditional, workHoursAnnual: workHours.traditional,
+      workingCapitalAmount: workingCapital.traditional, capex: traditionalSetup, setupResidual: traditionalSetupResidual, setupDepreciation: traditionalSetupDepreciation, laborCost: workCost.traditional, workHoursAnnual: workHours.traditional,
       details: {
         'Imobiliária / administração': tradManagement, 'Custos mensais do proprietário': fixedTraditional,
         'Manutenção e reparos': tradMaintenance, 'Inadimplência / perdas': tradLosses,
         'Comissão esperada de nova locação': leaseCommission, 'Outros custos anuais': tradOther,
         'Deduções consideradas na base de IR': tradTaxDeductions, 'Base tributável estimada': tradTaxBase,
-        'IR estimado': tradTax, 'CAPEX inicial': traditionalSetup, 'Valor residual do CAPEX': traditionalSetupResidual,
+        'IR estimado': tradTax, 'Capital de giro vinculado': workingCapital.traditional,
+        'CAPEX inicial': traditionalSetup, 'Valor residual do CAPEX': traditionalSetupResidual,
         'Depreciação econômica do CAPEX': traditionalSetupDepreciation, 'Valorização nominal do imóvel': propertyNominalGain,
         'Parcela da valorização que cobre inflação': propertyInflationPreservation, 'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
         'Horas próprias no ano': workHours.traditional, 'Valor do seu tempo': workCost.traditional
@@ -935,6 +978,8 @@
       benchmarkRealGain: invCalc.realWealthCreation, benchmarkNominalGain: invCalc.operatingCash,
       benchmarkRealReturn: invCalc.realReturn, benchmarkEndNetWorth: invCalc.endNetWorth,
       benchmarkRealEndNetWorth: invCalc.realEndNetWorth,
+      monthlyEquivalentExcess: invCalc.nominalExcessOverPreservation / 12,
+      monthlyEquivalentFreeCash: invCalc.sustainableCash / 12,
       financialGapVsBenchmark: 0, realGapVsBenchmark: 0,
       economicRealWealthCreation: invCalc.realWealthCreation - workCost.investment,
       benchmarkEconomicRealGain: invCalc.realWealthCreation - workCost.investment,
@@ -981,15 +1026,17 @@
     currentState.setupCosts.filter((x) => x.airbnb && x.adminPays).forEach((x) => includedAdminItems.push(`${x.name} (implantação paga pela admin.)`));
 
     return {
-      seasonDetails, adminSeasonDetails, totalDays, blockedDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy, adr, revPar,
+      seasonDetails, adminSeasonDetails, totalDays, blockedDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy,
+      averageNightlyRate, adr, totalAdr, revPar, totalRevPar,
       accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
-      adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAdr, adminReservations, adminGuestFeeRevenue, adminAirbnbRevenue,
+      adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
+      adminReservations, adminGuestFeeRevenue, adminAirbnbRevenue,
       fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, fixedTraditional, pctCostRate, adminPctCostRate,
       reserveRate, adminReserveRate, reserveOpening, adminReserveOpening, selfReserveContribution, adminReserveContribution,
       selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets, traditionalSetup,
       selfSetupResidual, adminSetupResidual, adminSetupPaidByAdmin: adminSetupData.paidByAdmin, rentedSetupResidual, traditionalSetupResidual,
       selfSetupDepreciation, adminSetupDepreciation, rentedSetupDepreciation, traditionalSetupDepreciation,
-      rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit,
+      rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit, workingCapital,
       scenarios, bestCash, bestFirstYear, bestEconomic, bestWealth, bestRealWealth, bestReal,
       propertyValue, inflation, realAppreciation, nominalPropertyAppreciation, propertyEndValue,
       propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation, investmentGrossRate,
@@ -1013,9 +1060,13 @@
     $('#totalDays').textContent = `${number1.format(calc.totalDays)} dias`;
     $('#blockedDays').textContent = `${number1.format(calc.blockedDays)} dias`;
     $('#availableDays').textContent = `${number1.format(calc.availableDays)} dias`;
-    $('#weightedAdr').textContent = money2.format(calc.adr);
+    $('#weightedAdr').textContent = money2.format(calc.averageNightlyRate);
     $('#weightedOccupancy').textContent = percent.format(calc.weightedOccupancy);
     $('#seasonRevenue').textContent = money2.format(calc.accommodationRevenue);
+    $('#metricAverageNightlyRate').textContent = money2.format(calc.averageNightlyRate);
+    $('#metricTotalAdr').textContent = money2.format(calc.totalAdr);
+    $('#metricRevPar').textContent = money2.format(calc.revPar);
+    $('#metricTotalRevPar').textContent = money2.format(calc.totalRevPar);
     $('#stayCostTotal').textContent = money2.format(calc.stayCostPerReservation);
     $('#monthlyAirbnbTotal').textContent = money.format(calc.fixedAirbnb);
     $('#monthlyRentedAirbnbTotal').textContent = money.format(calc.fixedRentedAirbnb);
@@ -1109,6 +1160,7 @@
         <td class="money-cell">${money.format(scenario.capex)}</td>
         <td class="money-cell">${money.format(scenario.setupResidual)}</td>
         <td class="money-cell">${money.format(scenario.tiedCapital)}</td>
+        <td class="money-cell">${money.format(scenario.workingCapital || 0)}</td>
         <td class="money-cell"><strong>${money.format(scenario.opportunityCapital)}</strong></td>
         <td class="money-cell"><strong>${money.format(scenario.realWealthCreation)}</strong></td>
         <td class="money-cell">${money.format(scenario.benchmarkRealGain)}</td>
@@ -1155,7 +1207,7 @@
       }
     }
     if (n(state.globals.ownerHourlyValue) > 0) messages.push({ text: `Com sua hora avaliada em ${money.format(state.globals.ownerHourlyValue)}, o melhor resultado econômico de caixa é ${calc.bestEconomic.label}: ${money.format(calc.bestEconomic.economicResult)} ao ano.` });
-    messages.push({ text: `A diária média vendida é ${money2.format(calc.adr)} e a receita por dia disponível (RevPAR) é ${money2.format(calc.revPar)}.` });
+    messages.push({ text: `A diária média das noites vendidas é ${money2.format(calc.averageNightlyRate)}. Incluindo taxas cobradas do hóspede, o ADR total é ${money2.format(calc.totalAdr)}. O RevPAR de diárias é ${money2.format(calc.revPar)} e o RevPAR total é ${money2.format(calc.totalRevPar)}.` });
     messages.push({ text: `O imóvel está projetado para valorizar ${percent.format(calc.nominalPropertyAppreciation)} nominalmente: ${percent.format(calc.inflation)} recompõem a inflação e ${percent.format(calc.realAppreciation)} representam valorização real acima dela.` });
     messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
     messages.push({ text: `Na aplicação financeira, ${money.format(calc.investmentCapitalPreservationAmount)} do rendimento líquido nominal precisam permanecer aplicados para preservar o principal real. O caixa sustentável distribuível é ${money.format(calc.investmentSustainableCash)}.` });
@@ -1169,7 +1221,7 @@
     const lead = best.nominalExcessOverPreservation - second.nominalExcessOverPreservation;
     const maxAbsExcess = Math.max(...calc.scenarios.map((s) => Math.abs(s.nominalExcessOverPreservation)), 1);
 
-    $('#finalWinner').innerHTML = `<span class="final-winner-label">Maior excedente nominal sobre preservação</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.nominalExcessOverPreservation)} / ano</span><small>${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'Empate no maior resultado'}</small>`;
+    $('#finalWinner').innerHTML = `<span class="final-winner-label">Maior excedente nominal sobre preservação</span><strong>${escapeHtml(best.label)}</strong><span>${money.format(best.nominalExcessOverPreservation)} / ano</span><small>${money.format(best.monthlyEquivalentExcess)} / mês equivalente · ${lead > 0 ? `${money.format(lead)} acima do 2º colocado` : 'empate no maior resultado'}</small>`;
 
     $('#finalScenarioGrid').innerHTML = calc.scenarios.map((scenario) => {
       const isBest = scenario.id === best.id;
@@ -1181,9 +1233,10 @@
           <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Maior excedente</span>' : ''}</div>
           <div class="final-annual ${scenario.nominalExcessOverPreservation < 0 ? 'negative' : ''}">${money.format(scenario.nominalExcessOverPreservation)}</div>
           <div class="final-annual-label">excedente nominal além da preservação do poder de compra / ano</div>
+          <div class="final-monthly-equivalent">${money.format(scenario.monthlyEquivalentExcess)} / mês equivalente</div>
           <div class="final-bar-track" aria-hidden="true"><span style="width:${barWidth.toFixed(1)}%"></span></div>
           <div class="money-lenses">
-            <div class="money-lens"><span>${freeCashLens}</span><strong>${money.format(scenario.freeCash)}</strong><small>disponível preservando as premissas do cenário</small></div>
+            <div class="money-lens"><span>${freeCashLens}</span><strong>${money.format(scenario.freeCash)}</strong><small>${money.format(scenario.monthlyEquivalentFreeCash)} / mês equivalente</small></div>
             <div class="money-lens"><span>Ganho patrimonial real</span><strong>${money.format(scenario.realWealthCreation)}</strong><small>em poder de compra de hoje</small></div>
             <div class="money-lens"><span>Capital vinculado</span><strong>${money.format(scenario.tiedCapital)}</strong><small>reservas, cauções e garantias</small></div>
           </div>
@@ -1194,6 +1247,7 @@
             <div><span>Aporte externo p/ déficit</span><strong>${money.format(scenario.externalFundingRequired)}</strong></div>
             <div><span>CAPEX inicial</span><strong>${money.format(scenario.capex)}</strong></div>
             <div><span>Valor residual CAPEX</span><strong>${money.format(scenario.setupResidual)}</strong></div>
+            <div><span>Capital de giro vinculado</span><strong>${money.format(scenario.workingCapital || 0)}</strong></div>
             <div><span>Capital de oportunidade</span><strong>${money.format(scenario.opportunityCapital)}</strong></div>
             <div><span>Ganho real do benchmark</span><strong>${money.format(scenario.benchmarkRealGain)}</strong></div>
             <div><span>Δ financeiro vs. benchmark</span><strong class="${scenario.financialGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.financialGapVsBenchmark)}</strong></div>
@@ -1257,9 +1311,9 @@
       `Valorização real esperada do imóvel: ${percent.format(calc.realAppreciation)}`,
       `Valorização nominal projetada do imóvel: ${percent.format(calc.nominalPropertyAppreciation)}`,
       '',
-      ...calc.scenarios.map((s) => `${s.label}: caixa livre ${money.format(s.freeCash)}/ano · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ real vs benchmark ${money.format(s.realGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
+      ...calc.scenarios.map((s) => `${s.label}: excedente ${money.format(s.nominalExcessOverPreservation)}/ano (${money.format(s.monthlyEquivalentExcess)}/mês equivalente) · caixa livre ${money.format(s.freeCash)}/ano · ganho patrimonial real ${money.format(s.realWealthCreation)} · capital vinculado ${money.format(s.tiedCapital)} · capital de oportunidade ${money.format(s.opportunityCapital)} · benchmark real ${money.format(s.benchmarkRealGain)} · Δ financeiro ${money.format(s.financialGapVsBenchmark)} · Δ econômico ${money.format(s.economicGapVsBenchmark)} · patrimônio real final ${money.format(s.realEndNetWorth)}`),
       '',
-      `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · ADR ${money2.format(calc.adr)} · ${number1.format(calc.reservations)} reservas/ano`
+      `Airbnb: ${number1.format(calc.occupiedNights)} noites ocupadas · ${number1.format(calc.availableDays)} dias disponíveis · ocupação ${percent.format(calc.weightedOccupancy)} · diária média ${money2.format(calc.averageNightlyRate)} · ADR total ${money2.format(calc.totalAdr)} · RevPAR diárias ${money2.format(calc.revPar)} · RevPAR total ${money2.format(calc.totalRevPar)} · ${number1.format(calc.reservations)} reservas/ano`
     ];
     try {
       await navigator.clipboard.writeText(lines.join('\n'));

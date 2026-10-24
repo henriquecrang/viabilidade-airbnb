@@ -81,6 +81,17 @@
           </div>
 
           <div class="subsection">
+            <div class="subsection-heading"><div><h3>Capital de giro manual</h3><p>Liquidez mantida disponível para sustentar a operação. Continua sendo patrimônio, mas fica vinculada à estratégia e entra no capital de oportunidade.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Airbnb próprio</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.airbnbSelf" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Airbnb com administradora</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.airbnbAdmin" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Airbnb em imóvel alugado</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.rentedAirbnb" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Aluguel tradicional</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.traditional" type="number" min="0" step="100" /></div></label>
+            </div>
+            <p class="helper">No futuro, o modelo mensal poderá substituir esta aproximação pelo pico efetivo de necessidade de caixa.</p>
+          </div>
+
+          <div class="subsection">
             <div class="subsection-heading"><div><h3>Tempo próprio</h3><p>As horas ligadas às tarefas do Airbnb são informadas nas tabelas operacionais. No cenário administrado, tarefas marcadas como “admin gerencia” deixam automaticamente de consumir seu tempo.</p></div></div>
             <div class="form-grid compact-fields">
               <label class="field-group"><span class="field-label">Outras horas gerais · Airbnb próprio</span><div class="input-suffix compact-control"><input data-path="work.selfHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
@@ -130,6 +141,12 @@
               </table>
             </div>
           </div>
+          <div class="market-metric-grid" aria-label="Métricas de receita Airbnb">
+            <article><span>Diária média</span><strong id="metricAverageNightlyRate">—</strong><small>receita de diárias ÷ noites ocupadas</small></article>
+            <article><span>ADR total</span><strong id="metricTotalAdr">—</strong><small>diárias + taxas do hóspede ÷ noites ocupadas</small></article>
+            <article><span>RevPAR de diárias</span><strong id="metricRevPar">—</strong><small>receita de diárias ÷ dias disponíveis</small></article>
+            <article><span>RevPAR total</span><strong id="metricTotalRevPar">—</strong><small>receita total ÷ dias disponíveis</small></article>
+          </div>
         </div>
       </details>
 
@@ -160,7 +177,7 @@
               <label><input data-path="airbnb.adminFeeDeductibleIR" type="checkbox" /> Comissão da administradora dedutível da base de IR</label>
               <label><input data-path="airbnb.adminMonthlyFeeDeductibleIR" type="checkbox" /> Mensalidade da administradora dedutível da base de IR</label>
             </div>
-            <p class="helper">“Admin gerencia” controla seu tempo; “custo incluído” controla quem paga. A dedutibilidade tributária é configurável e usa defaults conservadores — confirme a situação concreta com as regras fiscais aplicáveis.</p>
+            <p class="helper">“Admin gerencia” controla seu tempo; “custo incluído” controla quem paga. Dedutibilidade fiscal é uma dimensão separada: taxa da plataforma e comissão de administração vêm marcadas por padrão conforme a modelagem tributária atual, mas continuam editáveis.</p>
           </div>
 
           <div class="subsection">
@@ -375,7 +392,7 @@
             <div class="table-scroll">
               <table class="results-v2">
                 <thead>
-                  <tr><th>Cenário</th><th>Receita bruta</th><th>OPEX + taxas</th><th>Imposto</th><th>Caixa antes reserva/preservação</th><th>Necessário p/ preservar principal</th><th>Aporte reserva</th><th>Caixa livre</th><th>Aporte externo</th><th>CAPEX</th><th>Residual CAPEX</th><th>Capital vinculado</th><th>Capital de oportunidade</th><th>Ganho real</th><th>Benchmark financeiro real</th><th>Δ financeiro vs benchmark</th><th>Δ econômico vs benchmark</th><th>Patrimônio nominal final</th><th>Patrimônio real final</th><th>Horas / custo do seu tempo</th><th>Yield caixa</th><th>Retorno patrimonial real</th></tr>
+                  <tr><th>Cenário</th><th>Receita bruta</th><th>OPEX + taxas</th><th>Imposto</th><th>Caixa antes reserva/preservação</th><th>Necessário p/ preservar principal</th><th>Aporte reserva</th><th>Caixa livre</th><th>Aporte externo</th><th>CAPEX</th><th>Residual CAPEX</th><th>Capital vinculado</th><th>Capital de giro</th><th>Capital de oportunidade</th><th>Ganho real</th><th>Benchmark financeiro real</th><th>Δ financeiro vs benchmark</th><th>Δ econômico vs benchmark</th><th>Patrimônio nominal final</th><th>Patrimônio real final</th><th>Horas / custo do seu tempo</th><th>Yield caixa</th><th>Retorno patrimonial real</th></tr>
                 </thead>
                 <tbody id="resultRows"></tbody>
               </table>

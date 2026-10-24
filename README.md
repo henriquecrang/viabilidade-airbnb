@@ -153,3 +153,23 @@ node tests/round-b.test.js
 ```
 
 Os testes cobrem delegação de horas, separação entre gestão e custo incluído, caixa sustentável da aplicação, preservação do saldo inicial das reservas e base tributável configurável, incluindo sublocação.
+
+## Rodada C — métricas e interpretação
+
+A versão 9 consolida quatro melhorias:
+
+- **Tributação:** novas simulações consideram por padrão a taxa da plataforma, a comissão da administradora e a administração do aluguel tradicional como deduções/exclusões configuráveis da base tributável. OPEX e dedutibilidade continuam independentes.
+- **Métricas Airbnb:** separa diária média das noites vendidas, ADR total, RevPAR de diárias e RevPAR total. Taxas cobradas do hóspede afetam as métricas totais, mas não a diária média pura.
+- **Capital de giro manual:** configurável por estratégia, tratado como patrimônio vinculado e capital de oportunidade, nunca como OPEX.
+- **Equivalente mensal:** o resumo final mantém o resultado anual como principal e mostra sua média mensal equivalente para facilitar comparação com rendas mensais.
+
+Arquivos antigos preservam as flags fiscais que já continham; os novos defaults só valem para novas simulações.
+
+### Testes
+
+```bash
+node tests/round-a.test.js
+node tests/round-b0.test.js
+node tests/round-b.test.js
+node tests/round-c.test.js
+```

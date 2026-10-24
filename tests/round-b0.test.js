@@ -12,7 +12,7 @@ function approx(actual, expected, tolerance = 1e-6, label = '') {
   if (Math.abs(actual - expected) > tolerance) throw new Error(`${label}: esperado ${expected}, obtido ${actual}`);
 }
 
-assert(defaultState.version === 7, 'versão do estado deveria ser 7');
+assert(defaultState.version >= 7, 'versão do estado deveria preservar ou superar a calibração B0');
 assert(defaultState.name.includes('out/2026'), 'cenário-base deveria indicar out/2026');
 approx(defaultState.globals.inflationPct, 4.3, 1e-9, 'inflação default');
 approx(defaultState.airbnb.platformFeePct, 16, 1e-9, 'taxa Airbnb Brasil');
