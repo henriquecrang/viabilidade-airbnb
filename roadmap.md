@@ -50,6 +50,16 @@ Premissas do cenário-base:
 
 A futura venda do imóvel para formar o benchmark financeiro líquido está na Issue #34.
 
+### V12 — utilities do cenário-base
+Concluída em 24/10/2026 na Issue #37.
+
+Defaults mensais:
+- água + esgoto: R$ 200;
+- gás: R$ 100;
+- energia elétrica: R$ 400.
+
+A calibração usa tarifas atuais de Águas do Rio, Naturgy e Light e assume um apartamento de 1 quarto e sala em operação de temporada com dois aparelhos de ar-condicionado.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
