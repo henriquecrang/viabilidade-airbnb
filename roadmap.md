@@ -76,6 +76,18 @@ Entregou:
 
 Implementação principal: V9, commit `902acdbd2c6ce2d2abbc1185113638db00525399`.
 
+### V11 — contrato do Airbnb alugado
+Implementação anual concluída em 24/10/2026 na Issue #36.
+
+Inclui:
+- mobiliado × não mobiliado;
+- encargos atribuídos ao locatário;
+- CAPEX condicional;
+- autorização de sublocação/temporada;
+- resumo contratual e alertas.
+
+A #36 permanece aberta para custos de saída e integração plurianual.
+
 ### Pré-Rodada D — cenário Airbnb em imóvel alugado
 **Issue:** #36
 
