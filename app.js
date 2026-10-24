@@ -32,6 +32,9 @@
         purchaseCosts: 0,
         workingCapitalTarget: 'airbnbSelf',
         workingCapitalAmount: 0
+      },
+      airbnbOps: {
+        configured: false
       }
     },
     market: {
@@ -557,6 +560,55 @@
         capitalGainsTax,
         otherCosts
       }
+    };
+  }
+
+
+  function buildAirbnbOpsWizardPatch(draft = {}) {
+    const normalized = {
+      avgStayNights: Math.max(0.1, n(draft.avgStayNights, 1)),
+      cleaningFeeRevenue: Math.max(0, n(draft.cleaningFeeRevenue)),
+      checkinCost: Math.max(0, n(draft.checkinCost)),
+      cleaningCost: Math.max(0, n(draft.cleaningCost)),
+      laundryCost: Math.max(0, n(draft.laundryCost)),
+      guestSupportMonthly: Math.max(0, n(draft.guestSupportMonthly)),
+      localSupportMonthly: Math.max(0, n(draft.localSupportMonthly)),
+      marketingMonthly: Math.max(0, n(draft.marketingMonthly)),
+      pmsMonthly: Math.max(0, n(draft.pmsMonthly)),
+      pricingMonthly: Math.max(0, n(draft.pricingMonthly)),
+      waterMonthly: Math.max(0, n(draft.waterMonthly)),
+      electricityMonthly: Math.max(0, n(draft.electricityMonthly)),
+      gasMonthly: Math.max(0, n(draft.gasMonthly)),
+      internetMonthly: Math.max(0, n(draft.internetMonthly))
+    };
+    const meta = { configured: true, ...normalized };
+    return {
+      valid: true,
+      errors: [],
+      values: {
+        'airbnb.avgStayNights': normalized.avgStayNights,
+        'airbnb.cleaningFeeRevenue': normalized.cleaningFeeRevenue,
+        'guidedSetup.airbnbOps': meta
+      },
+      arrayValues: {
+        stayCosts: {
+          checkin: { amount: normalized.checkinCost },
+          limpeza: { amount: normalized.cleaningCost },
+          lavanderia: { amount: normalized.laundryCost }
+        },
+        monthlyCosts: {
+          'guest-support': { amount: normalized.guestSupportMonthly },
+          'local-support': { amount: normalized.localSupportMonthly },
+          marketing: { amount: normalized.marketingMonthly },
+          software: { amount: normalized.pmsMonthly },
+          pricing: { amount: normalized.pricingMonthly },
+          agua: { amount: normalized.waterMonthly },
+          luz: { amount: normalized.electricityMonthly },
+          gas: { amount: normalized.gasMonthly },
+          internet: { amount: normalized.internetMonthly }
+        }
+      },
+      normalized
     };
   }
 
@@ -2981,6 +3033,75 @@
       <div class="concept-note"><strong>Limite atual:</strong> a venda líquida já afeta o benchmark financeiro. No caminho “tenho capital e penso em comprar”, preço, CAPEX e capital de giro podem ser aplicados, mas capital disponível e custos de aquisição ainda não entram no cálculo; essa modelagem está registrada na Issue #42.</div>`;
   }
 
+
+  function airbnbOpsWizardDraftFromState() {
+    const saved = state.guidedSetup?.airbnbOps || {};
+    const useSaved = Boolean(saved.configured);
+    const getStay = (id) => Math.max(0, n(state.stayCosts.find((x) => x.id === id)?.amount));
+    const getMonthly = (id) => Math.max(0, n(state.monthlyCosts.find((x) => x.id === id)?.amount));
+    const value = (key, fallback) => useSaved && saved[key] != null ? n(saved[key]) : fallback;
+    return {
+      avgStayNights: value('avgStayNights', n(state.airbnb.avgStayNights)),
+      cleaningFeeRevenue: value('cleaningFeeRevenue', n(state.airbnb.cleaningFeeRevenue)),
+      checkinCost: value('checkinCost', getStay('checkin')),
+      cleaningCost: value('cleaningCost', getStay('limpeza')),
+      laundryCost: value('laundryCost', getStay('lavanderia')),
+      guestSupportMonthly: value('guestSupportMonthly', getMonthly('guest-support')),
+      localSupportMonthly: value('localSupportMonthly', getMonthly('local-support')),
+      marketingMonthly: value('marketingMonthly', getMonthly('marketing')),
+      pmsMonthly: value('pmsMonthly', getMonthly('software')),
+      pricingMonthly: value('pricingMonthly', getMonthly('pricing')),
+      waterMonthly: value('waterMonthly', getMonthly('agua')),
+      electricityMonthly: value('electricityMonthly', getMonthly('luz')),
+      gasMonthly: value('gasMonthly', getMonthly('gas')),
+      internetMonthly: value('internetMonthly', getMonthly('internet'))
+    };
+  }
+
+  function airbnbOpsWizardFormHtml(draft) {
+    const moneyInput = (field, label, value, suffix = 'mês') => `
+      <label class="field-group"><span class="field-label">${escapeHtml(label)}</span>
+        <div class="input-prefix money-control"><span>R$</span><input data-wizard-field="${escapeAttr(field)}" type="number" min="0" step="10" value="${escapeAttr(value)}" /></div>
+        <small class="field-help">${suffix === 'reserva' ? 'por reserva' : 'por mês'}</small>
+      </label>`;
+    return `
+      <div class="wizard-section">
+        <h3>Estadia e taxas do hóspede</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Estadia média</span><div class="input-suffix compact-control"><input data-wizard-field="avgStayNights" type="number" min="0.1" step="0.1" value="${escapeAttr(draft.avgStayNights)}" /><span>noites</span></div></label>
+          ${moneyInput('cleaningFeeRevenue','Taxa de limpeza cobrada do hóspede',draft.cleaningFeeRevenue,'reserva')}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Custos por reserva</h3>
+        <div class="wizard-form-grid">
+          ${moneyInput('checkinCost','Check-in / check-out',draft.checkinCost,'reserva')}
+          ${moneyInput('cleaningCost','Limpeza',draft.cleaningCost,'reserva')}
+          ${moneyInput('laundryCost','Lavanderia',draft.laundryCost,'reserva')}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Operação mensal</h3>
+        <div class="wizard-form-grid">
+          ${moneyInput('guestSupportMonthly','Atendimento ao hóspede',draft.guestSupportMonthly)}
+          ${moneyInput('localSupportMonthly','Suporte operacional local',draft.localSupportMonthly)}
+          ${moneyInput('marketingMonthly','Marketing / conteúdo',draft.marketingMonthly)}
+          ${moneyInput('pmsMonthly','PMS / software / automação',draft.pmsMonthly)}
+          ${moneyInput('pricingMonthly','Pricing dinâmico',draft.pricingMonthly)}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Utilities</h3>
+        <div class="wizard-form-grid">
+          ${moneyInput('waterMonthly','Água + esgoto',draft.waterMonthly)}
+          ${moneyInput('electricityMonthly','Energia elétrica',draft.electricityMonthly)}
+          ${moneyInput('gasMonthly','Gás',draft.gasMonthly)}
+          ${moneyInput('internetMonthly','Internet',draft.internetMonthly)}
+        </div>
+      </div>
+      <div class="concept-note"><strong>Premissas editáveis:</strong> o assistente parte dos valores atualmente configurados. Ao aplicar, ele altera somente os mesmos itens de estadia, custos mensais, estadia média e taxa de limpeza já visíveis nas seções detalhadas.</div>`;
+  }
+
   function financialWizardFormHtml(draft) {
     return `
       <div class="wizard-form-grid">
@@ -3064,13 +3185,28 @@
     $('#wizardDialog').showModal();
   }
 
+
+  function openAirbnbOpsWizard() {
+    activeWizard = 'airbnbOps';
+    activeWizardPatch = null;
+    const draft = airbnbOpsWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Operação Airbnb';
+    $('#wizardDescription').textContent = 'Consolide estadia, serviços por reserva, operação recorrente e utilities.';
+    $('#wizardBody').innerHTML = airbnbOpsWizardFormHtml(draft);
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
   function reviewActiveWizard() {
     const draft = readWizardDraft();
     const patch = activeWizard === 'financial'
       ? buildFinancialWizardPatch(draft, state)
       : activeWizard === 'property'
         ? buildPropertyWizardPatch(draft, state)
-        : null;
+        : activeWizard === 'airbnbOps'
+          ? buildAirbnbOpsWizardPatch(draft, state)
+          : null;
     if (!patch) return;
     activeWizardPatch = patch;
     const preview = $('#wizardPreview');
@@ -3099,6 +3235,24 @@
           <li>Venda: ajuste ${number1.format(x.salePriceAdjustmentPct)}% · corretagem ${number1.format(x.brokeragePct)}% · custos fixos ${money.format(x.fixedCosts)} · financiamento ${money.format(x.mortgageBalance)} · IR ${money.format(x.capitalGainsTax)} · outros ${money.format(x.otherCosts)}.</li>
           ${gapLine}
           ${purchaseWarning}
+        </ul>`;
+      setWizardReviewMode(true);
+      return;
+    }
+
+    if (activeWizard === 'airbnbOps') {
+      const x = patch.normalized;
+      const monthlyOps = x.guestSupportMonthly + x.localSupportMonthly + x.marketingMonthly + x.pmsMonthly + x.pricingMonthly;
+      const utilities = x.waterMonthly + x.electricityMonthly + x.gasMonthly + x.internetMonthly;
+      const perStay = x.checkinCost + x.cleaningCost + x.laundryCost;
+      preview.innerHTML = `
+        <h3>Revise antes de aplicar</h3>
+        <ul class="wizard-change-list">
+          <li>Estadia média: <strong>${number1.format(x.avgStayNights)} noites</strong> · taxa de limpeza do hóspede: <strong>${money.format(x.cleaningFeeRevenue)}</strong> por reserva.</li>
+          <li>Custos por reserva: check-in ${money.format(x.checkinCost)} + limpeza ${money.format(x.cleaningCost)} + lavanderia ${money.format(x.laundryCost)} = <strong>${money.format(perStay)}</strong>.</li>
+          <li>Operação recorrente configurada: <strong>${money.format(monthlyOps)}/mês</strong> em suporte, marketing, PMS e pricing.</li>
+          <li>Utilities configuradas: <strong>${money.format(utilities)}/mês</strong>.</li>
+          <li>Horas próprias, dedutibilidade fiscal, responsabilidade do locatário e itens da administradora não são alterados por este wizard.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
@@ -3137,6 +3291,7 @@
   function bindWizards() {
     $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
     $('#openPropertyWizard')?.addEventListener('click', openPropertyWizard);
+    $('#openAirbnbOpsWizard')?.addEventListener('click', openAirbnbOpsWizard);
     $('#wizardReviewButton')?.addEventListener('click', reviewActiveWizard);
     $('#wizardBackButton')?.addEventListener('click', () => setWizardReviewMode(false));
     $('#wizardApplyButton')?.addEventListener('click', applyActiveWizard);
@@ -3172,7 +3327,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildFinancialWizardPatch, buildPropertyWizardPatch, applyWizardPatch
+    buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, applyWizardPatch
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
