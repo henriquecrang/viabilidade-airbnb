@@ -449,20 +449,42 @@ node tests/market-evidence-v23.test.js
 ```
 
 
-## V24 — configuração guiada do benchmark financeiro
+## V24 — configuração guiada
 
-A primeira camada de onboarding guiado (#25) foi adicionada sem criar um segundo motor econômico.
+A camada de onboarding guiado foi adicionada sem criar um segundo motor econômico. Todos os wizards partem das premissas atuais, mostram uma revisão e só então aplicam alterações aos mesmos campos detalhados já existentes.
 
-- o wizard pergunta tipo de aplicação, forma da taxa, IR, custos, prazo, liquidez e papel na análise;
-- prazo, liquidez, tipo e papel são guardados como metadados auditáveis, sem penalidades implícitas;
-- taxas nominais brutas são aplicadas diretamente ao motor existente;
-- taxas reais brutas usam o modo inflação + taxa real já existente;
-- taxas nominais líquidas são convertidas para a taxa bruta equivalente antes da aplicação, evitando dupla cobrança de IR/custos;
-- toda alteração passa por uma etapa explícita de revisão antes de ser aplicada;
-- os campos detalhados continuam visíveis e editáveis depois do wizard.
+### #25 — benchmark financeiro
 
-Teste específico:
+- pergunta tipo de aplicação, forma da taxa, IR, custos, prazo, liquidez e papel na análise;
+- prazo, liquidez, tipo e papel ficam como metadados auditáveis, sem penalidades implícitas;
+- taxas nominais líquidas são convertidas para a taxa bruta equivalente antes da aplicação, evitando dupla cobrança de IR/custos.
+
+### #27 — operação Airbnb
+
+- estadia média e taxa de limpeza;
+- check-in/out, limpeza e lavanderia por reserva;
+- atendimento, suporte local, marketing, PMS/software e pricing;
+- água, energia, gás e internet;
+- não altera horas próprias, dedutibilidade fiscal nem responsabilidades contratuais.
+
+### #28 — aquisição e venda (parcial)
+
+- o caminho “já possuo o imóvel” cobre valor de mercado, CAPEX, capital de giro e todas as premissas de venda líquida da #34;
+- o caminho “tenho capital e penso em comprar” já coleta capital disponível e custos de aquisição, mas esses dois itens permanecem explicitamente fora do cálculo até a modelagem econômica da **#42**;
+- o wizard não mascara essa lacuna nem aplica custos de compra silenciosamente.
+
+### #29 — uso parcial / híbrido
+
+- classifica dias de uso pessoal, moradia e indisponibilidade operacional por período anual;
+- impede que a soma ultrapasse a duração de cada período;
+- configura benefício de hospedagem evitada, moradia, custos incrementais e CAPEX adicional;
+- preserva a separação entre receita, benefício de consumo e patrimônio.
+
+Testes específicos:
 
 ```bash
 node tests/financial-wizard-v24.test.js
+node tests/property-wizard-v24.test.js
+node tests/airbnb-ops-wizard-v24.test.js
+node tests/hybrid-wizard-v24.test.js
 ```
