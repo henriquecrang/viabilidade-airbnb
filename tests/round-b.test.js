@@ -13,6 +13,7 @@ function approx(a,b,t=1e-6,m=''){ if(Math.abs(a-b)>t) throw new Error(`${m}: esp
 let s=clone(defaultState);
 s.airbnb.adminNightlyRateImpactPct=0;
 s.airbnb.adminOccupancyImpactPp=0;
+s.airbnb.managementOccupancyDeltaPp=0;
 let c=calculateModel(s);
 approx(scenario(c,'airbnb-admin').grossRevenue,scenario(c,'airbnb-self').grossRevenue,0.01,'impactos zero');
 const baseAdminReservations=c.adminReservations;
