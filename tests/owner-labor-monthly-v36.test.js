@@ -31,7 +31,7 @@ zero.work.traditionalHoursMonthly=0;
 zero.work.investmentHoursMonthly=0;
 zero.work.rentedAirbnbHoursMonthly=0;
 for(const x of zero.stayCosts) x.ownerHoursPerReservation=0;
-for(const x of zero.monthlyCosts) x.ownerHoursPerMonth=0;
+for(const x of zero.monthlyCosts) x.ownerHoursMonthly=0;
 const z=calculateModel(zero);
 for(const sc of z.scenarios){
   approx(sc.workHoursAnnual,0,.0001,`${sc.id}: horas zero`);
