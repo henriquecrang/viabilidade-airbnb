@@ -217,8 +217,8 @@ Concluída em 24/10/2026.
 - enxoval pertence a quem compra;
 - manutenção de imóvel/equipamentos permanece do proprietário;
 - ocupação administrada passa a aceitar piso-alvo;
-- preset oficial usa 80% como piso conservador, sem uplift de ADR;
-- #46 criada para validar a alegação de ocupação com dados reais;
+- preset oficial usa 80% como piso default informado pelo parceiro, sem uplift de ADR e com edição livre;
+- #46 posteriormente descartada: não será exigido histórico adicional da administradora para sustentar esse default;
 - contrato enviado classificado como canal direto/hóspede, não contrato de administração;
 - #32 e #44 podem ser encerradas após incorporação;
 - regressão do cenário-base V27 preservada;
