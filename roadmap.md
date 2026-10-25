@@ -367,6 +367,18 @@ Concluída em 25/10/2026 — Issue #40.
 - nenhuma saída é tratada como custo recorrente;
 - suíte completa: 39/39 testes.
 
+### V43 — financiamento e aporte adicional
+Concluída em 25/10/2026 — Issue #43.
+
+- aporte adicional de capital próprio explícito;
+- principal financiado, taxa, prazo e custos de contratação explícitos;
+- parcela anual equivalente com juros, amortização e saldo devedor;
+- dívida reduz patrimônio e nunca entra como riqueza no benchmark;
+- benchmark recebe o mesmo capital próprio;
+- venda no horizonte quita o saldo projetado;
+- caminho cash-only V25 preservado;
+- suíte completa: 40/40 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
