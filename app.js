@@ -3585,7 +3585,7 @@
       if (state.guidedSetup?.adminProposal?.configured) {
         const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
         if (state.guidedSetup.adminProposal.calibrationStatus === 'official-response') {
-          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. O default de gestão adiciona 20 p.p. à ocupação autogerida de cada período, com teto de 100%, e pode ser alterado pelo usuário.` });
+          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. O ganho de gestão de referência está em ${number1.format(managementOccupancyDeltaPp(state))} p.p. e pode ser alterado pelo usuário.` });
         } else if (state.guidedSetup.adminProposal.provisionalAssumptions) {
           messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa uma calibração provisória antiga; reaplique o wizard para usar as respostas oficiais da V28.` });
         }
@@ -4449,7 +4449,7 @@
           <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
           <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'fica com quem comprou, portanto não integra seu patrimônio neste preset'}.</li>
           <li>Manutenção do imóvel/equipamentos: ${x.maintenanceIncluded?'custo incluído':'proprietário paga'} · ${x.maintenanceManaged?'gestão pela administradora marcada':'gestão dos reparos não presumida'}.</li>
-          <li>O default de gestão adiciona <strong>20 p.p.</strong> à ocupação autogerida de cada período, limitado a 100%, e pode ser ajustado livremente.</li>
+          <li>A base de ocupação atualmente informada é <strong>${occupancyInputBasis(state)==='self'?'autogestão':'com administradora'}</strong>; a outra base é derivada automaticamente pelo delta global.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
