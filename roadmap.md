@@ -151,14 +151,28 @@ Consolidada em 24/10/2026, com duas dependências explicitamente abertas.
 - #25 concluída: wizard de benchmark financeiro;
 - #27 concluída: wizard de operação Airbnb;
 - #29 concluída: wizard de uso parcial/híbrido;
-- #24 implementada para imóvel próprio, moradia principal, segunda residência e Airbnb alugado; caminho capital → compra bloqueado até #42;
-- #28 implementada para imóvel já possuído e parcialmente para aquisição; capital disponível e custos de compra dependem da #42;
-- #42 criada para a regra econômica ausente de capital → compra/custos de aquisição;
+- #24 concluída na V25: o caminho capital → compra passou a habilitar cenários após uma aquisição válida ser configurada;
+- #28 concluída na V25: capital disponível, custos de aquisição, CAPEX e capital de giro agora entram de forma auditável;
+- #42 concluída na V25 com escopo de compra integralmente coberta pelo capital disponível; financiamento/aporte adicional foi separado para backlog;
 - #26 permanece dependente da calibração real da administradora (#5/#32);
 - estrutura genérica de revisão/aplicação compartilhada entre os wizards;
 - metadados descritivos ficam separados das variáveis que afetam o motor;
 - nenhuma regra econômica é criada silenciosamente pela camada de onboarding;
 - auditoria confirmou resultados default idênticos à V23 e 24/24 testes passando.
+
+### V25 — aquisição a partir de capital disponível
+Concluída em 24/10/2026.
+
+- compra e benchmark partem do mesmo capital inicial;
+- custos de aquisição entram uma única vez e são consumidos economicamente;
+- CAPEX, reservas e capital de giro permanecem separados;
+- sobra de capital continua aplicada financeiramente dentro do cenário de compra;
+- benchmark financeiro de quem parte de capital não sofre custos de venda;
+- compra que não cabe integralmente no capital informado é rejeitada;
+- financiamento, dívida ou aporte adicional para completar a entrada ficam para backlog;
+- #42, #28 e #24 concluídas;
+- regressão confirmou zero alteração no cenário-base de imóvel já possuído e nos horizontes 1/3/5 anos;
+- suíte ampliada para 25 testes.
 
 ## Rodadas de execução
 
