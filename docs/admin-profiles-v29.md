@@ -56,3 +56,17 @@ As projeções de 1, 3 e 5 anos aplicam cada perfil antes da inflação anual e 
 Suíte completa: **29/29 testes**.
 
 Teste específico: `tests/admin-profiles-v29.test.js`.
+
+
+## V39 — horas residuais por plano
+
+Os perfis agora diferem também no conjunto de tarefas gerenciadas:
+
+**Essencial**
+- admin gerencia: check-in/out, marketing/comercial, reservas/pré-venda, atendimento, suporte local, software e pricing;
+- proprietário gerencia: limpeza, lavanderia e amenidades/consumíveis.
+
+**Premium**
+- admin gerencia também limpeza, lavanderia e amenidades/consumíveis.
+
+O campo de supervisão residual permanece 1 h/mês em ambos; no Essencial, porém, as horas das tarefas que continuam com o proprietário são adicionadas normalmente pelo motor.
