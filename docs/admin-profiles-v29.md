@@ -17,7 +17,7 @@ Perfis:
 
 Cada perfil persiste independentemente:
 - comissão;
-- regra de ocupação (delta em p.p. ou piso-alvo);
+- ajuste adicional de ocupação do perfil (delta em p.p. ou piso-alvo), separado do delta global de gestão da V31;
 - impacto de diária;
 - mensalidade e onboarding;
 - supervisão residual;
@@ -37,7 +37,7 @@ Essencial adiciona:
 - `airbnb-admin-essential`;
 - `airbnb-rented-admin-essential`.
 
-Antes da primeira aplicação do wizard da administradora, o cenário-base continua com as seis estratégias da V28/V30. Isso evita aplicar silenciosamente o default de +20 p.p. informado pelo parceiro.
+Desde a V31, o delta global de gestão é aplicado independentemente do preset Essencial/Premium. O wizard de plano guarda apenas ajustes adicionais, evitando duplicar o default de +20 p.p.
 
 Depois da configuração, a categoria “com administradora” do wizard principal se expande para as duas variantes de gestão.
 
