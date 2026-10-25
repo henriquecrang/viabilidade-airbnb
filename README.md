@@ -363,6 +363,21 @@ O custo total do trabalho continua existindo normalmente no motor e continua sen
 
 Também foram adicionadas proteções de CSS para impedir que rótulos e valores atravessem os limites dos cards.
 
+## V39 — esforço diferente entre Essencial e Premium
+
+A comparação entre os planos administrados passa a refletir o escopo operacional original da proposta:
+
+- **Essencial:** a administradora cuida de anúncios/comercial, reservas, check-in/recepção e atendimento ao hóspede; o proprietário continua operando **limpeza, lavanderia e reposição de amenidades/consumíveis**;
+- **Premium:** essas tarefas operacionais também são gerenciadas pela administradora.
+
+Com os defaults atuais, no imóvel próprio:
+- Essencial ≈ **13,9 h/mês** de trabalho do proprietário;
+- Premium = **1,0 h/mês** de supervisão residual.
+
+Essa diferença afeta diretamente o custo econômico do tempo e, portanto, o resultado econômico real.
+
+Perfis Essencial antigos só são migrados automaticamente quando ainda coincidem exatamente com o antigo preset indiferenciado; customizações explícitas são preservadas.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
