@@ -44,3 +44,5 @@ assert(appSource.includes('Valor das horas trabalhadas por mês'),'linha de valo
 assert(!appSource.includes("scenario.workHoursAnnual > 0 ?"),'exibição mensal não deve depender de horas > 0');
 
 console.log('V36 detalhamento mensal do trabalho: todos os testes passaram.');
+
+assert(!appSource.includes('Trabalho do proprietário: ${money.format(sc.realLaborCost)}'),'total do trabalho não deve aparecer na tabela plurianual');
