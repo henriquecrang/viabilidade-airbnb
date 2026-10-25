@@ -344,6 +344,18 @@ Concluída em 25/10/2026 — Issue #56.
 - a mesma fórmula vale para todos os cenários;
 - suíte completa: 37/37 testes.
 
+### V41 — wizard principal integrado
+Concluída em 25/10/2026 — Issue #57.
+
+- “Situação inicial” evolui para “Configurar simulação”;
+- oito cenários finais selecionáveis;
+- horizonte e valor da hora editáveis;
+- ocupação self/admin, delta e sazonalidade editáveis;
+- estadia, limpeza e custos principais por reserva editáveis;
+- revisão mostra ocupação resultante e horas/mês de autogestão, Essencial e Premium;
+- wizards especializados permanecem disponíveis;
+- suíte completa: 38/38 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
