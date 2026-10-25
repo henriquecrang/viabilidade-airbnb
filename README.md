@@ -1,12 +1,13 @@
 # Simulador patrimonial — Airbnb × aluguel × investimento
 
-Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar cinco estratégias:
+Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar seis estratégias:
 
 1. Airbnb em imóvel próprio, autogerido
 2. Airbnb em imóvel próprio, com administradora
-3. Airbnb em imóvel alugado (arbitragem de locação)
-4. Aluguel tradicional
-5. Investimento financeiro
+3. Airbnb em imóvel alugado, autogerido
+4. Airbnb em imóvel alugado, com administradora
+5. Aluguel tradicional
+6. Investimento financeiro
 
 Pode ser aberta localmente ou publicada no GitHub Pages. As simulações podem ser exportadas/importadas em JSON.
 
@@ -72,9 +73,16 @@ A versão 8 torna três dimensões explícitas:
 
 JSONs anteriores são migrados automaticamente. No CAPEX legado, `adminIncluded=true` é interpretado como “admin paga / ativo não fica com o proprietário”, preservando o comportamento econômico anterior.
 
-## Airbnb em imóvel alugado
+## Matriz Airbnb: posse × gestão
 
-O cenário usa a mesma receita, sazonalidade, custos por reserva, OPEX percentual e reservas do Airbnb autogerido. Possui campos próprios para:
+A V27 organiza o Airbnb em duas dimensões independentes:
+
+- **posse:** imóvel próprio ou alugado;
+- **gestão:** autogestão ou administradora.
+
+Isso produz quatro modos: próprio + autogestão, próprio + administradora, alugado + autogestão e alugado + administradora.
+
+Nos dois modos alugados, o contrato possui campos próprios para:
 
 - aluguel mensal pago ao proprietário;
 - caução/garantia reembolsável;
@@ -82,7 +90,7 @@ O cenário usa a mesma receita, sazonalidade, custos por reserva, OPEX percentua
 - custos anuais do contrato/garantia;
 - horas de trabalho do usuário.
 
-A tabela de custos mensais e a tabela de CAPEX possuem uma coluna específica **Airbnb alugado**, permitindo decidir quais despesas cabem ao locatário. O valor do imóvel não entra no patrimônio nem no custo de oportunidade desse cenário.
+A tabela de custos mensais, percentuais e CAPEX permite separar o que pertence ao regime de posse alugado do que muda com a gestão. O valor do imóvel não entra no patrimônio nem no custo de oportunidade de nenhum dos dois modos alugados. Comissão, performance, tarefas gerenciadas, custos incluídos e regras de CAPEX da administradora são aplicados sobre o mesmo contrato alugado quando a gestão é terceirizada.
 
 ## CAPEX e valor residual
 
@@ -108,7 +116,7 @@ Principais referências usadas:
 
 Alguns parâmetros permanecem necessariamente **ilustrativos**, especialmente imposto efetivo do proprietário, condomínio, IPTU, valor/hora do investidor e CAPEX. A versão 7 usa 15% como alíquota efetiva de exemplo tanto para Airbnb quanto para aluguel tradicional apenas para eliminar a assimetria antiga; o usuário deve substituir esse número pela sua situação tributária.
 
-A proposta comercial real de administradora mencionada no backlog ainda não foi localizada nos materiais conectados. Até que ela seja fornecida, os checkboxes de gestão usam como proxy o escopo público de planos completos do mercado carioca: a administradora gerencia atendimento, preços, limpeza/lavanderia e operação, mas esses custos não são presumidos como incluídos financeiramente na comissão.
+A V26 substituiu o proxy genérico por presets provisórios Essencial/Premium autorizados pelo usuário. Eles permanecem explicitamente marcados como provisórios até a resposta formal da administradora e serão revisados pela Issue #44.
 
 ## Organização do desenvolvimento
 
@@ -175,6 +183,31 @@ Essas premissas não são aplicadas silenciosamente ao cenário-base. Elas só a
 A comparação simultânea **Essencial × Premium** foi separada na Issue #45 para preservar configurações independentes e editáveis de cada plano, em vez de duplicar cenários por hard-code.
 
 A migração V25 → V26 preserva os resultados default; a suíte passou **26/26 testes**.
+
+## V27 — matriz posse × gestão do Airbnb
+
+A Rodada D refatorou os cenários Airbnb para um motor-base compartilhado em duas dimensões:
+
+| Posse | Gestão | Cenário |
+| --- | --- | --- |
+| próprio | autogestão | Airbnb próprio + autogestão |
+| próprio | administradora | Airbnb próprio + administradora |
+| alugado | autogestão | Airbnb alugado + autogestão |
+| alugado | administradora | Airbnb alugado + administradora |
+
+A dimensão **posse** determina valor do imóvel, aluguel, caução, encargos contratuais, CAPEX alugado e patrimônio imobiliário. A dimensão **gestão** determina comissão, performance, taxa de limpeza, alocação da taxa Airbnb, tarefas delegadas, custos incluídos, onboarding e titularidade/pagamento de CAPEX.
+
+O novo modo **alugado + administradora**:
+- não incorpora o valor do imóvel ao capital;
+- preserva aluguel, caução e encargos do contrato alugado;
+- aplica as mesmas regras da administradora usadas no imóvel próprio;
+- combina CAPEX alugado com as flags de quem paga e de quem mantém o ativo;
+- possui benchmark financeiro próprio sobre o capital efetivamente comprometido;
+- funciona nos horizontes anuais de 1/3/5 anos.
+
+A refatoração preservou numericamente os cinco cenários que já existiam na V26. A suíte completa passou **27/27 testes**.
+
+A V27 ainda usa um único conjunto ativo de premissas da administradora para os dois modos administrados. A comparação simultânea entre presets Essencial e Premium permanece na Issue #45.
 
 ## Limitações atuais
 
