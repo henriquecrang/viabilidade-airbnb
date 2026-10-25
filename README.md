@@ -135,12 +135,32 @@ Commits devem mencionar a Issue relacionada e usar `Closes #N` quando concluíre
 
 Publique os arquivos na raiz de um repositório e habilite **Settings → Pages → Deploy from a branch**. Não há build nem backend.
 
+## V25 — aquisição a partir de capital disponível
+
+A posição inicial **“tenho capital e penso em comprar”** passou a alterar efetivamente o motor econômico.
+
+Regra atual:
+
+- o patrimônio inicial é o **capital disponível informado**;
+- o cenário de compra e o benchmark financeiro partem exatamente desse mesmo montante;
+- preço de compra + custos de aquisição + CAPEX + reservas iniciais + capital de giro precisam caber integralmente no capital disponível;
+- custos de aquisição são consumidos uma única vez e não viram patrimônio;
+- CAPEX mantém sua lógica própria de residual/depreciação;
+- capital de giro e reservas continuam sendo patrimônio vinculado;
+- o capital que sobra após a entrada permanece aplicado financeiramente e integra o patrimônio do cenário;
+- o benchmark sem compra investe o capital inicial integral, sem aplicar custos de venda de um imóvel que ainda não existe;
+- quando o usuário já possui o imóvel, permanece a regra anterior: vender implica corretagem e demais custos de liquidação, e apenas o capital líquido é investido.
+
+Nesta versão, **não existe financiamento nem aporte adicional para completar uma compra que exceda o capital disponível**. O wizard rejeita essa configuração. Essa expansão foi separada para o backlog, para não introduzir dívida, juros e aportes assimétricos sem modelagem explícita.
+
+Os horizontes continuam anuais (1/3/5 anos), e o comportamento default de quem já possui o imóvel permanece numericamente idêntico à V24.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, aquisição/venda e configuração guiada ainda serão implementados (#23–#29).
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, operação e uso híbrido já estão disponíveis; o wizard de administradora (#26) ainda depende da calibração real da proposta (#5/#32).
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
@@ -458,7 +478,7 @@ A camada de onboarding guiado foi adicionada sem criar um segundo motor econômi
 - já possui imóvel, moradia principal, segunda residência e Airbnb em imóvel alugado filtram apenas os cenários exibidos;
 - premissas dos cenários ocultos continuam salvas e o motor detalhado não é apagado;
 - no Airbnb alugado, o benchmark financeiro permanece embutido no próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido;
-- o caminho **“tenho capital e penso em comprar” é bloqueado**, em vez de produzir uma comparação economicamente falsa, até a conclusão da #42.
+- o caminho **“tenho capital e penso em comprar”** foi completado na V25: compra e benchmark partem do mesmo capital inicial; a compra precisa caber integralmente nesse capital.
 
 ### #25 — benchmark financeiro
 
