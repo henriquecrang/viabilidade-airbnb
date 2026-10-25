@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 32;
+  const APP_VERSION = 33;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -3719,11 +3719,11 @@
       return `
         <article class="final-scenario-card ${isBest ? 'best' : ''}">
           <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Maior excedente</span>' : ''}</div>
-          <div class="final-annual ${total < 0 ? 'negative' : ''}">${money.format(total)}</div>
-          <div class="final-annual-label">excedente nominal sobre preservação · total de ${years} ano${years>1?'s':''}</div>
+          <div class="final-annual ${monthly < 0 ? 'negative' : ''}">${money.format(monthly)}</div>
+          <div class="final-annual-label">média mensal equivalente do excedente nominal</div>
           <div class="final-period-equivalents">
+            <div><span>Total · ${years} ano${years>1?'s':''}</span><strong>${money.format(total)}</strong></div>
             <div><span>Média anual</span><strong>${money.format(annual)}</strong></div>
-            <div><span>Média mensal eq.</span><strong>${money.format(monthly)}</strong></div>
           </div>
           <div class="final-bar-track" aria-hidden="true"><span style="width:${barWidth.toFixed(1)}%"></span></div>
           <div class="money-lenses">
