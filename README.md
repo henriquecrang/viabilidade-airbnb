@@ -225,7 +225,7 @@ Regras incorporadas:
 - **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. O wizard usa **80% como piso-alvo conservador**, preservando a sazonalidade, apenas quando o preset é aplicado;
 - **diária/ADR:** uplift default permanece 0%, coerente com a resposta de que o ganho seria pequeno/insignificante.
 
-A faixa de ocupação não foi tratada como dado de mercado auditado. A Issue #46 foi criada para validar a alegação com histórico real.
+A faixa de ocupação é usada apenas como **default operacional informado pelo parceiro**, totalmente editável no wizard. Foi decidido não exigir validação histórica adicional para esse uso; a Issue #46 foi encerrada como não planejada.
 
 O contrato enviado pela administradora foi classificado como **contrato de hospedagem direta com hóspede**, usado fora do Airbnb, e não como contrato proprietário × administradora. Por conter dados pessoais de terceiros, o PDF não foi adicionado ao repositório público; apenas notas sem PII foram registradas.
 
@@ -260,7 +260,7 @@ Suíte completa: **29/29 testes**.
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium foram recalibrados com as respostas oficiais recebidas em 24/10/2026; a alegação de ocupação >80% permanece hipótese comercial a validar (#46).
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium foram recalibrados com as respostas oficiais recebidas em 24/10/2026; 80% permanece um default operacional editável informado pelo parceiro, sem validação adicional planejada.
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
