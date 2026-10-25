@@ -131,6 +131,22 @@
           </div>
 
           <div class="subsection">
+            <div class="subsection-heading"><div><h3>Estratégia ao fim do horizonte</h3><p>Default: continuar. Se você escolher encerrar, o modelo realiza o patrimônio e aplica apenas os custos explicitamente configurados.</p></div></div>
+            <div class="form-grid compact-fields">
+              <label class="field-group"><span class="field-label">Airbnb em imóvel próprio</span><select data-path="exitStrategy.ownedAirbnb"><option value="continue">Continuar / manter o imóvel</option><option value="liquidate">Encerrar e vender o imóvel</option></select></label>
+              <label class="field-group"><span class="field-label">Airbnb em imóvel alugado</span><select data-path="exitStrategy.rentedAirbnb"><option value="continue">Renovar / continuar</option><option value="liquidate">Encerrar e realizar ativos</option></select></label>
+              <label class="field-group"><span class="field-label">Aluguel tradicional</span><select data-path="exitStrategy.traditional"><option value="continue">Continuar locado</option><option value="liquidate">Encerrar e vender o imóvel</option></select></label>
+              <label class="field-group"><span class="field-label">Investimento financeiro</span><select data-path="exitStrategy.investment"><option value="continue">Manter aplicado</option><option value="liquidate">Liquidar no fim</option></select></label>
+              <label class="field-group"><span class="field-label">Recuperação do CAPEX · imóvel próprio</span><div class="input-suffix compact-control"><input data-path="exitStrategy.ownedAssetRecoveryPct" type="number" min="0" max="100" step="1" /><span>% residual</span></div></label>
+              <label class="field-group"><span class="field-label">Recuperação do CAPEX · imóvel alugado</span><div class="input-suffix compact-control"><input data-path="exitStrategy.rentedAssetRecoveryPct" type="number" min="0" max="100" step="1" /><span>% residual</span></div></label>
+              <label class="field-group"><span class="field-label">Recuperação da caução</span><div class="input-suffix compact-control"><input data-path="exitStrategy.rentedDepositRecoveryPct" type="number" min="0" max="100" step="1" /><span>%</span></div></label>
+              <label class="field-group"><span class="field-label">Custos de saída · imóvel alugado</span><div class="input-prefix money-control"><span>R$</span><input data-path="exitStrategy.rentedExitCosts" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Custo de liquidação do investimento</span><div class="input-suffix compact-control"><input data-path="exitStrategy.investmentLiquidationCostPct" type="number" min="0" max="100" step="0.1" /><span>% patrimônio</span></div></label>
+            </div>
+            <p class="helper">Venda de imóvel usa as premissas já configuradas em “Aquisição e venda”: ajuste de preço, corretagem, custos fixos, saldo a quitar, IR e outros custos.</p>
+          </div>
+
+          <div class="subsection">
             <div class="subsection-heading"><div><h3>Tempo próprio</h3><p>As horas ligadas às tarefas do Airbnb são informadas nas tabelas operacionais. No cenário administrado, tarefas marcadas como “admin gerencia” deixam automaticamente de consumir seu tempo.</p></div></div>
             <div class="form-grid compact-fields">
               <label class="field-group"><span class="field-label">Outras horas gerais · Airbnb próprio</span><div class="input-suffix compact-control"><input data-path="work.selfHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
@@ -395,19 +411,8 @@
             <label class="field-group checkbox-field"><span class="field-label">Tributação</span><span class="check-row"><label><input data-path="rentedAirbnb.annualLeaseCostsDeductibleIR" type="checkbox" /> Custos anuais do contrato dedutíveis IR</label></span></label>
           </div>
           <div class="subsection rented-end-strategy">
-            <div class="subsection-heading"><div><h3>Ao fim do horizonte</h3><p>O que o modelo assume quando termina o período de 1, 3 ou 5 anos.</p></div></div>
-            <div class="exit-strategy-switch" role="group" aria-label="Estratégia ao fim do horizonte">
-              <button class="exit-strategy-option active" type="button" aria-pressed="true">
-                <strong>Renovar e continuar</strong>
-                <span>Default atual · receitas, custos e operação continuam normalmente.</span>
-              </button>
-              <button class="exit-strategy-option" type="button" disabled title="Será implementado na Issue #40">
-                <strong>Encerrar a operação</strong>
-                <span>Futuro · distrato, saída, caução e realização/reuso dos ativos.</span>
-              </button>
-            </div>
-            <input type="hidden" data-path="rentedAirbnb.contractEndStrategy" value="renew" />
-            <p class="helper">A alternativa de encerramento está registrada na Issue #40. Até sua implementação, todos os horizontes assumem renovação/continuidade.</p>
+            <div class="subsection-heading"><div><h3>Ao fim do horizonte</h3><p>A estratégia é configurada em “Dados gerais → Estratégia ao fim do horizonte”.</p></div></div>
+            <p class="helper">Ao encerrar: o modelo recupera a parcela configurada da caução e do residual do CAPEX, desconta os custos de saída e não trata esses valores como receita operacional recorrente.</p>
           </div>
           <div class="concept-note">
             <strong>Como o cenário funciona:</strong> usa as mesmas diárias, ocupação, custos por reserva e reservas do Airbnb autogerido. Na tabela de custos mensais, “Locatário paga” define os encargos do contrato/operação; nos custos percentuais, uma coluna própria decide o que também vale para esse cenário. A caução não é despesa: continua sendo patrimônio, mas fica vinculada ao contrato.
