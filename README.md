@@ -319,6 +319,18 @@ Desde a V34:
 
 Isso mantém explícita a distinção entre resultado financeiro e custo econômico do tempo.
 
+## V35 — trabalho do proprietário explícito no cálculo
+
+O detalhamento de cada cenário passa a mostrar explicitamente quanto foi “pago” em trabalho do proprietário.
+
+Exemplo anual:
+
+`263,3 h × R$ 100/h = R$ 26.325`
+
+A linha é identificada como **custo econômico; não sai do caixa**. Nos horizontes de 1, 3 e 5 anos, o simulador acumula as horas efetivamente exigidas pelo cenário e mostra a mesma fórmula usando o valor real da hora informado no início da simulação.
+
+A fórmula também aparece nos cards finais e na comparação 1/3/5.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
