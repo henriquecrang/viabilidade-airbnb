@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===36,'estado deve estar na V36');
+assert(defaultState.version>=36,'estado deve preservar o detalhamento mensal V36+');
 
 const annual=calculateModel(defaultState);
 for(const sc of annual.scenarios){
