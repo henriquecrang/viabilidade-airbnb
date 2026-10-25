@@ -314,6 +314,15 @@ Concluída em 25/10/2026 — Issue #53.
 - cards finais e comparação 1/3/5 mostram equivalentes mensais;
 - suíte completa: 35/35 testes.
 
+### V38 — simplificação do trabalho nos cards
+Concluída em 25/10/2026 — Issue #54.
+
+- removida a linha visual de total acumulado do trabalho;
+- mantidas apenas horas/mês e valor das horas/mês;
+- custo total permanece no motor econômico;
+- corrigido overflow entre cards;
+- suíte completa: 35/35 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
