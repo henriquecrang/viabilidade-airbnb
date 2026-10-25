@@ -392,6 +392,8 @@ td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space
 .final-period-equivalents span { color: #aeb8c8; font-size: .61rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 800; }
 .final-scenario-card.best .final-period-equivalents span { color: var(--muted); }
 .final-period-equivalents strong { margin-top: 2px; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.final-period-equivalents small { display: block; margin-top: 3px; color: #8f9aae; font-size: .57rem; line-height: 1.2; }
+.final-scenario-card.best .final-period-equivalents small { color: var(--muted); }
 .final-winner { min-width: 230px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.16); border-radius: 13px; background: rgba(255,255,255,.07); text-align: right; }
 .final-winner-label, .final-winner span, .final-winner small { display: block; }
 .final-winner-label { color: #aeb8c8; font-size: .65rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
