@@ -2028,18 +2028,25 @@
     const adminCommissionBase = adminAccommodationRevenue
       + adminOtherGuestFeeRevenue
       + (currentState.airbnb.adminCommissionBaseIncludesCleaning ? adminCleaningFeeRevenue : 0);
-    const adminFee = adminCommissionBase * Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
-    const adminCleaningPassThrough = currentState.airbnb.adminCleaningFeeRecipient === 'admin'
+    const adminCommissionRate = Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
+    const adminPlatformRate = Math.max(0, n(currentState.airbnb.platformFeePct)) / 100;
+    const adminSplitAfterPlatform = currentState.airbnb.adminPlatformFeeAllocation === 'split-shares';
+    const adminCommissionGrossShare = adminCommissionBase * adminCommissionRate;
+    const adminCleaningPassThroughGross = currentState.airbnb.adminCleaningFeeRecipient === 'admin'
       ? adminCleaningFeeRevenue
       : 0;
-    const adminGrossShare = adminFee + adminCleaningPassThrough;
-    const adminOwnerRevenueBeforePlatform = Math.max(0, adminAirbnbRevenue - adminGrossShare);
+    const adminPlatformFeeAttributedToAdmin = adminSplitAfterPlatform
+      ? (adminCommissionGrossShare + adminCleaningPassThroughGross) * adminPlatformRate
+      : 0;
+    const adminFee = adminCommissionGrossShare * (adminSplitAfterPlatform ? Math.max(0, 1 - adminPlatformRate) : 1);
+    const adminCleaningPassThrough = adminCleaningPassThroughGross
+      * (adminSplitAfterPlatform ? Math.max(0, 1 - adminPlatformRate) : 1);
+    const adminPlatformFee = currentState.airbnb.adminIncludesPlatformFee ? 0 : adminPlatformFeeGross;
+    const adminOwnerRevenueAfterPlatformAndSplit = Math.max(
+      0,
+      adminAirbnbRevenue - adminPlatformFee - adminFee - adminCleaningPassThrough
+    );
     const adminMonthlyFee = Math.max(0, n(currentState.airbnb.adminMonthlyFee)) * 12;
-    const adminPlatformFee = currentState.airbnb.adminIncludesPlatformFee
-      ? 0
-      : (currentState.airbnb.adminPlatformFeeAllocation === 'split-shares'
-        ? adminOwnerRevenueBeforePlatform * Math.max(0, n(currentState.airbnb.platformFeePct)) / 100
-        : adminPlatformFeeGross);
     const adminOperatingCosts = adminFee + adminCleaningPassThrough + adminMonthlyFee + adminPlatformFee + adminStayCosts + adminFixedAirbnb + adminPctCosts;
     const adminPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? adminPlatformFee : 0;
     const adminManagementTaxDeductions = (currentState.airbnb.adminFeeDeductibleIR ? adminFee : 0)
@@ -2428,11 +2435,14 @@
         'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
         'Ocupação alvo administrada (%)': adminOccupancyMode === 'target-floor' ? adminOccupancyTargetPct : 0,
         'Ajuste efetivo para atingir o piso (p.p.)': adminOccupancyTargetExtraPp,
-        'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
-        'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
-        'Receita bruta restante do proprietário antes da plataforma': adminOwnerRevenueBeforePlatform,
+        'Base bruta da divisão': adminCommissionBase,
+        'Parcela bruta da comissão antes do Airbnb': adminCommissionGrossShare,
+        'Taxa Airbnb total antes da divisão': adminPlatformFee,
+        'Taxa Airbnb atribuída à parcela da administradora': adminPlatformFeeAttributedToAdmin,
+        'Comissão líquida estimada da administradora': adminFee,
+        'Taxa de limpeza líquida repassada à administradora': adminCleaningPassThrough,
+        'Receita do proprietário após Airbnb e divisão': adminOwnerRevenueAfterPlatformAndSplit,
         'Mensalidade da administradora': adminMonthlyFee,
-        'Taxa da plataforma atribuída ao proprietário': adminPlatformFee,
         'Custos por reservas não incluídos': adminStayCosts, 'Custos mensais não incluídos': adminFixedAirbnb,
         'OPEX % não incluído': adminPctCosts, 'Deduções consideradas na base de IR': adminTaxDeductions,
         'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax, 'Caixa antes das reservas': adminOperatingCash,
@@ -2489,9 +2499,13 @@
         'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
         'Ocupação alvo administrada (%)': adminOccupancyMode === 'target-floor' ? adminOccupancyTargetPct : 0,
         'Ajuste efetivo para atingir o piso (p.p.)': adminOccupancyTargetExtraPp,
-        'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
-        'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
-        'Taxa da plataforma atribuída ao operador': adminPlatformFee,
+        'Base bruta da divisão': adminCommissionBase,
+        'Parcela bruta da comissão antes do Airbnb': adminCommissionGrossShare,
+        'Taxa Airbnb total antes da divisão': adminPlatformFee,
+        'Taxa Airbnb atribuída à parcela da administradora': adminPlatformFeeAttributedToAdmin,
+        'Comissão líquida estimada da administradora': adminFee,
+        'Taxa de limpeza líquida repassada à administradora': adminCleaningPassThrough,
+        'Receita do operador após Airbnb e divisão': adminOwnerRevenueAfterPlatformAndSplit,
         'Aluguel pago ao proprietário': rentedLeaseRent,
         'Imóvel vem mobiliado': currentState.rentedAirbnb.furnished ? 1 : 0,
         'Sublocação/temporada autorizada': currentState.rentedAirbnb.subleaseAuthorized ? 1 : 0,
@@ -2624,7 +2638,8 @@
       accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
       adminReservations, adminCleaningFeeRevenue, adminOtherGuestFeeRevenue, adminGuestFeeRevenue, adminAirbnbRevenue,
-      adminCommissionBase, adminFee, adminCleaningPassThrough, adminOwnerRevenueBeforePlatform, adminPlatformFee,
+      adminCommissionBase, adminCommissionGrossShare, adminPlatformFeeAttributedToAdmin,
+      adminFee, adminCleaningPassThrough, adminOwnerRevenueAfterPlatformAndSplit, adminPlatformFee,
       adminOccupancyMode, adminOccupancyTargetPct, adminOccupancyTargetExtraPp,
       fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, adminFixedRentedAirbnb, fixedTraditional,
       pctCostRate, rentedPctCostRate, adminPctCostRate, adminRentedPctCostRate,
