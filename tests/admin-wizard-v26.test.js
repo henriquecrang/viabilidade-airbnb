@@ -9,7 +9,7 @@ function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
 assert(defaultState.version>=26,'estado deve preservar o wizard V26+');
-assert(defaultState.guidedSetup.adminProposal.configured===false,'preset provisório não pode ser aplicado silenciosamente');
+assert(defaultState.guidedSetup.adminProposal.configured===false,'calibração da administradora não pode ser aplicada silenciosamente');
 
 const legacy=clone(defaultState);
 legacy.version=25;
@@ -111,11 +111,11 @@ assert(s.setupCosts.find(x=>x.id==='enxoval').adminPays===true,'admin paga enxov
 assert(s.setupCosts.find(x=>x.id==='enxoval').adminAssetBelongsToOwner===false,'enxoval Premium não fica com proprietário');
 assert(s.percentageCosts.find(x=>x.id==='maintenance').adminManages===true,'admin gerencia manutenção Premium');
 assert(s.percentageCosts.find(x=>x.id==='maintenance').adminIncluded===false,'proprietário paga manutenção Premium');
-assert(s.guidedSetup.adminProposal.provisionalAssumptions===true,'preset deve permanecer marcado provisório');
-assert(s.guidedSetup.adminProposal.reviewIssue===44,'revisão futura deve apontar #44');
+assert(s.guidedSetup.adminProposal.provisionalAssumptions===false,'novas aplicações devem usar calibração oficial');
+assert(s.guidedSetup.adminProposal.calibrationStatus==='official-response','status oficial ausente');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 assert(html.includes('id="openAdminWizard"'),'launcher da administradora ausente');
 assert(html.includes('Administradora'),'texto do launcher ausente');
 
-console.log('V26 wizard administradora: presets provisórios Essencial/Premium passaram.');
+console.log('V26 wizard administradora: compatibilidade de configuração preservada na V28.');
