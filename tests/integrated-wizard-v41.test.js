@@ -24,12 +24,12 @@ const draft={
   cost_lavanderia:75,
   cost_amenidades:80,
   cost_checkin:20,
-  scenario_airbnb_self:true,
-  scenario_airbnb_admin_essential:false,
-  scenario_airbnb_admin:false,
-  scenario_airbnb_rented:false,
-  scenario_airbnb_rented_admin_essential:false,
-  scenario_airbnb_rented_admin:false,
+  'scenario_airbnb-self':true,
+  'scenario_airbnb-admin-essential':false,
+  'scenario_airbnb-admin':false,
+  'scenario_airbnb-rented':false,
+  'scenario_airbnb-rented-admin-essential':false,
+  'scenario_airbnb-rented-admin':false,
   scenario_traditional:true,
   scenario_investment:true
 };
