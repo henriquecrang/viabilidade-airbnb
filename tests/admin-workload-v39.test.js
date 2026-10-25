@@ -48,7 +48,7 @@ legacy.version=38;
 legacy.guidedSetup.adminProfiles.essential={
   configured:true,plan:'essential',commissionPct:15,supervisionHoursMonthly:1,
   manage_limpeza:true,manage_lavanderia:true,manage_amenidades:true,manage_checkin:true,
-  manage_marketing:true,manage_presales:true,manage_guest-support:true,manage_local-support:true,
+  manage_marketing:true,manage_presales:true,'manage_guest-support':true,'manage_local-support':true,
   manage_software:true,manage_pricing:true
 };
 const migrated=normalizeState(legacy);
