@@ -222,7 +222,7 @@ Regras incorporadas:
 - **enxoval:** pertence a quem compra; quando a administradora compra no preset Premium, o ativo não integra o patrimônio do proprietário;
 - **manutenção de imóvel/equipamentos/bens:** responsabilidade financeira do proprietário; o preset não presume que reparos estejam incluídos nem que a administradora gerencie esses reparos;
 - **enxoval e amenidades:** a administradora declarou que repõe/troca esses itens; isso confirma responsabilidade operacional, mas o simulador não presume custo de amenidades incluído sem preço/contrato explícito;
-- **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. Desde a V30, o wizard usa **+20 pontos percentuais por período, com teto de 100%**, sobre a ocupação autogerida;
+- **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. Desde a V31, a diferença esperada da gestão é uma **variável calibrável em pontos percentuais** (default +20 p.p.), e a ocupação pode ser informada tanto pela lente de autogestão quanto pela lente administrada;
 - **diária/ADR:** uplift default permanece 0%, coerente com a resposta de que o ganho seria pequeno/insignificante.
 
 A diferença de ocupação é usada apenas como **default operacional informado pelo parceiro**, totalmente editável no wizard. Foi decidido não exigir validação histórica adicional para esse uso; a Issue #46 foi encerrada como não planejada.
@@ -274,12 +274,22 @@ As horas mensais existentes foram mantidas nesta rodada. Com estadia média de 5
 
 A recalibração é aplicada automaticamente apenas ao antigo cenário-base V29 intacto. Simulações customizadas preservam seus valores.
 
+## V31 — ocupação bidirecional e delta de gestão calibrável
+
+A Issue #48 separa a **ocupação informada pelo usuário** do **ganho esperado da gestão profissional**.
+
+Na tabela sazonal, o usuário escolhe se os percentuais digitados representam **autogestão / sem administradora** ou **operação com administradora**. O ganho esperado com administradora é uma variável global calibrável, com default **+20 p.p.**.
+
+O simulador mantém internamente a autogestão como base canônica e deriva a outra lente automaticamente. Quando a entrada é autogestão, soma o delta com teto de 100%; quando a entrada é administrada, converte o valor digitado para autogestão removendo o delta, com piso de 0%.
+
+Trocar a base de preenchimento não altera os resultados econômicos: muda apenas a forma de exibir e editar os mesmos valores. A tabela mostra simultaneamente a ocupação informada e a derivada. Ajustes específicos dos perfis Essencial/Premium continuam disponíveis como ajustes adicionais ao delta global e começam em zero.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium usam +20 p.p. de ocupação por período, com teto de 100%, como default operacional editável informado pelo parceiro.
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. O ganho esperado de ocupação com administradora é global e editável (default +20 p.p.); ajustes específicos de Essencial/Premium são adicionais e começam neutros.
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
