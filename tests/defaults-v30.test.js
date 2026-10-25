@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===30,'estado deve estar na V30');
+assert(defaultState.version>=30,'estado deve preservar a recalibração V30+');
 const occ=Object.fromEntries(defaultState.seasons.map(x=>[x.id,x.occupancyPct]));
 assert(JSON.stringify(occ)===JSON.stringify({reveillon:100,verao:75,carnaval:100,outono:55,inverno:50,primavera:55}),'sazonalidade V30');
 
@@ -27,7 +27,8 @@ approx(self.workHoursAnnual/12,21.9375,1e-9,'trabalho manual mensal equivalente'
 
 const preset=adminWizardPresetDraft('premium',defaultState);
 assert(preset.occupancyMode==='delta','admin deve usar delta');
-approx(preset.occupancyImpactPp,20,1e-9,'admin +20 p.p.');
+approx(defaultState.airbnb.managementOccupancyDeltaPp,20,1e-9,'ganho global da admin +20 p.p.');
+approx(preset.occupancyImpactPp,0,1e-9,'perfil não deve duplicar ganho global');
 approx(preset.occupancyTargetPct,0,1e-9,'sem piso fixo');
 
 let adminState=applyWizardPatch(clone(defaultState),buildAdminWizardPatch(preset,defaultState));
@@ -53,4 +54,4 @@ custom.seasons.find(x=>x.id==='verao').occupancyPct=82;
 const customMigrated=normalizeState(custom);
 approx(customMigrated.seasons.find(x=>x.id==='verao').occupancyPct,82,1e-9,'ocupação customizada deve ser preservada');
 
-console.log('V30 defaults: ocupação, autogestão manual, +20 p.p. e migração passaram.');
+console.log('V30 defaults: ocupação e autogestão manual preservadas na V31+.');
