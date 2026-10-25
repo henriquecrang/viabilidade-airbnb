@@ -418,11 +418,11 @@ td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space
 .final-scenario-card.best .final-bar-track { background: #e9edf2; }
 .final-scenario-card.best .final-bar-track span { background: var(--green); }
 .final-scenario-metrics { display: grid; gap: 6px; }
-.final-scenario-metrics > div { display: flex; justify-content: space-between; gap: 9px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.10); }
+.final-scenario-metrics > div { display: flex; justify-content: space-between; gap: 9px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.10); min-width: 0; }
 .final-scenario-card.best .final-scenario-metrics > div { border-top-color: var(--border); }
-.final-scenario-metrics span { color: #aeb8c8; font-size: .65rem; }
+.final-scenario-metrics span { color: #aeb8c8; font-size: .65rem; min-width: 0; overflow-wrap: anywhere; }
 .final-scenario-card.best .final-scenario-metrics span { color: var(--muted); }
-.final-scenario-metrics strong { font-size: .72rem; text-align: right; white-space: nowrap; }
+.final-scenario-metrics strong { font-size: .72rem; text-align: right; white-space: nowrap; flex: 0 0 auto; }
 .final-difference { margin-top: 11px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.10); color: #aeb8c8; font-size: .67rem; line-height: 1.3; }
 .final-scenario-card.best .final-difference { border-top-color: var(--border); color: #21653a; font-weight: 800; }
 .final-summary-note { margin: 12px 2px 0; color: #98a4b6; font-size: .68rem; }
