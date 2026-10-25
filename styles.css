@@ -602,12 +602,12 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
 @media (max-width: 900px) { .normalization-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .normalization-preview { grid-template-columns: 1fr; } }
 
-/* B0 — página mais larga e cinco resultados lado a lado em desktop */
+/* V27 — página larga e seis resultados lado a lado em desktop */
 .app-header,
 .app-shell { max-width: 1560px; }
 
 @media (min-width: 1280px) {
-  .final-scenario-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .final-scenario-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 
 @media (min-width: 900px) and (max-width: 1279px) {
