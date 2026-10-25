@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 41;
+  const APP_VERSION = 42;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -265,6 +265,17 @@
       mortgageBalance: 0,
       capitalGainsTax: 0,
       otherCosts: 0
+    },
+    exitStrategy: {
+      ownedAirbnb: 'continue',
+      rentedAirbnb: 'continue',
+      traditional: 'continue',
+      investment: 'continue',
+      ownedAssetRecoveryPct: 100,
+      rentedAssetRecoveryPct: 100,
+      rentedDepositRecoveryPct: 100,
+      rentedExitCosts: 0,
+      investmentLiquidationCostPct: 0
     },
     workingCapital: {
       airbnbSelf: 0,
@@ -1372,11 +1383,15 @@
       merged.analysis.horizonYears = 5;
     }
 
-    // V20: política explícita de fim do horizonte para o imóvel alugado.
-    // Até a Issue #40, apenas renovação/continuidade é calculada.
-    merged.rentedAirbnb.contractEndStrategy = source.rentedAirbnb?.contractEndStrategy === 'renew'
-      ? 'renew'
-      : 'renew';
+    // V42: estratégia explícita de saída. O campo legado do Airbnb alugado
+    // continua sincronizado para compatibilidade com simulações V20+.
+    merged.rentedAirbnb.contractEndStrategy = source.rentedAirbnb?.contractEndStrategy === 'terminate'
+      ? 'terminate'
+      : (source.exitStrategy?.rentedAirbnb === 'liquidate' ? 'terminate' : 'renew');
+    merged.exitStrategy = mergeDefaults(defaultState.exitStrategy, source.exitStrategy || {});
+    if (incomingVersion < 42 && source.rentedAirbnb?.contractEndStrategy === 'terminate') {
+      merged.exitStrategy.rentedAirbnb = 'liquidate';
+    }
 
     // V30: recalibração dos defaults de ocupação e trabalho manual.
     // Só o antigo cenário-base V29 intacto recebe os novos valores; simulações
