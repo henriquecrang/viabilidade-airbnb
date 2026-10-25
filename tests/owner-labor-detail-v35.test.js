@@ -25,7 +25,7 @@ for(const years of [1,3,5]){
 
 const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
 assert(appSource.includes('Trabalho do proprietário <small>custo econômico; não sai do caixa</small>'),'detalhamento anual não explica trabalho');
-assert(appSource.includes('h × ${money.format(hourly)}/h ='),'detalhamento anual não mostra fórmula');
-assert(appSource.includes('Trabalho do proprietário: ${number1.format(sc.cumulativeWorkHours || 0)} h'),'comparação plurianual não mostra horas acumuladas');
+assert(appSource.includes('<strong>${money.format(labor)}</strong>'),'detalhamento anual deve mostrar o valor total do trabalho');
+assert(appSource.includes('Trabalho do proprietário: ${money.format(sc.realLaborCost)}'),'comparação plurianual deve mostrar o valor do trabalho');
 
 console.log('V35 trabalho do proprietário: fórmula anual e plurianual passaram.');
