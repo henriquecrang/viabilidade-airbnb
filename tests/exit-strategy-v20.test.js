@@ -23,8 +23,8 @@ const migrated=normalizeState(legacy);
 assert(migrated.rentedAirbnb.contractEndStrategy==='renew','migração deve assumir renovação');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-assert(html.includes('Renovar e continuar'),'opção de continuidade ausente');
-assert(html.includes('Encerrar a operação'),'opção futura ausente');
-assert(html.includes('disabled title="Será implementado na Issue #40"'),'encerramento deve permanecer desabilitado');
+assert(html.includes('exitStrategy.rentedAirbnb'),'seletor de saída do Airbnb alugado ausente');
+assert(html.includes('Encerrar e realizar ativos'),'opção de encerramento ausente');
+assert(!html.includes('Será implementado na Issue #40'),'UI não deve mais tratar a saída como futura');
 
 console.log('V20 fim do horizonte: todos os testes passaram.');
