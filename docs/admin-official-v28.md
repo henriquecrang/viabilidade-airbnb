@@ -37,15 +37,14 @@ Declaração comercial recebida:
 - proprietário sem apoio: abaixo de 60%;
 - aumento de diária: pequeno/insignificante.
 
-Decisão de modelagem:
-- 80% é usado como **piso-alvo conservador** no preset oficial;
-- o piso nunca reduz uma ocupação que já esteja acima de 80%;
-- a sazonalidade é preservada por um ajuste uniforme em pontos percentuais, com teto de 100%;
+Decisão de modelagem original da V28:
+- 80% foi inicialmente usado como piso-alvo conservador;
 - uplift default de diária = 0%;
-- o piso de 80% é aceito como **default operacional informado pelo parceiro**, mantendo-se editável no uso;
-- essa premissa não é usada como evidência independente no módulo de comparáveis de mercado.
+- a premissa não é usada como evidência independente no módulo de comparáveis de mercado.
 
-Decisão posterior: a Issue #46 foi descartada. Não será exigida validação adicional com histórico da administradora para sustentar esse default.
+**Recalibração V30:** o piso fixo de 80% foi substituído por **+20 pontos percentuais sobre a ocupação autogerida de cada período**, com teto de 100%. Essa regra segue a diferença operacional informada pelo parceiro e permanece editável.
+
+Decisão posterior: a Issue #46 foi descartada. Não será exigida validação adicional com histórico da administradora para sustentar esse default operacional.
 
 ### Manutenção, enxoval e amenidades
 
