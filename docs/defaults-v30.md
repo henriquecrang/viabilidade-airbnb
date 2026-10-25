@@ -64,3 +64,8 @@ Qualquer simulação customizada preserva suas próprias premissas.
 Suíte completa: **30/30 testes**.
 
 Teste específico: `tests/defaults-v30.test.js`.
+
+
+## Evolução V31
+
+A V31 preserva os defaults V30, mas move o +20 p.p. para uma variável global de diferença esperada entre autogestão e gestão profissional. A ocupação sazonal continua armazenada canonicamente como autogestão, mesmo quando a interface está configurada para receber percentuais já administrados.
