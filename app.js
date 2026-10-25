@@ -423,6 +423,8 @@
     return clamp(n(inputState?.airbnb?.managementOccupancyDeltaPp, 20), 0, 100);
   }
 
+  // A ocupação sazonal é armazenada canonicamente como autogestão.
+  // A base escolhida pelo usuário altera apenas a entrada/exibição.
   function selfOccupancyPctFromInput(rawPct, inputState = state) {
     const raw = clamp(n(rawPct), 0, 100);
     return occupancyInputBasis(inputState) === 'admin'
@@ -430,24 +432,19 @@
       : raw;
   }
 
-  function adminReferenceOccupancyPctFromInput(rawPct, inputState = state) {
-    const raw = clamp(n(rawPct), 0, 100);
-    return occupancyInputBasis(inputState) === 'self'
-      ? clamp(raw + managementOccupancyDeltaPp(inputState), 0, 100)
-      : raw;
+  function adminReferenceOccupancyPctFromInput(selfPct, inputState = state) {
+    return clamp(n(selfPct) + managementOccupancyDeltaPp(inputState), 0, 100);
+  }
+
+  function occupancyDisplayPct(selfPct, inputState = state) {
+    return occupancyInputBasis(inputState) === 'admin'
+      ? adminReferenceOccupancyPctFromInput(selfPct, inputState)
+      : clamp(n(selfPct), 0, 100);
   }
 
   function convertOccupancyInputBasis(inputState, newBasis) {
     const next = structuredCloneSafe(inputState);
-    const from = occupancyInputBasis(next);
-    const to = newBasis === 'admin' ? 'admin' : 'self';
-    if (from === to) return next;
-    const delta = managementOccupancyDeltaPp(next);
-    next.seasons = (next.seasons || []).map((season) => ({
-      ...season,
-      occupancyPct: clamp(n(season.occupancyPct) + (to === 'admin' ? delta : -delta), 0, 100)
-    }));
-    next.airbnb.occupancyInputBasis = to;
+    next.airbnb.occupancyInputBasis = newBasis === 'admin' ? 'admin' : 'self';
     return next;
   }
 
@@ -1332,11 +1329,18 @@
       const profileTotals = ['essential','premium']
         .map((plan) => sourceProfiles?.[plan]?.configured ? n(sourceProfiles[plan].occupancyImpactPp, 0) : null)
         .filter((value) => value != null);
+      const hasConfiguredAdmin = Boolean(
+        source.guidedSetup?.adminProposal?.configured
+        || source.guidedSetup?.adminProfiles?.essential?.configured
+        || source.guidedSetup?.adminProfiles?.premium?.configured
+      );
       const configuredTotal = activeTotal !== 0
         ? activeTotal
         : (profileTotals.find((value) => value !== 0) ?? 20);
       merged.airbnb.managementOccupancyDeltaPp = clamp(configuredTotal, 0, 100);
-      merged.airbnb.adminOccupancyImpactPp = activeTotal - merged.airbnb.managementOccupancyDeltaPp;
+      merged.airbnb.adminOccupancyImpactPp = hasConfiguredAdmin || activeTotal !== 0
+        ? activeTotal - merged.airbnb.managementOccupancyDeltaPp
+        : 0;
 
       const proposal = merged.guidedSetup?.adminProposal;
       if (proposal?.configured) {
@@ -1448,9 +1452,10 @@
       const habitual = Math.max(0, n(item.habitualUseDays));
       const operational = Math.max(0, n(item.operationalUnavailableDays));
       const available = Math.max(0, days - personal - habitual - operational);
+      const inputValue = occupancyDisplayPct(item.occupancyPct, state);
       const derived = basis === 'self'
         ? adminReferenceOccupancyPctFromInput(item.occupancyPct, state)
-        : selfOccupancyPctFromInput(item.occupancyPct, state);
+        : clamp(n(item.occupancyPct), 0, 100);
       return `
       <tr data-id="${escapeAttr(item.id)}">
         <td><input class="row-name" data-array="seasons" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
@@ -1460,7 +1465,7 @@
         <td><input data-array="seasons" data-field="operationalUnavailableDays" data-id="${escapeAttr(item.id)}" type="number" min="0" step="1" value="${operational}" /></td>
         <td class="number-cell" data-season-available="${escapeAttr(item.id)}">${number1.format(available)}</td>
         <td><input data-array="seasons" data-field="nightlyRate" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.nightlyRate)}" /></td>
-        <td><input data-array="seasons" data-field="occupancyPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.occupancyPct)}" /></td>
+        <td><input data-array="seasons" data-field="occupancyPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${inputValue}" /></td>
         <td class="number-cell" data-season-derived-occupancy="${escapeAttr(item.id)}">${number1.format(derived)}%</td>
         <td class="money-cell" data-season-revenue="${escapeAttr(item.id)}">—</td>
         <td><button class="button icon" type="button" data-remove-array="seasons" data-id="${escapeAttr(item.id)}">Remover</button></td>
@@ -1769,7 +1774,11 @@
     if (input.type === 'checkbox') value = input.checked;
     else if (input.type === 'number') value = input.value === '' ? 0 : n(input.value);
     else value = input.value;
-    item[input.dataset.field] = value;
+    if (input.dataset.array === 'seasons' && input.dataset.field === 'occupancyPct') {
+      item.occupancyPct = selfOccupancyPctFromInput(value, state);
+    } else {
+      item[input.dataset.field] = value;
+    }
     autosave();
     if (input.dataset.array === 'monthlyCosts' || input.dataset.array === 'setupCosts') {
       renderMonthlyCosts();
@@ -1947,7 +1956,7 @@
     const managementDeltaPp = managementOccupancyDeltaPp(currentState);
     const seasonDetails = currentState.seasons.map((season) => {
       const availability = classifySeasonAvailability(season);
-      const occupancyPct = selfOccupancyPctFromInput(season.occupancyPct, currentState);
+      const occupancyPct = clamp(n(season.occupancyPct), 0, 100);
       const occupancy = occupancyPct / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate));
       const occupiedNights = availability.availableDays * occupancy;
@@ -3299,7 +3308,7 @@
         const sourceSeason = state.seasons.find((season) => String(season.id) === String(item.id));
         const derived = occupancyInputBasis(state) === 'self'
           ? adminReferenceOccupancyPctFromInput(sourceSeason?.occupancyPct, state)
-          : selfOccupancyPctFromInput(sourceSeason?.occupancyPct, state);
+          : clamp(n(sourceSeason?.occupancyPct), 0, 100);
         derivedCell.textContent = `${number1.format(derived)}%`;
       }
     });
@@ -3313,7 +3322,7 @@
     const weightedInput = calc.availableDays > 0
       ? state.seasons.reduce((sum, season) => {
           const detail = calc.seasonDetails.find((item) => String(item.id) === String(season.id));
-          return sum + n(detail?.availableDays) * clamp(n(season.occupancyPct), 0, 100) / 100;
+          return sum + n(detail?.availableDays) * occupancyDisplayPct(season.occupancyPct, state) / 100;
         }, 0) / calc.availableDays
       : 0;
     const weightedDerived = calc.availableDays > 0
@@ -3321,7 +3330,7 @@
           const detail = calc.seasonDetails.find((item) => String(item.id) === String(season.id));
           const pct = occupancyInputBasis(state) === 'self'
             ? adminReferenceOccupancyPctFromInput(season.occupancyPct, state)
-            : selfOccupancyPctFromInput(season.occupancyPct, state);
+            : clamp(n(season.occupancyPct), 0, 100);
           return sum + n(detail?.availableDays) * pct / 100;
         }, 0) / calc.availableDays
       : 0;
@@ -4558,7 +4567,7 @@
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
     buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled,
-    occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, convertOccupancyInputBasis
+    occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, occupancyDisplayPct, convertOccupancyInputBasis
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
