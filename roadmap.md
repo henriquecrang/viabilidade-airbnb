@@ -207,6 +207,22 @@ Concluída em 24/10/2026 — Rodada D / Issues #11 e #12.
 - suíte completa: 27/27 testes;
 - Rodada D concluída.
 
+### V28 — respostas oficiais da administradora
+Concluída em 24/10/2026.
+
+- substituição das premissas provisórias da V26;
+- taxa Airbnb modelada explicitamente antes da divisão;
+- limpeza entra na divisão nos planos 15% e 25%;
+- remoção do repasse integral da limpeza no Premium;
+- enxoval pertence a quem compra;
+- manutenção de imóvel/equipamentos permanece do proprietário;
+- ocupação administrada passa a aceitar piso-alvo;
+- preset oficial usa 80% como piso conservador, sem uplift de ADR;
+- #46 criada para validar a alegação de ocupação com dados reais;
+- contrato enviado classificado como canal direto/hóspede, não contrato de administração;
+- #32 e #44 podem ser encerradas após incorporação;
+- regressão do cenário-base V27 preservada.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
