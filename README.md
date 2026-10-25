@@ -349,6 +349,20 @@ Nos horizontes de 1, 3 e 5 anos:
 
 A fórmula total de trabalho continua visível e o custo permanece explicitamente identificado como econômico, não caixa.
 
+## V38 — trabalho mensal sem total acumulado
+
+Após revisão visual, o detalhamento de trabalho foi simplificado.
+
+A interface passa a mostrar apenas:
+- **Horas trabalhadas por mês**;
+- **Valor das horas trabalhadas por mês**.
+
+O total acumulado do trabalho deixa de ser exibido nos cards e tabelas para reduzir ruído visual e evitar overflow entre colunas.
+
+O custo total do trabalho continua existindo normalmente no motor e continua sendo descontado do resultado econômico.
+
+Também foram adicionadas proteções de CSS para impedir que rótulos e valores atravessem os limites dos cards.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
