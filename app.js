@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 35;
+  const APP_VERSION = 36;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -3331,7 +3331,7 @@
           if (!sc) return '<td>—</td>';
           const payback=sc.paybackYear==null?'sem payback':sc.paybackYear===0?'sem CAPEX':`payback ano ${sc.paybackYear}`;
           const economicMonthly = sc.economicRealWealthCreation / (h * 12);
-          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.economicRealWealthCreation)}</strong><small>resultado econômico real · ${money.format(economicMonthly)}/mês eq.</small><span>Trabalho do proprietário: ${number1.format(sc.cumulativeWorkHours || 0)} h × ${money.format(Math.max(0, n(state.globals.ownerHourlyValue)))}/h = ${money.format(sc.realLaborCost)}</span><span>Ganho patrimonial real: ${money.format(sc.realWealthCreation)}</span><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média caixa/ano: ${money.format(sc.averageAnnualFreeCash)}</span><span class="${sc.economicGapVsBenchmark>=0?'positive-text':'negative'}">Δ econômico vs. benchmark: ${money.format(sc.economicGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
+          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.economicRealWealthCreation)}</strong><small>resultado econômico real · ${money.format(economicMonthly)}/mês eq.</small><span>Trabalho do proprietário: ${number1.format(sc.cumulativeWorkHours || 0)} h × ${money.format(Math.max(0, n(state.globals.ownerHourlyValue)))}/h = ${money.format(sc.realLaborCost)}</span><span>Horas trabalhadas por mês: ${number1.format((sc.cumulativeWorkHours || 0)/(h*12))} h/mês</span><span>Valor das horas por mês: ${money.format(sc.realLaborCost/(h*12))}/mês</span><span>Ganho patrimonial real: ${money.format(sc.realWealthCreation)}</span><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média caixa/ano: ${money.format(sc.averageAnnualFreeCash)}</span><span class="${sc.economicGapVsBenchmark>=0?'positive-text':'negative'}">Δ econômico vs. benchmark: ${money.format(sc.economicGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
         }).join('')}</tr>`).join('')}</tbody>
       </table></div></div>
       <p class="helper">Motor anual: receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. Médias anual e mensal são equivalentes aritméticos do acumulado do horizonte, não um fluxo mensal real.</p>`;
@@ -3607,7 +3607,12 @@
       const hourly = Math.max(0, n(state.globals.ownerHourlyValue));
       const hours = Math.max(0, n(scenario.workHoursAnnual));
       const labor = Math.max(0, n(scenario.laborCost));
-      const laborLine = `<div class="breakdown-labor-line"><dt>Trabalho do proprietário <small>custo econômico; não sai do caixa</small></dt><dd>${number1.format(hours)} h × ${money.format(hourly)}/h = <strong>${money.format(labor)}</strong></dd></div>`;
+      const hoursMonthly = hours / 12;
+      const laborMonthly = labor / 12;
+      const laborLine = `
+        <div class="breakdown-labor-line"><dt>Trabalho do proprietário <small>custo econômico; não sai do caixa</small></dt><dd>${number1.format(hours)} h × ${money.format(hourly)}/h = <strong>${money.format(labor)}</strong></dd></div>
+        <div><dt>Horas trabalhadas por mês</dt><dd>${number1.format(hoursMonthly)} h/mês</dd></div>
+        <div><dt>Valor das horas trabalhadas por mês</dt><dd>${money.format(laborMonthly)}/mês</dd></div>`;
       return `<article class="breakdown"><h3>${escapeHtml(scenario.label)}</h3><dl>${detailLines}${laborLine}</dl></article>`;
     }).join('');
   }
@@ -3752,6 +3757,8 @@
             <div><span>Patrimônio nominal final</span><strong>${money.format(scenario.endNetWorth)}</strong></div>
             <div><span>Patrimônio real final</span><strong>${money.format(scenario.realEndNetWorth)}</strong></div>
             <div><span>Trabalho do proprietário</span><strong>${number1.format(scenario.cumulativeWorkHours || 0)} h × ${money.format(Math.max(0, n(state.globals.ownerHourlyValue)))}/h = ${money.format(scenario.realLaborCost)}</strong></div>
+            <div><span>Horas trabalhadas por mês</span><strong>${number1.format((scenario.cumulativeWorkHours || 0) / (years * 12))} h/mês</strong></div>
+            <div><span>Valor das horas trabalhadas por mês</span><strong>${money.format(scenario.realLaborCost / (years * 12))}/mês</strong></div>
             <div><span>Δ financeiro vs. benchmark</span><strong class="${scenario.financialGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.financialGapVsBenchmark)}</strong></div>
             <div><span>Δ econômico vs. benchmark</span><strong class="${scenario.economicGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.economicGapVsBenchmark)}</strong></div>
             <div><span>Payback</span><strong>${escapeHtml(payback)}</strong></div>
