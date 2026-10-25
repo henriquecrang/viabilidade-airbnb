@@ -17,7 +17,7 @@ Perfis:
 
 Cada perfil persiste independentemente:
 - comissão;
-- regra de ocupação e piso-alvo;
+- regra de ocupação (delta em p.p. ou piso-alvo);
 - impacto de diária;
 - mensalidade e onboarding;
 - supervisão residual;
@@ -37,7 +37,7 @@ Essencial adiciona:
 - `airbnb-admin-essential`;
 - `airbnb-rented-admin-essential`.
 
-Antes da primeira aplicação do wizard da administradora, o cenário-base continua com as seis estratégias da V28. Isso evita aplicar silenciosamente o piso default de ocupação de 80% informado pelo parceiro.
+Antes da primeira aplicação do wizard da administradora, o cenário-base continua com as seis estratégias da V28/V30. Isso evita aplicar silenciosamente o default de +20 p.p. informado pelo parceiro.
 
 Depois da configuração, a categoria “com administradora” do wizard principal se expande para as duas variantes de gestão.
 
