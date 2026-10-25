@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 31;
+  const APP_VERSION = 32;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -10,7 +10,17 @@
     name: 'Rio de Janeiro — cenário-base de mercado (out/2026)',
     analysis: {
       startingPosition: 'property',
-      horizonYears: 5
+      horizonYears: 3,
+      finalScenarioIds: [
+        'airbnb-self',
+        'airbnb-admin-essential',
+        'airbnb-admin',
+        'airbnb-rented',
+        'airbnb-rented-admin-essential',
+        'airbnb-rented-admin',
+        'traditional',
+        'investment'
+      ]
     },
     guidedSetup: {
       main: {
