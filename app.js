@@ -2579,13 +2579,13 @@
     const enrichScenarioWithBenchmark = (scenario, propertyBacked = false) => {
       const purchaseBenchmark = propertyBacked && purchaseMode;
       const extraCapital = propertyBacked
-        ? Math.max(0, scenario.opportunityCapital - (purchaseBenchmark ? acquisitionAvailableCapital : propertyValue))
+        ? Math.max(0, scenario.opportunityCapital - (purchaseBenchmark ? acquisitionEquityCapital : propertyValue))
         : 0;
       const benchmarkInvestableCapital = purchaseBenchmark
-        ? acquisitionAvailableCapital + extraCapital
+        ? acquisitionEquityCapital + extraCapital
         : (propertyBacked ? netSaleProceeds + extraCapital : scenario.opportunityCapital);
       const benchmarkWealthBasis = purchaseBenchmark
-        ? acquisitionAvailableCapital + extraCapital
+        ? acquisitionEquityCapital + extraCapital
         : (propertyBacked ? startingPropertyEquity + extraCapital : scenario.opportunityCapital);
       const benchmark = investmentForCapital(benchmarkInvestableCapital, benchmarkWealthBasis);
       return {
@@ -2612,23 +2612,28 @@
     };
 
     const makePropertyScenario = ({ id, label, grossRevenue, opCosts, tax, operatingCash, reserveContribution = 0, reserveOpening = 0, linkedReserve = 0, workingCapitalAmount = 0, capex = 0, setupResidual = 0, setupDepreciation = 0, laborCost = 0, workHoursAnnual = 0, details = {} }) => {
-      const freeCash = operatingCash - reserveContribution;
+      const financingPayment = purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.payment)) : 0;
+      const financingInterest = purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.interest)) : 0;
+      const financingPrincipalPaid = purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.principalPaid)) : 0;
+      const financingBalance = purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.endingBalance)) : 0;
+      const freeCash = operatingCash - reserveContribution - financingPayment;
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
       const workingCapitalValue = Math.max(0, n(workingCapitalAmount));
-      const purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + capex + reserveOpening + workingCapitalValue;
-      const acquisitionFundingGap = purchaseMode ? Math.max(0, purchaseCapitalRequired - acquisitionAvailableCapital) : 0;
+      const purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + acquisitionFinancingOriginationCosts + capex + reserveOpening + workingCapitalValue;
+      const ownCapitalRequired = Math.max(0, purchaseCapitalRequired - acquisitionFinancingPrincipal);
+      const acquisitionFundingGap = purchaseMode ? Math.max(0, ownCapitalRequired - acquisitionEquityCapital) : 0;
       const acquisitionValid = !purchaseMode || acquisitionFundingGap <= 1e-9;
       const leftoverInvestmentInitial = purchaseMode && acquisitionValid
-        ? Math.max(0, acquisitionAvailableCapital - purchaseCapitalRequired)
+        ? Math.max(0, acquisitionEquityCapital - ownCapitalRequired)
         : 0;
       const leftoverInvestment = investmentForCapital(leftoverInvestmentInitial, leftoverInvestmentInitial);
       const baseInitialCapital = purchaseMode
-        ? acquisitionAvailableCapital
+        ? acquisitionEquityCapital
         : propertyValue + capex + reserveOpening + workingCapitalValue;
       const initialCapital = baseInitialCapital + externalFundingRequired;
       const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue
-        + (purchaseMode ? leftoverInvestment.endNetWorth : 0);
+        + (purchaseMode ? leftoverInvestment.endNetWorth : 0) - financingBalance;
       const wealthCreation = endNetWorth - initialCapital;
       const inflationFactor = 1 + inflation;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
@@ -2642,9 +2647,17 @@
       const scenarioDetails = purchaseMode ? {
         ...details,
         'Capital disponível antes da compra': acquisitionAvailableCapital,
+        'Aporte adicional de capital próprio': acquisitionAdditionalEquity,
+        'Capital próprio total': acquisitionEquityCapital,
         'Preço de compra do imóvel': propertyValue,
         'Custos de aquisição consumidos': acquisitionPurchaseCosts,
+        'Custos de contratação do crédito': acquisitionFinancingOriginationCosts,
         'Necessidade inicial da compra': purchaseCapitalRequired,
+        'Principal financiado': acquisitionFinancingPrincipal,
+        'Parcela do financiamento no ano': financingPayment,
+        'Juros do financiamento no ano': financingInterest,
+        'Amortização no ano': financingPrincipalPaid,
+        'Saldo devedor ao fim do ano': financingBalance,
         'Capital remanescente aplicado': leftoverInvestmentInitial,
         'Valor final da sobra aplicada': leftoverInvestment.endNetWorth
       } : details;
@@ -2659,6 +2672,11 @@
         realFreeCash, cashYield, nominalTotalReturn, realTotalReturn,
         purchaseMode, acquisitionValid, acquisitionCosts: acquisitionPurchaseCosts, purchaseCapitalRequired,
         acquisitionFundingGap, leftoverInvestmentInitial, leftoverInvestmentEnd: purchaseMode ? leftoverInvestment.endNetWorth : 0,
+        additionalEquity: purchaseMode ? acquisitionAdditionalEquity : 0,
+        financingPrincipal: purchaseMode ? acquisitionFinancingPrincipal : 0,
+        financingPayment, financingInterest, financingPrincipalPaid, financingBalance,
+        financingOriginationCosts: purchaseMode ? acquisitionFinancingOriginationCosts : 0,
+        fundingMode: purchaseMode ? (acquisitionMeta.fundingMode || 'cash') : 'owned',
         details: scenarioDetails
       }, true);
     };
@@ -2671,7 +2689,11 @@
       laborCost, workHoursAnnual, details = {}
     }) => {
       const rented = possession === 'rented';
-      const freeCash = operatingCash - reserveContribution;
+      const financingPayment = !rented && purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.payment)) : 0;
+      const financingInterest = !rented && purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.interest)) : 0;
+      const financingPrincipalPaid = !rented && purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.principalPaid)) : 0;
+      const financingBalance = !rented && purchaseMode ? Math.max(0, n(acquisitionFinancingYear1.endingBalance)) : 0;
+      const freeCash = operatingCash - reserveContribution - financingPayment;
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
       const workingCapitalValue = Math.max(0, n(workingCapitalAmount));
@@ -2692,26 +2714,35 @@
         initialCapital = baseInitialCapital + externalFundingRequired;
         endNetWorth = setupResidual + distributableCash + linkedReserve + securityDeposit + workingCapitalValue;
       } else {
-        purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + capex + scenarioReserveOpening + workingCapitalValue;
-        acquisitionFundingGap = purchaseMode ? Math.max(0, purchaseCapitalRequired - acquisitionAvailableCapital) : 0;
+        purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + acquisitionFinancingOriginationCosts + capex + scenarioReserveOpening + workingCapitalValue;
+        const ownCapitalRequired = Math.max(0, purchaseCapitalRequired - acquisitionFinancingPrincipal);
+        acquisitionFundingGap = purchaseMode ? Math.max(0, ownCapitalRequired - acquisitionEquityCapital) : 0;
         acquisitionValid = !purchaseMode || acquisitionFundingGap <= 1e-9;
         leftoverInvestmentInitial = purchaseMode && acquisitionValid
-          ? Math.max(0, acquisitionAvailableCapital - purchaseCapitalRequired)
+          ? Math.max(0, acquisitionEquityCapital - ownCapitalRequired)
           : 0;
         const leftoverInvestment = investmentForCapital(leftoverInvestmentInitial, leftoverInvestmentInitial);
         leftoverInvestmentEnd = purchaseMode ? leftoverInvestment.endNetWorth : 0;
         baseInitialCapital = purchaseMode
-          ? acquisitionAvailableCapital
+          ? acquisitionEquityCapital
           : propertyValue + capex + scenarioReserveOpening + workingCapitalValue;
         initialCapital = baseInitialCapital + externalFundingRequired;
-        endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue + leftoverInvestmentEnd;
+        endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue + leftoverInvestmentEnd - financingBalance;
         if (purchaseMode) {
           scenarioDetails = {
             ...details,
             'Capital disponível antes da compra': acquisitionAvailableCapital,
+            'Aporte adicional de capital próprio': acquisitionAdditionalEquity,
+            'Capital próprio total': acquisitionEquityCapital,
             'Preço de compra do imóvel': propertyValue,
             'Custos de aquisição consumidos': acquisitionPurchaseCosts,
+            'Custos de contratação do crédito': acquisitionFinancingOriginationCosts,
             'Necessidade inicial da compra': purchaseCapitalRequired,
+            'Principal financiado': acquisitionFinancingPrincipal,
+            'Parcela do financiamento no ano': financingPayment,
+            'Juros do financiamento no ano': financingInterest,
+            'Amortização no ano': financingPrincipalPaid,
+            'Saldo devedor ao fim do ano': financingBalance,
             'Capital remanescente aplicado': leftoverInvestmentInitial,
             'Valor final da sobra aplicada': leftoverInvestmentEnd
           };
@@ -2748,6 +2779,11 @@
         purchaseMode: !rented && purchaseMode,
         acquisitionValid, acquisitionCosts: rented ? 0 : acquisitionPurchaseCosts,
         purchaseCapitalRequired, acquisitionFundingGap, leftoverInvestmentInitial, leftoverInvestmentEnd,
+        additionalEquity: !rented && purchaseMode ? acquisitionAdditionalEquity : 0,
+        financingPrincipal: !rented && purchaseMode ? acquisitionFinancingPrincipal : 0,
+        financingPayment, financingInterest, financingPrincipalPaid, financingBalance,
+        financingOriginationCosts: !rented && purchaseMode ? acquisitionFinancingOriginationCosts : 0,
+        fundingMode: !rented && purchaseMode ? (acquisitionMeta.fundingMode || 'cash') : (rented ? 'rented' : 'owned'),
         details: scenarioDetails
       }, !rented);
     };
@@ -2899,9 +2935,10 @@
     });
 
     // O benchmark financeiro respeita a posição inicial.
-    // Imóvel já possuído: vende e investe o líquido. Capital → compra: investe exatamente o mesmo capital disponível.
-    const investmentInvestableCapital = purchaseMode ? acquisitionAvailableCapital : netSaleProceeds;
-    const investmentWealthBasis = purchaseMode ? acquisitionAvailableCapital : startingPropertyEquity;
+    // Imóvel já possuído: vende e investe o líquido. Capital → compra: investe o mesmo capital próprio;
+    // dinheiro emprestado nunca é tratado como riqueza do usuário no benchmark.
+    const investmentInvestableCapital = purchaseMode ? acquisitionEquityCapital : netSaleProceeds;
+    const investmentWealthBasis = purchaseMode ? acquisitionEquityCapital : startingPropertyEquity;
     const invCalc = investmentForCapital(investmentInvestableCapital, investmentWealthBasis);
     const investment = {
       id: 'investment', label: 'Investimento financeiro', grossRevenue: invCalc.grossIncome, opCosts: invCalc.fees,
