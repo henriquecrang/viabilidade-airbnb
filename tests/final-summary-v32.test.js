@@ -46,5 +46,5 @@ console.log('V32 resumo final: oito cenários, filtros, 3 anos e reset passaram.
 
 
 const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
-assert(appSource.includes('média mensal equivalente do excedente nominal'),'mensal deve ser o destaque principal dos cards');
+assert(appSource.includes('resultado econômico real · média mensal equivalente'),'mensal econômico deve ser o destaque principal dos cards');
 assert(appSource.includes('Total · ${years} ano'),'total do horizonte deve continuar visível');
