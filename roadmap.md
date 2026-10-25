@@ -305,6 +305,15 @@ Concluída em 25/10/2026 — Issue #52.
 - investimento e demais cenários seguem a mesma regra;
 - suíte completa: 34/34 testes.
 
+### V36 — trabalho mensal no detalhamento
+Concluída em 25/10/2026 — Issue #53.
+
+- todos os cenários exibem horas trabalhadas por mês;
+- todos exibem valor econômico das horas por mês;
+- campos permanecem visíveis mesmo em zero;
+- cards finais e comparação 1/3/5 mostram equivalentes mensais;
+- suíte completa: 35/35 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
