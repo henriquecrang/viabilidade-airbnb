@@ -276,6 +276,15 @@ Concluída em 25/10/2026 — Issue #49.
 - botão no topo restaura todos os defaults após confirmação;
 - suíte completa: 32/32 testes.
 
+### V33 — destaque mensal nos cards finais
+Concluída em 25/10/2026 — Issue #50.
+
+- média mensal equivalente vira o número principal dos cards;
+- total do horizonte e média anual permanecem visíveis em segundo nível;
+- valores negativos preservam a sinalização visual;
+- nenhuma fórmula ou regra de ranking foi alterada;
+- suíte completa: 32/32 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
