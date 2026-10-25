@@ -24,6 +24,6 @@ const five=calculateHorizonProjection(defaultState,5).scenarios.find(x=>x.id==='
 approx(five.monthlyEquivalentFreeCash,five.cumulativeFreeCashBeforeFunding/60,.01,'5 anos / 60');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-assert(html.includes('Média mensal equivalente'),'explicação de média mensal ausente');
+assert(html.includes('Médias equivalentes') && html.includes('média mensal'),'explicação de média mensal ausente');
 
 console.log('V21 anual: todos os testes passaram.');
