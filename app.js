@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 30;
+  const APP_VERSION = 31;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -279,6 +279,8 @@
       adminMonthlyFee: 0,
       adminOnboardingFee: 0,
       adminNightlyRateImpactPct: 0,
+      occupancyInputBasis: 'self',
+      managementOccupancyDeltaPp: 20,
       adminOccupancyImpactPp: 0,
       adminOccupancyImpactRelativePct: 0,
       adminOccupancyMode: 'delta',
@@ -412,6 +414,42 @@
   }
 
   function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+  function occupancyInputBasis(inputState = state) {
+    return inputState?.airbnb?.occupancyInputBasis === 'admin' ? 'admin' : 'self';
+  }
+
+  function managementOccupancyDeltaPp(inputState = state) {
+    return clamp(n(inputState?.airbnb?.managementOccupancyDeltaPp, 20), 0, 100);
+  }
+
+  function selfOccupancyPctFromInput(rawPct, inputState = state) {
+    const raw = clamp(n(rawPct), 0, 100);
+    return occupancyInputBasis(inputState) === 'admin'
+      ? clamp(raw - managementOccupancyDeltaPp(inputState), 0, 100)
+      : raw;
+  }
+
+  function adminReferenceOccupancyPctFromInput(rawPct, inputState = state) {
+    const raw = clamp(n(rawPct), 0, 100);
+    return occupancyInputBasis(inputState) === 'self'
+      ? clamp(raw + managementOccupancyDeltaPp(inputState), 0, 100)
+      : raw;
+  }
+
+  function convertOccupancyInputBasis(inputState, newBasis) {
+    const next = structuredCloneSafe(inputState);
+    const from = occupancyInputBasis(next);
+    const to = newBasis === 'admin' ? 'admin' : 'self';
+    if (from === to) return next;
+    const delta = managementOccupancyDeltaPp(next);
+    next.seasons = (next.seasons || []).map((season) => ({
+      ...season,
+      occupancyPct: clamp(n(season.occupancyPct) + (to === 'admin' ? delta : -delta), 0, 100)
+    }));
+    next.airbnb.occupancyInputBasis = to;
+    return next;
+  }
 
   function getPath(obj, path) { return path.split('.').reduce((acc, key) => acc?.[key], obj); }
 
@@ -1282,6 +1320,37 @@
       merged.stayCosts.forEach((x) => { if (stayHours.has(String(x.id))) x.ownerHoursPerReservation = stayHours.get(String(x.id)); });
     }
 
+    // V31: a ocupação informada ganha uma base explícita (autogestão/admin)
+    // e o ganho de gestão vira uma referência global calibrável. Nos estados
+    // antigos, adminOccupancyImpactPp representava o impacto total; migramos
+    // esse total para a referência e deixamos apenas diferenças por perfil
+    // como ajustes adicionais, preservando a economia anterior.
+    if (incomingVersion < 31 && source.airbnb?.managementOccupancyDeltaPp == null) {
+      merged.airbnb.occupancyInputBasis = 'self';
+      const activeTotal = n(source.airbnb?.adminOccupancyImpactPp, 0);
+      const sourceProfiles = source.guidedSetup?.adminProfiles || {};
+      const profileTotals = ['essential','premium']
+        .map((plan) => sourceProfiles?.[plan]?.configured ? n(sourceProfiles[plan].occupancyImpactPp, 0) : null)
+        .filter((value) => value != null);
+      const configuredTotal = activeTotal !== 0
+        ? activeTotal
+        : (profileTotals.find((value) => value !== 0) ?? 20);
+      merged.airbnb.managementOccupancyDeltaPp = clamp(configuredTotal, 0, 100);
+      merged.airbnb.adminOccupancyImpactPp = activeTotal - merged.airbnb.managementOccupancyDeltaPp;
+
+      const proposal = merged.guidedSetup?.adminProposal;
+      if (proposal?.configured) {
+        const oldTotal = n(source.guidedSetup?.adminProposal?.occupancyImpactPp, activeTotal);
+        proposal.occupancyImpactPp = oldTotal - merged.airbnb.managementOccupancyDeltaPp;
+      }
+      for (const plan of ['essential','premium']) {
+        const profile = merged.guidedSetup?.adminProfiles?.[plan];
+        if (!profile?.configured) continue;
+        const oldTotal = n(sourceProfiles?.[plan]?.occupancyImpactPp, activeTotal);
+        profile.occupancyImpactPp = oldTotal - merged.airbnb.managementOccupancyDeltaPp;
+      }
+    }
+
     // V22: indisponibilidade anual passa a ser classificada por motivo.
     // JSONs antigos migram "unavailableDays" para indisponibilidade operacional.
     // V23: o cenário-base recebe um snapshot auditável de comparáveis públicos.
@@ -1321,9 +1390,16 @@
         if (input.type === 'checkbox') value = input.checked;
         else if (input.type === 'number') value = input.value === '' ? 0 : n(input.value);
         else value = input.value;
-        setPath(state, input.dataset.path, value);
+        if (input.dataset.path === 'airbnb.occupancyInputBasis') {
+          state = convertOccupancyInputBasis(state, value);
+          renderSeasons();
+          hydrateStaticInputs();
+        } else {
+          setPath(state, input.dataset.path, value);
+        }
         autosave();
         if (input.dataset.path === 'rentedAirbnb.furnished') renderSetupCosts();
+        if (input.dataset.path === 'airbnb.managementOccupancyDeltaPp') renderSeasons();
         if (input.dataset.path.startsWith('market.subject.')) renderMarketComparables();
         calculateAndRender();
       });
@@ -1355,12 +1431,26 @@
   }
 
   function renderSeasons() {
+    const basis = occupancyInputBasis(state);
+    const delta = managementOccupancyDeltaPp(state);
+    const inputHeader = $('#occupancyInputHeader');
+    const derivedHeader = $('#occupancyDerivedHeader');
+    if (inputHeader) inputHeader.textContent = basis === 'self' ? 'Ocupação informada · autogestão' : 'Ocupação informada · com admin';
+    if (derivedHeader) derivedHeader.textContent = basis === 'self' ? 'Derivada · com admin' : 'Derivada · autogestão';
+    const helper = $('#occupancyBasisHelp');
+    if (helper) helper.textContent = basis === 'self'
+      ? `Você está preenchendo a ocupação sem administradora. O cenário administrado soma ${number1.format(delta)} p.p. a cada período, com teto de 100%.`
+      : `Você está preenchendo a ocupação já com administradora. A autogestão remove ${number1.format(delta)} p.p. de cada período, com piso de 0%.`;
+
     $('#seasonRows').innerHTML = state.seasons.map((item) => {
       const days = Math.max(0, n(item.days));
       const personal = Math.max(0, n(item.personalUseDays));
       const habitual = Math.max(0, n(item.habitualUseDays));
       const operational = Math.max(0, n(item.operationalUnavailableDays));
       const available = Math.max(0, days - personal - habitual - operational);
+      const derived = basis === 'self'
+        ? adminReferenceOccupancyPctFromInput(item.occupancyPct, state)
+        : selfOccupancyPctFromInput(item.occupancyPct, state);
       return `
       <tr data-id="${escapeAttr(item.id)}">
         <td><input class="row-name" data-array="seasons" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
@@ -1371,6 +1461,7 @@
         <td class="number-cell" data-season-available="${escapeAttr(item.id)}">${number1.format(available)}</td>
         <td><input data-array="seasons" data-field="nightlyRate" data-id="${escapeAttr(item.id)}" type="number" min="0" step="10" value="${n(item.nightlyRate)}" /></td>
         <td><input data-array="seasons" data-field="occupancyPct" data-id="${escapeAttr(item.id)}" type="number" min="0" max="100" step="1" value="${n(item.occupancyPct)}" /></td>
+        <td class="number-cell" data-season-derived-occupancy="${escapeAttr(item.id)}">${number1.format(derived)}%</td>
         <td class="money-cell" data-season-revenue="${escapeAttr(item.id)}">—</td>
         <td><button class="button icon" type="button" data-remove-array="seasons" data-id="${escapeAttr(item.id)}">Remover</button></td>
       </tr>`;
@@ -1852,24 +1943,29 @@
       return { days, personalUseDays, habitualUseDays, operationalUnavailableDays, unavailableDays, availableDays, blockedOverflowDays };
     };
 
+    const occupancyBasis = occupancyInputBasis(currentState);
+    const managementDeltaPp = managementOccupancyDeltaPp(currentState);
     const seasonDetails = currentState.seasons.map((season) => {
       const availability = classifySeasonAvailability(season);
-      const occupancy = clamp(n(season.occupancyPct), 0, 100) / 100;
+      const occupancyPct = selfOccupancyPctFromInput(season.occupancyPct, currentState);
+      const occupancy = occupancyPct / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate));
       const occupiedNights = availability.availableDays * occupancy;
       const revenue = occupiedNights * nightlyRate;
-      return { ...season, ...availability, occupancy, nightlyRate, occupiedNights, revenue };
+      return { ...season, ...availability, occupancyPct, occupancy, nightlyRate, occupiedNights, revenue };
     });
 
-    // V28: performance administrada pode usar deltas legados ou um piso-alvo de ocupação.
-    // O piso preserva a sazonalidade e adiciona apenas os p.p. necessários, com teto de 100%.
+    // V31: o delta de gestão de referência converte autogestão <-> admin.
+    // Os campos de performance do perfil da administradora são ajustes adicionais.
     const adminNightlyRateImpact = n(currentState.airbnb.adminNightlyRateImpactPct) / 100;
     const adminOccupancyImpactPp = n(currentState.airbnb.adminOccupancyImpactPp);
     const adminOccupancyImpactRelative = n(currentState.airbnb.adminOccupancyImpactRelativePct) / 100;
     const adminOccupancyMode = currentState.airbnb.adminOccupancyMode === 'target-floor' ? 'target-floor' : 'delta';
     const adminOccupancyTargetPct = clamp(n(currentState.airbnb.adminOccupancyTargetPct), 0, 100);
     const adminBaseOccupancyPct = (season) =>
-      n(season.occupancyPct) * Math.max(0, 1 + adminOccupancyImpactRelative) + adminOccupancyImpactPp;
+      adminReferenceOccupancyPctFromInput(season.occupancyPct, currentState)
+        * Math.max(0, 1 + adminOccupancyImpactRelative)
+        + adminOccupancyImpactPp;
     const targetAvailableDays = seasonDetails.reduce((sum, season) => sum + season.availableDays, 0);
     const weightedAdminOccupancyPctForExtra = (extraPp) => {
       if (targetAvailableDays <= 0) return 0;
@@ -2670,6 +2766,7 @@
     return {
       seasonDetails, adminSeasonDetails, totalDays, blockedDays, personalUseDays, habitualUseDays,
       operationalUnavailableDays, blockedOverflowDays, availableDays, occupiedNights, weightedOccupancy, calendarOccupancy,
+      occupancyBasis, managementDeltaPp,
       averageNightlyRate, adr, totalAdr, revPar, totalRevPar,
       accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
@@ -3195,8 +3292,16 @@
     calc.seasonDetails.forEach((item) => {
       const revenueCell = document.querySelector(`[data-season-revenue="${cssEscape(item.id)}"]`);
       const availableCell = document.querySelector(`[data-season-available="${cssEscape(item.id)}"]`);
+      const derivedCell = document.querySelector(`[data-season-derived-occupancy="${cssEscape(item.id)}"]`);
       if (revenueCell) revenueCell.textContent = money2.format(item.revenue);
       if (availableCell) availableCell.textContent = number1.format(item.availableDays);
+      if (derivedCell) {
+        const sourceSeason = state.seasons.find((season) => String(season.id) === String(item.id));
+        const derived = occupancyInputBasis(state) === 'self'
+          ? adminReferenceOccupancyPctFromInput(sourceSeason?.occupancyPct, state)
+          : selfOccupancyPctFromInput(sourceSeason?.occupancyPct, state);
+        derivedCell.textContent = `${number1.format(derived)}%`;
+      }
     });
 
     $('#totalDays').textContent = `${number1.format(calc.totalDays)} dias`;
@@ -3205,7 +3310,23 @@
     $('#operationalUnavailableDays').textContent = `${number1.format(calc.operationalUnavailableDays)} dias`;
     $('#availableDays').textContent = `${number1.format(calc.availableDays)} dias`;
     $('#weightedAdr').textContent = money2.format(calc.averageNightlyRate);
-    $('#weightedOccupancy').textContent = percent.format(calc.weightedOccupancy);
+    const weightedInput = calc.availableDays > 0
+      ? state.seasons.reduce((sum, season) => {
+          const detail = calc.seasonDetails.find((item) => String(item.id) === String(season.id));
+          return sum + n(detail?.availableDays) * clamp(n(season.occupancyPct), 0, 100) / 100;
+        }, 0) / calc.availableDays
+      : 0;
+    const weightedDerived = calc.availableDays > 0
+      ? state.seasons.reduce((sum, season) => {
+          const detail = calc.seasonDetails.find((item) => String(item.id) === String(season.id));
+          const pct = occupancyInputBasis(state) === 'self'
+            ? adminReferenceOccupancyPctFromInput(season.occupancyPct, state)
+            : selfOccupancyPctFromInput(season.occupancyPct, state);
+          return sum + n(detail?.availableDays) * pct / 100;
+        }, 0) / calc.availableDays
+      : 0;
+    $('#weightedInputOccupancy').textContent = percent.format(weightedInput);
+    $('#weightedDerivedOccupancy').textContent = percent.format(weightedDerived);
     $('#seasonRevenue').textContent = money2.format(calc.accommodationRevenue);
     $('#metricAverageNightlyRate').textContent = money2.format(calc.averageNightlyRate);
     $('#metricTotalAdr').textContent = money2.format(calc.totalAdr);
@@ -3779,7 +3900,7 @@
       occupancyMode: 'delta',
       occupancyTargetPct: 0,
       occupancyRelativePct: 0,
-      occupancyImpactPp: 20,
+      occupancyImpactPp: 0,
       nightlyRateImpactPct: 0,
       monthlyFee: 0,
       onboardingFee: 0,
@@ -3903,7 +4024,7 @@
           ${moneyInput('onboardingFee','Onboarding / setup',draft.onboardingFee)}
           <label class="field-group"><span class="field-label">Supervisão residual do proprietário</span><div class="input-suffix compact-control"><input data-wizard-field="supervisionHoursMonthly" type="number" min="0" step="0.5" value="${escapeAttr(draft.supervisionHoursMonthly)}" /><span>h/mês</span></div></label>
         </div>
-        <p class="helper">Resposta oficial: a administradora informa que um Superhost com apoio costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset aplica +20 pontos percentuais à ocupação autogerida de cada período, com teto de 100%, e mantém 0% de uplift de diária. A premissa é editável.</p>
+        <p class="helper">O ganho esperado da gestão profissional é configurado junto à tabela de ocupação e vale para todos os planos. Aqui você pode adicionar um ajuste específico deste perfil, além da referência global. O uplift default de diária permanece 0%.</p>
       </div>
       <div class="wizard-section">
         <h3>Comissão, Airbnb e limpeza</h3>
@@ -3951,7 +4072,7 @@
           <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Resposta oficial: toda manutenção de equipamentos, imóvel e bens é do proprietário.</small></span></label>
         </div>
       </div>
-      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A gestão profissional usa por default +20 p.p. sobre a ocupação autogerida de cada período, com teto de 100%; a premissa permanece totalmente editável.</div>`;
+      <div class="concept-note"><strong>Calibração de ocupação:</strong> o ganho esperado com administradora é uma variável global junto à sazonalidade (default +20 p.p.). O ajuste deste perfil é adicional e começa em 0 p.p.</div>`;
   }
 
   function bindAdminWizardPresetChange() {
@@ -4313,7 +4434,7 @@
         <h3>Revise antes de aplicar</h3>
         <ul class="wizard-change-list">
           <li>Calibração oficial: <strong>Administradora ${planLabel}</strong> · comissão <strong>${number1.format(x.commissionPct)}%</strong>.</li>
-          <li>Performance: <strong>${x.occupancyMode==='target-floor'?`piso-alvo de ${number1.format(x.occupancyTargetPct)}%`:`${number1.format(x.occupancyRelativePct)}% relativo + ${number1.format(x.occupancyImpactPp)} p.p.`}</strong> na ocupação · <strong>${number1.format(x.nightlyRateImpactPct)}%</strong> na diária.</li>
+          <li>Performance: ganho global da gestão <strong>+${number1.format(managementOccupancyDeltaPp(state))} p.p.</strong> · ajuste deste perfil <strong>${x.occupancyMode==='target-floor'?`piso-alvo de ${number1.format(x.occupancyTargetPct)}%`:`${number1.format(x.occupancyRelativePct)}% relativo + ${number1.format(x.occupancyImpactPp)} p.p.`}</strong> · <strong>${number1.format(x.nightlyRateImpactPct)}%</strong> na diária.</li>
           <li>Airbnb: <strong>${x.platformFeeAllocation==='split-shares'?'a taxa é descontada antes da divisão, equivalente a cada parte suportar sua parcela':'proprietário suporta a taxa sobre o bruto'}</strong>.</li>
           <li>Limpeza: <strong>${x.cleaningFeeRecipient==='admin'?'100% para a administradora':'entra no valor compartilhado'}</strong> · ${x.cleaningInCommissionBase?'entra':'não entra'} na base da divisão.</li>
           <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
@@ -4436,7 +4557,8 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled
+    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled,
+    occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, convertOccupancyInputBasis
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
