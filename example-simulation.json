@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 27,
+  "version": 28,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 27,
+    "version": 28,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -555,7 +555,9 @@
       "adminOccupancyImpactRelativePct": 0,
       "adminCommissionBaseIncludesCleaning": true,
       "adminCleaningFeeRecipient": "owner",
-      "adminPlatformFeeAllocation": "gross-owner"
+      "adminPlatformFeeAllocation": "gross-owner",
+      "adminOccupancyMode": "delta",
+      "adminOccupancyTargetPct": 0
     },
     "rentedAirbnb": {
       "furnished": false,
@@ -1143,8 +1145,9 @@
       "adminProposal": {
         "configured": false,
         "plan": "premium",
-        "provisionalAssumptions": true,
-        "reviewIssue": 44
+        "provisionalAssumptions": false,
+        "calibrationStatus": "official-response",
+        "sourceDate": "2026-10-24"
       }
     }
   }
