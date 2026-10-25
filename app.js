@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 29;
+  const APP_VERSION = 30;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -338,17 +338,17 @@
     },
     seasons: [
       { id: 'reveillon', name: 'Réveillon', days: 4, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
-      { id: 'verao', name: 'Verão', days: 81, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 400, occupancyPct: 90 },
+      { id: 'verao', name: 'Verão', days: 81, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 400, occupancyPct: 75 },
       { id: 'carnaval', name: 'Carnaval', days: 7, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 750, occupancyPct: 100 },
-      { id: 'outono', name: 'Outono', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 },
-      { id: 'inverno', name: 'Inverno', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 60 },
-      { id: 'primavera', name: 'Primavera', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 70 }
+      { id: 'outono', name: 'Outono', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 55 },
+      { id: 'inverno', name: 'Inverno', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 50 },
+      { id: 'primavera', name: 'Primavera', days: 91, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 250, occupancyPct: 55 }
     ],
     stayCosts: [
-      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 0.1, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'limpeza', name: 'Limpeza', amount: 180, ownerHoursPerReservation: 0.25, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 70, ownerHoursPerReservation: 0.15, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 0.25, adminManages: true, adminIncluded: false, deductibleIR: false }
+      { id: 'lavanderia', name: 'Lavanderia de cama/banho', amount: 60, ownerHoursPerReservation: 2, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'limpeza', name: 'Limpeza', amount: 180, ownerHoursPerReservation: 0.5, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'amenidades', name: 'Amenidades e consumíveis', amount: 70, ownerHoursPerReservation: 0.5, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 1, adminManages: true, adminIncluded: false, deductibleIR: false }
     ],
     monthlyCosts: [
       { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
@@ -1261,6 +1261,26 @@
     merged.rentedAirbnb.contractEndStrategy = source.rentedAirbnb?.contractEndStrategy === 'renew'
       ? 'renew'
       : 'renew';
+
+    // V30: recalibração dos defaults de ocupação e trabalho manual.
+    // Só o antigo cenário-base V29 intacto recebe os novos valores; simulações
+    // customizadas preservam sua própria ocupação, horas e configuração da admin.
+    const oldV29Occupancy = [100,90,100,70,60,70];
+    const oldV29StayHours = { lavanderia:0.1, limpeza:0.25, amenidades:0.15, checkin:0.25 };
+    const sourceStayByIdV30 = new Map((Array.isArray(source.stayCosts) ? source.stayCosts : []).map((x) => [String(x.id), x]));
+    const looksLikeV29Base = incomingVersion === 29
+      && source.name === 'Rio de Janeiro — cenário-base de mercado (out/2026)'
+      && Array.isArray(source.seasons) && source.seasons.length === 6
+      && source.seasons.every((x,index) => n(x.occupancyPct) === oldV29Occupancy[index])
+      && Object.entries(oldV29StayHours).every(([id,hours]) => n(sourceStayByIdV30.get(id)?.ownerHoursPerReservation) === hours)
+      && !source.guidedSetup?.adminProposal?.configured
+      && !source.guidedSetup?.adminProfiles?.essential?.configured
+      && !source.guidedSetup?.adminProfiles?.premium?.configured;
+    if (looksLikeV29Base) {
+      merged.seasons = structuredCloneSafe(defaultState.seasons);
+      const stayHours = new Map(defaultState.stayCosts.map((x) => [String(x.id), x.ownerHoursPerReservation]));
+      merged.stayCosts.forEach((x) => { if (stayHours.has(String(x.id))) x.ownerHoursPerReservation = stayHours.get(String(x.id)); });
+    }
 
     // V22: indisponibilidade anual passa a ser classificada por motivo.
     // JSONs antigos migram "unavailableDays" para indisponibilidade operacional.
@@ -3756,10 +3776,10 @@
     const draft = {
       plan: premium ? 'premium' : 'essential',
       commissionPct: premium ? 25 : 15,
-      occupancyMode: 'target-floor',
-      occupancyTargetPct: 80,
+      occupancyMode: 'delta',
+      occupancyTargetPct: 0,
       occupancyRelativePct: 0,
-      occupancyImpactPp: 0,
+      occupancyImpactPp: 20,
       nightlyRateImpactPct: 0,
       monthlyFee: 0,
       onboardingFee: 0,
@@ -3883,7 +3903,7 @@
           ${moneyInput('onboardingFee','Onboarding / setup',draft.onboardingFee)}
           <label class="field-group"><span class="field-label">Supervisão residual do proprietário</span><div class="input-suffix compact-control"><input data-wizard-field="supervisionHoursMonthly" type="number" min="0" step="0.5" value="${escapeAttr(draft.supervisionHoursMonthly)}" /><span>h/mês</span></div></label>
         </div>
-        <p class="helper">Resposta oficial: a administradora informa que um Superhost com apoio costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset usa 80% como piso-alvo default e mantém 0% de uplift de diária. O valor é uma premissa operacional editável, não uma regra fixa do modelo.</p>
+        <p class="helper">Resposta oficial: a administradora informa que um Superhost com apoio costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset aplica +20 pontos percentuais à ocupação autogerida de cada período, com teto de 100%, e mantém 0% de uplift de diária. A premissa é editável.</p>
       </div>
       <div class="wizard-section">
         <h3>Comissão, Airbnb e limpeza</h3>
@@ -4299,7 +4319,7 @@
           <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
           <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'fica com quem comprou, portanto não integra seu patrimônio neste preset'}.</li>
           <li>Manutenção do imóvel/equipamentos: ${x.maintenanceIncluded?'custo incluído':'proprietário paga'} · ${x.maintenanceManaged?'gestão pela administradora marcada':'gestão dos reparos não presumida'}.</li>
-          <li>O piso de ocupação de <strong>80%</strong> é o default informado pelo parceiro e pode ser ajustado livremente nesta simulação.</li>
+          <li>O default de gestão adiciona <strong>20 p.p.</strong> à ocupação autogerida de cada período, limitado a 100%, e pode ser ajustado livremente.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
