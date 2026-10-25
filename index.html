@@ -15,6 +15,7 @@
       <p class="header-copy">Compare seis estratégias, incluindo os quatro modos Airbnb da matriz posse × gestão, e separando caixa livre, capital vinculado, patrimônio, OPEX, CAPEX, trabalho próprio e custo de oportunidade.</p>
     </div>
     <div class="header-actions">
+      <button class="button ghost" id="restoreDefaultsButton" type="button">Restaurar defaults</button>
       <button class="button secondary" id="loadButton" type="button">Carregar JSON</button>
       <button class="button primary" id="saveButton" type="button">Baixar simulação</button>
       <input id="fileInput" type="file" accept="application/json,.json" hidden />
@@ -114,7 +115,7 @@
             <article class="input-card">
               <label class="field-label" for="horizonYears">Horizonte principal</label>
               <select id="horizonYears" data-path="analysis.horizonYears"><option value="1">1 ano</option><option value="3">3 anos</option><option value="5">5 anos</option></select>
-              <p class="helper">Default: 5 anos. O resumo sempre mostra 1, 3 e 5 anos lado a lado; este seletor apenas escolhe o horizonte destacado.</p>
+              <p class="helper">Default: 3 anos. O resumo final usa esse horizonte nos cards e mantém 1, 3 e 5 anos lado a lado logo abaixo.</p>
             </article>
           </div>
 
@@ -585,9 +586,23 @@
         </div>
         <div class="final-winner" id="finalWinner"></div>
       </div>
+      <div class="final-comparison-controls">
+        <div class="final-control-group">
+          <span class="final-control-label">Horizonte dos cards</span>
+          <select id="finalHorizonYears" aria-label="Horizonte dos cards finais">
+            <option value="1">1 ano</option>
+            <option value="3">3 anos</option>
+            <option value="5">5 anos</option>
+          </select>
+        </div>
+        <div class="final-control-group final-scenario-selector-wrap">
+          <span class="final-control-label">Cenários exibidos</span>
+          <div class="final-scenario-selector" id="finalScenarioSelector"></div>
+        </div>
+      </div>
       <div class="final-scenario-grid" id="finalScenarioGrid"></div>
       <div class="horizon-comparison-section">
-        <div class="subsection-heading"><div><h3>Como a decisão muda em 1, 3 e 5 anos</h3><p>Custos iniciais e de venda deixam de dominar artificialmente a leitura quando o horizonte aumenta.</p></div></div>
+        <div class="subsection-heading"><div><h3>Como a decisão muda em 1, 3 e 5 anos</h3><p>A tabela respeita os mesmos cenários selecionados acima. Custos iniciais e de venda deixam de dominar artificialmente a leitura quando o horizonte aumenta.</p></div></div>
         <div id="horizonComparison"></div>
       </div>
       <p class="final-summary-note"><strong>Média mensal equivalente:</strong> quando exibida, é apenas o resultado anual dividido por 12 — não representa fluxo de caixa mês a mês.</p>
