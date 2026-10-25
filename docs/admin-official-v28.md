@@ -66,3 +66,9 @@ A V28 adiciona:
 - metadados de calibração oficial.
 
 O cenário-base permanece com modo `delta` e alvo 0 até o wizard ser aplicado. Assim, simulações existentes não recebem uplift silencioso.
+
+## Verificação
+
+Suíte completa: **28/28 testes**.
+
+A comparação direta contra a V27 confirmou zero diferença nos indicadores econômicos do cenário-base enquanto o wizard não é aplicado.
