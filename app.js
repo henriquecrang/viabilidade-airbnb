@@ -3257,31 +3257,78 @@
     };
   }
 
+  const FINAL_SCENARIO_IDS = [
+    'airbnb-self',
+    'airbnb-admin-essential',
+    'airbnb-admin',
+    'airbnb-rented',
+    'airbnb-rented-admin-essential',
+    'airbnb-rented-admin',
+    'traditional',
+    'investment'
+  ];
+
+  function finalComparisonState(inputState = state) {
+    const next = structuredCloneSafe(inputState);
+    next.guidedSetup = next.guidedSetup || {};
+    next.guidedSetup.adminComparisonEnabled = true;
+    return next;
+  }
+
+  function finalVisibleScenarioIds(inputState = state) {
+    const configured = Array.isArray(inputState?.analysis?.finalScenarioIds)
+      ? inputState.analysis.finalScenarioIds.filter((id) => FINAL_SCENARIO_IDS.includes(id))
+      : [];
+    return configured.length ? [...new Set(configured)] : [...FINAL_SCENARIO_IDS];
+  }
+
+  function finalProjection(years = null, inputState = state) {
+    const selectedYears = [1,3,5].includes(Number(years))
+      ? Number(years)
+      : ([1,3,5].includes(Number(inputState.analysis?.horizonYears)) ? Number(inputState.analysis.horizonYears) : 3);
+    return calculateHorizonProjection(finalComparisonState(inputState), selectedYears);
+  }
+
+  function renderFinalScenarioSelector(projection) {
+    const root = $('#finalScenarioSelector');
+    if (!root) return;
+    const visible = new Set(finalVisibleScenarioIds(state));
+    root.innerHTML = projection.scenarios.map((scenario) => `
+      <label class="final-scenario-toggle ${visible.has(scenario.id) ? 'active' : ''}">
+        <input type="checkbox" data-final-scenario-id="${escapeAttr(scenario.id)}" ${visible.has(scenario.id) ? 'checked' : ''} />
+        <span>${escapeHtml(scenario.label)}</span>
+      </label>`).join('');
+    const horizon = $('#finalHorizonYears');
+    if (horizon) horizon.value = String([1,3,5].includes(Number(state.analysis.horizonYears)) ? Number(state.analysis.horizonYears) : 3);
+  }
+
   function renderHorizonComparison() {
     const root = $('#horizonComparison');
     if (!root) return;
-    const selected = [1,3,5].includes(Number(state.analysis.horizonYears)) ? Number(state.analysis.horizonYears) : 5;
-    const projections = new Map([1,3,5].map((years)=>[years,calculateHorizonProjection(state,years)]));
+    const selected = [1,3,5].includes(Number(state.analysis.horizonYears)) ? Number(state.analysis.horizonYears) : 3;
+    const comparisonState = finalComparisonState(state);
+    const projections = new Map([1,3,5].map((years)=>[years,calculateHorizonProjection(comparisonState,years)]));
+    const ids = finalVisibleScenarioIds(state);
     const selectedProjection = projections.get(selected);
-    const ids = enabledScenarioIds(state);
     const selectedCandidates = selectedProjection.scenarios.filter((x)=>ids.includes(x.id));
     const selectedBest = selectedCandidates.reduce((best,item)=>!best || item.realWealthCreation>best.realWealthCreation?item:best,null);
     const labelFor = (id) => projections.get(1).scenarios.find((x)=>x.id===id)?.label || id;
     root.innerHTML = `
       <div class="horizon-highlight">
         <span>Horizonte em destaque: ${selected} ano${selected>1?'s':''}</span>
-        <strong>${escapeHtml(selectedBest.label)}</strong>
-        <small>maior ganho patrimonial real: ${money.format(selectedBest.realWealthCreation)}</small>
+        <strong>${escapeHtml(selectedBest?.label || 'Nenhum cenário')}</strong>
+        <small>${selectedBest ? `maior ganho patrimonial real: ${money.format(selectedBest.realWealthCreation)}` : 'selecione ao menos um cenário acima'}</small>
       </div>
       <div class="table-card horizon-table-card"><div class="table-scroll"><table class="horizon-table">
         <thead><tr><th>Cenário</th>${[1,3,5].map((h)=>`<th class="${h===selected?'selected-horizon':''}">${h} ano${h>1?'s':''}</th>`).join('')}</tr></thead>
         <tbody>${ids.map((id)=>`<tr><th>${escapeHtml(labelFor(id))}</th>${[1,3,5].map((h)=>{
           const sc=projections.get(h).scenarios.find((x)=>x.id===id);
+          if (!sc) return '<td>—</td>';
           const payback=sc.paybackYear==null?'sem payback':sc.paybackYear===0?'sem CAPEX':`payback ano ${sc.paybackYear}`;
-          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média mensal eq.: ${money.format(sc.monthlyEquivalentFreeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes anuais: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
+          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média anual: ${money.format(sc.averageAnnualFreeCash)}</span><span>Média mensal eq.: ${money.format(sc.monthlyEquivalentFreeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
         }).join('')}</tr>`).join('')}</tbody>
       </table></div></div>
-      <p class="helper">Motor anual: receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. “Média mensal equivalente” é apenas o valor anual/acumulado dividido pelos meses do horizonte — não é fluxo de caixa mensal.</p>`;
+      <p class="helper">Motor anual: receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. Médias anual e mensal são equivalentes aritméticos do acumulado do horizonte, não um fluxo mensal real.</p>`;
   }
 
   function renderHybridUse(calc) {
