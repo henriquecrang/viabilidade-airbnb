@@ -356,6 +356,17 @@ Concluída em 25/10/2026 — Issue #57.
 - wizards especializados permanecem disponíveis;
 - suíte completa: 38/38 testes.
 
+### V42 — estratégia de saída
+Concluída em 25/10/2026 — Issue #40.
+
+- default continua/renova;
+- imóvel próprio e aluguel tradicional podem ser vendidos no fim do horizonte;
+- Airbnb alugado realiza caução/CAPEX e desconta custos de saída;
+- investimento pode ser liquidado com custo explícito;
+- comparação final mostra estratégia e custos terminais;
+- nenhuma saída é tratada como custo recorrente;
+- suíte completa: 39/39 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
