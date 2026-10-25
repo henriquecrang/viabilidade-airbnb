@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 38;
+  const APP_VERSION = 39;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -1362,6 +1362,46 @@
         if (!profile?.configured) continue;
         const oldTotal = n(sourceProfiles?.[plan]?.occupancyImpactPp, activeTotal);
         profile.occupancyImpactPp = oldTotal - merged.airbnb.managementOccupancyDeltaPp;
+      }
+    }
+
+    // V39: Essencial volta a refletir o escopo comercial original:
+    // admin cuida de vendas/reservas/check-in/atendimento, enquanto o proprietário
+    // opera limpeza, lavanderia e reposição de consumíveis. Migramos apenas
+    // perfis legados que ainda correspondem ao antigo preset indiferenciado.
+    if (incomingVersion < 39) {
+      const managedTaskIdsV39 = ['limpeza','lavanderia','amenidades','checkin'];
+      const monthlyTaskIdsV39 = ['marketing','presales','guest-support','local-support','software','pricing'];
+      const looksLikeLegacyEssentialProfileV39 = (profile) => Boolean(
+        profile?.configured
+        && profile.plan === 'essential'
+        && n(profile.commissionPct, 15) === 15
+        && n(profile.supervisionHoursMonthly, 1) === 1
+        && managedTaskIdsV39.every((id) => profile[`manage_${id}`] === true)
+        && monthlyTaskIdsV39.every((id) => profile[`manage_${id}`] === true)
+      );
+      const correctEssentialProfileV39 = (profile) => {
+        if (!looksLikeLegacyEssentialProfileV39(profile)) return;
+        profile.manage_limpeza = false;
+        profile.manage_lavanderia = false;
+        profile.manage_amenidades = false;
+        profile.manage_checkin = true;
+      };
+
+      const sourceEssentialProfile = source.guidedSetup?.adminProfiles?.essential;
+      const mergedEssentialProfile = merged.guidedSetup?.adminProfiles?.essential;
+      if (looksLikeLegacyEssentialProfileV39(sourceEssentialProfile)) {
+        correctEssentialProfileV39(mergedEssentialProfile);
+      }
+
+      const sourceActiveProposal = source.guidedSetup?.adminProposal;
+      const mergedActiveProposal = merged.guidedSetup?.adminProposal;
+      if (looksLikeLegacyEssentialProfileV39(sourceActiveProposal)) {
+        correctEssentialProfileV39(mergedActiveProposal);
+        for (const item of merged.stayCosts || []) {
+          if (['limpeza','lavanderia','amenidades'].includes(String(item.id))) item.adminManages = false;
+          if (String(item.id) === 'checkin') item.adminManages = true;
+        }
       }
     }
 
@@ -4011,7 +4051,8 @@
       linenBelongsToOwner: !premium
     };
     for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
-      draft[`manage_${id}`] = true;
+      const essentialOwnerOperates = !premium && ['limpeza','lavanderia','amenidades'].includes(id);
+      draft[`manage_${id}`] = !essentialOwnerOperates;
       draft[`include_${id}`] = false;
     }
     for (const id of ['marketing','presales','guest-support','local-support','software','pricing']) {
