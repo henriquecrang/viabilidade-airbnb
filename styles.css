@@ -337,6 +337,61 @@ td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space
 .final-summary-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 22px; margin-bottom: 18px; }
 .final-summary-heading h2 { color: #fff; }
 .final-summary-heading p:not(.eyebrow) { margin: 7px 0 0; color: #cbd3df; max-width: 680px; font-size: .84rem; }
+.final-comparison-controls {
+  display: grid;
+  grid-template-columns: 180px minmax(0,1fr);
+  gap: 14px;
+  align-items: start;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: rgba(255,255,255,.045);
+}
+.final-control-group { display: grid; gap: 7px; }
+.final-control-label { color: #aeb8c8; font-size: .66rem; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+.final-control-group select {
+  min-height: 38px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text);
+  padding: 7px 9px;
+}
+.final-scenario-selector { display: flex; flex-wrap: wrap; gap: 7px; }
+.final-scenario-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  color: #cbd3df;
+  background: rgba(255,255,255,.035);
+  font-size: .69rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.final-scenario-toggle input { margin: 0; accent-color: var(--accent); }
+.final-scenario-toggle.active { background: rgba(127,179,255,.16); border-color: rgba(127,179,255,.42); color: #fff; }
+.final-period-equivalents {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+.final-period-equivalents > div {
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 9px;
+  background: rgba(255,255,255,.035);
+}
+.final-scenario-card.best .final-period-equivalents > div { border-color: var(--border); background: var(--panel-soft); }
+.final-period-equivalents span,
+.final-period-equivalents strong { display: block; }
+.final-period-equivalents span { color: #aeb8c8; font-size: .61rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 800; }
+.final-scenario-card.best .final-period-equivalents span { color: var(--muted); }
+.final-period-equivalents strong { margin-top: 2px; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .final-winner { min-width: 230px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.16); border-radius: 13px; background: rgba(255,255,255,.07); text-align: right; }
 .final-winner-label, .final-winner span, .final-winner small { display: block; }
 .final-winner-label { color: #aeb8c8; font-size: .65rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
@@ -395,6 +450,7 @@ footer { border-top: 1px solid var(--border); color: var(--muted); padding: 18px
   .share-card { align-items: flex-start; flex-direction: column; }
   .final-summary-section { padding: 18px; }
   .final-summary-heading { grid-template-columns: 1fr; align-items: start; }
+  .final-comparison-controls { grid-template-columns: 1fr; }
   .final-winner { min-width: 0; width: 100%; text-align: left; }
 }
 
