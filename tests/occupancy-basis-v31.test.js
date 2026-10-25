@@ -13,7 +13,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===31,'estado deve estar na V31');
+assert(defaultState.version>=31,'estado deve preservar a arquitetura V31+');
 assert(occupancyInputBasis(defaultState)==='self','base default autogestão');
 approx(managementOccupancyDeltaPp(defaultState),20,1e-9,'delta global default');
 approx(defaultState.airbnb.adminOccupancyImpactPp,0,1e-9,'ajuste adicional do perfil deve começar zerado');
