@@ -3455,7 +3455,7 @@
       if (state.guidedSetup?.adminProposal?.configured) {
         const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
         if (state.guidedSetup.adminProposal.calibrationStatus === 'official-response') {
-          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. O piso de ocupação de 80% é um default baseado na experiência operacional informada pelo parceiro e pode ser alterado pelo usuário.` });
+          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. O default de gestão adiciona 20 p.p. à ocupação autogerida de cada período, com teto de 100%, e pode ser alterado pelo usuário.` });
         } else if (state.guidedSetup.adminProposal.provisionalAssumptions) {
           messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa uma calibração provisória antiga; reaplique o wizard para usar as respostas oficiais da V28.` });
         }
@@ -3951,7 +3951,7 @@
           <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Resposta oficial: toda manutenção de equipamentos, imóvel e bens é do proprietário.</small></span></label>
         </div>
       </div>
-      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A ocupação de 80% é tratada como piso-alvo default baseado na experiência operacional informada pela administradora e permanece totalmente editável.</div>`;
+      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A gestão profissional usa por default +20 p.p. sobre a ocupação autogerida de cada período, com teto de 100%; a premissa permanece totalmente editável.</div>`;
   }
 
   function bindAdminWizardPresetChange() {
