@@ -32,7 +32,7 @@ for (const id of ['lavanderia','limpeza','amenidades','checkin']) {
 }
 
 const calc = calculateModel(defaultState);
-assert(calc.scenarios.length === 5, 'deveriam existir cinco cenários');
+assert(calc.scenarios.length === 6, 'V27 deve preservar B0 e acrescentar o quarto modo Airbnb');
 for (const s of calc.scenarios) assert(Number.isFinite(s.nominalExcessOverPreservation), `${s.id}: excedente ausente`);
 const inv = calc.scenarios.find(s=>s.id==='investment');
 approx(inv.nominalExcessOverPreservation, inv.freeCash, 1e-6, 'investimento: excedente vs caixa sustentável');
@@ -42,7 +42,7 @@ assert(appSource.includes('Maior excedente nominal sobre preservação'), 'rótu
 
 const css = fs.readFileSync(path.join(root,'styles.css'),'utf8');
 assert(css.includes('max-width: 1560px'), 'página não ampliada');
-assert(css.includes('repeat(5, minmax(0, 1fr))'), 'grid não prevê cinco colunas');
+assert(css.includes('repeat(6, minmax(0, 1fr))'), 'grid não prevê seis colunas');
 
 const html = fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(html.includes('O ranking usa o excedente nominal sobre preservação do poder de compra'), 'explicação do ranking não atualizada');
