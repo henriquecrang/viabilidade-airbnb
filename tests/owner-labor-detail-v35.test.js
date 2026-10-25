@@ -24,7 +24,7 @@ for(const years of [1,3,5]){
 }
 
 const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
-assert(appSource.includes('Trabalho do proprietário <small>custo econômico; não sai do caixa</small>'),'detalhamento anual não explica trabalho');
+assert(appSource.includes('Valor das horas trabalhadas por mês <small>custo econômico; não sai do caixa</small>'),'detalhamento anual deve explicar o custo econômico mensal');
 assert(!appSource.includes('Trabalho do proprietário <small>'),'detalhamento anual não deve mais mostrar total do trabalho');
 assert(!appSource.includes('Trabalho do proprietário: ${money.format(sc.realLaborCost)}'),'comparação plurianual não deve mostrar total do trabalho');
 
