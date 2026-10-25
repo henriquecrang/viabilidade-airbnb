@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===42,'estado deve estar na V42');
+assert(defaultState.version>=42,'estado deve preservar a estratégia de saída V42+');
 for(const key of ['ownedAirbnb','rentedAirbnb','traditional','investment']) {
   assert(defaultState.exitStrategy[key]==='continue',`${key}: default deve continuar`);
 }
