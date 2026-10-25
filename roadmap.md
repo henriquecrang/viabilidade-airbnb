@@ -221,7 +221,8 @@ Concluída em 24/10/2026.
 - #46 criada para validar a alegação de ocupação com dados reais;
 - contrato enviado classificado como canal direto/hóspede, não contrato de administração;
 - #32 e #44 podem ser encerradas após incorporação;
-- regressão do cenário-base V27 preservada.
+- regressão do cenário-base V27 preservada;
+- suíte completa: 28/28 testes.
 
 ## Rodadas de execução
 
