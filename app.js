@@ -4614,6 +4614,46 @@
     });
   }
 
+  function restoreDefaults() {
+    const proceed = typeof window === 'undefined'
+      || typeof window.confirm !== 'function'
+      || window.confirm('Restaurar todos os valores default? As alterações não salvas nesta simulação serão substituídas.');
+    if (!proceed) return;
+    state = structuredCloneSafe(defaultState);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    autosave();
+    renderAll();
+    showNotice('Valores default restaurados.');
+  }
+
+  function bindFinalComparisonControls() {
+    $('#finalScenarioSelector')?.addEventListener('change', (event) => {
+      const input = event.target.closest('[data-final-scenario-id]');
+      if (!input) return;
+      const id = input.dataset.finalScenarioId;
+      const visible = new Set(finalVisibleScenarioIds(state));
+      if (input.checked) visible.add(id);
+      else visible.delete(id);
+      if (visible.size === 0) {
+        input.checked = true;
+        showNotice('Mantenha ao menos um cenário visível na comparação final.', true);
+        return;
+      }
+      state.analysis.finalScenarioIds = FINAL_SCENARIO_IDS.filter((scenarioId) => visible.has(scenarioId));
+      autosave();
+      calculateAndRender();
+    });
+
+    $('#finalHorizonYears')?.addEventListener('change', (event) => {
+      const years = Number(event.target.value);
+      if (![1,3,5].includes(years)) return;
+      state.analysis.horizonYears = years;
+      autosave();
+      hydrateStaticInputs();
+      calculateAndRender();
+    });
+  }
+
   function renderAll() { hydrateStaticInputs(); renderDynamicTables(); renderMarketComparables(); calculateAndRender(); }
 
   function init() {
@@ -4622,6 +4662,7 @@
     bindMarketComparables();
     bindAccordions();
     bindWizards();
+    bindFinalComparisonControls();
     $('#addSeasonButton').addEventListener('click', addSeason);
     $('#addStayCostButton').addEventListener('click', addStayCost);
     $('#addMonthlyCostButton').addEventListener('click', addMonthlyCost);
@@ -4633,6 +4674,7 @@
     ['#loadButton', '#loadButtonBottom'].forEach((selector) => $(selector).addEventListener('click', () => $('#fileInput').click()));
     $('#fileInput').addEventListener('change', (event) => { const [file] = event.target.files || []; if (file) importSimulation(file); event.target.value = ''; });
     $('#copySummaryButton').addEventListener('click', copySummary);
+    $('#restoreDefaultsButton')?.addEventListener('click', restoreDefaults);
     renderAll();
   }
 
@@ -4640,7 +4682,8 @@
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
     buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled,
-    occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, occupancyDisplayPct, convertOccupancyInputBasis
+    occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, occupancyDisplayPct, convertOccupancyInputBasis,
+    finalComparisonState, finalVisibleScenarioIds, finalProjection
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
