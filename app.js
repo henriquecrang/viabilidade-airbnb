@@ -2561,17 +2561,15 @@
     };
 
     // Complementa detalhes de oportunidade depois que os cenários já foram enriquecidos.
-    [self, admin, traditional].forEach((scenario) => {
+    [self, admin, rented, rentedAdmin, traditional].forEach((scenario) => {
       scenario.details['Aporte externo para cobrir déficit'] = scenario.externalFundingRequired;
       scenario.details['Capital de oportunidade'] = scenario.opportunityCapital;
       scenario.details['Ganho real do benchmark financeiro'] = scenario.benchmarkRealGain;
       scenario.details['Δ financeiro vs. benchmark'] = scenario.financialGapVsBenchmark;
       scenario.details['Δ econômico vs. benchmark'] = scenario.economicGapVsBenchmark;
     });
-    rented.details['Δ financeiro vs. benchmark'] = rented.financialGapVsBenchmark;
-    rented.details['Δ econômico vs. benchmark'] = rented.economicGapVsBenchmark;
 
-    const scenarios = [self, admin, rented, traditional, investment];
+    const scenarios = [self, admin, rented, rentedAdmin, traditional, investment];
     const bestCash = [...scenarios].sort((a, b) => b.freeCash - a.freeCash)[0];
     const bestFirstYear = [...scenarios].sort((a, b) => b.firstYearCash - a.firstYearCash)[0];
     const bestEconomic = [...scenarios].sort((a, b) => b.economicResult - a.economicResult)[0];
@@ -2599,11 +2597,15 @@
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
       adminReservations, adminCleaningFeeRevenue, adminOtherGuestFeeRevenue, adminGuestFeeRevenue, adminAirbnbRevenue,
       adminCommissionBase, adminFee, adminCleaningPassThrough, adminOwnerRevenueBeforePlatform, adminPlatformFee,
-      fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, fixedTraditional, pctCostRate, adminPctCostRate,
+      fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, adminFixedRentedAirbnb, fixedTraditional,
+      pctCostRate, rentedPctCostRate, adminPctCostRate, adminRentedPctCostRate,
+      adminRentedPctCosts, adminRentedOperatingCosts, adminRentedTaxDeductions, adminRentedTaxBase, adminRentedTax, adminRentedOperatingCash,
       reserveRate, adminReserveRate, reserveOpening, adminReserveOpening, selfReserveContribution, adminReserveContribution,
-      selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets, traditionalSetup,
-      selfSetupResidual, adminSetupResidual, adminSetupPaidByAdmin: adminSetupData.paidByAdmin, rentedSetupResidual, traditionalSetupResidual,
-      selfSetupDepreciation, adminSetupDepreciation, rentedSetupDepreciation, traditionalSetupDepreciation,
+      selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets,
+      rentedAdminSetup, rentedAdminSetupAssets, rentedAdminSetupPaidByAdmin: rentedAdminSetupData.paidByAdmin, traditionalSetup,
+      selfSetupResidual, adminSetupResidual, adminSetupPaidByAdmin: adminSetupData.paidByAdmin,
+      rentedSetupResidual, rentedAdminSetupResidual, traditionalSetupResidual,
+      selfSetupDepreciation, adminSetupDepreciation, rentedSetupDepreciation, rentedAdminSetupDepreciation, traditionalSetupDepreciation,
       rentedLeaseRent, rentedAnnualLeaseCosts, rentedSecurityDeposit, rentedInitialLeaseCosts,
       rentedMonthlyCostItems, rentedPctCostRate, rentedPctCosts,
       rentedFurnished: Boolean(currentState.rentedAirbnb.furnished),
@@ -2702,6 +2704,9 @@
         amount = n(x.amount);
       } else if (scenarioId === 'airbnb-rented') {
         belongs = Boolean(x.rentedAirbnb && (!furnished || !x.rentedOnlyIfUnfurnished));
+        amount = n(x.rentedAmount, x.amount);
+      } else if (scenarioId === 'airbnb-rented-admin') {
+        belongs = Boolean(x.rentedAirbnb && (!furnished || !x.rentedOnlyIfUnfurnished) && x.adminAssetBelongsToOwner);
         amount = n(x.rentedAmount, x.amount);
       } else if (scenarioId === 'traditional') {
         belongs = Boolean(x.traditional);
@@ -2827,7 +2832,7 @@
     const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
     const propertyValue = Math.max(0, n(baseState.globals.propertyValue));
     const initialHourly = Math.max(0, n(baseState.globals.ownerHourlyValue));
-    const scenarioIds = ['airbnb-self','airbnb-admin','airbnb-rented','traditional'];
+    const scenarioIds = ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional'];
 
     const projectedScenarios = scenarioIds.map((scenarioId) => {
       const baseScenario = baseCalc.scenarios.find((x) => x.id === scenarioId);
@@ -2860,11 +2865,11 @@
       const timing = buildAnnualFundingSchedule(yearsDetail, inflation);
       const cashBalance = timing.endingCashBalance;
       const externalFundingRequired = timing.externalFundingRequired;
-      const ownsProperty = scenarioId !== 'airbnb-rented';
+      const ownsProperty = !['airbnb-rented','airbnb-rented-admin'].includes(scenarioId);
       const propertyEndValue = ownsProperty ? propertyValue * Math.pow(1 + nominalAppreciation, years) : 0;
       const setupResidual = setupResidualForHorizon(baseState, scenarioId, years);
       const workingCapital = Math.max(0, n(baseScenario.workingCapital));
-      const securityDeposit = scenarioId === 'airbnb-rented' ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
+      const securityDeposit = ['airbnb-rented','airbnb-rented-admin'].includes(scenarioId) ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
       const baseCapitalForScenario = purchaseMode && ownsProperty
         ? acquisitionAvailableCapital
         : Math.max(0, n(baseScenario.baseInitialCapital));
@@ -3170,7 +3175,7 @@
 
   function enabledScenarioIds(inputState = state) {
     const configured = inputState?.guidedSetup?.main;
-    const known = ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'];
+    const known = ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'];
     if (!configured?.configured || !Array.isArray(configured.enabledScenarios) || configured.enabledScenarios.length === 0) return known;
     const selected = configured.enabledScenarios.filter((id) => known.includes(id));
     return selected.length ? selected : known;
@@ -3236,7 +3241,7 @@
       const lines = Object.entries(scenario.details).map(([key, value]) => {
         const lowerKey = key.toLowerCase();
         const isRate = lowerKey.includes('taxa bruta nominal') || lowerKey.includes('impacto admin. na diária') || lowerKey.includes('ocupação relativo');
-        const isPercentagePoint = lowerKey.includes('impacto admin. na ocupação');
+        const isPercentagePoint = lowerKey.includes('impacto admin. na ocupação') && !lowerKey.includes('relativo');
         const formatted = isPercentagePoint ? `${number1.format(value)} p.p.` : (isRate ? percent.format(value) : money.format(value));
         return `<div><dt>${escapeHtml(key)}</dt><dd>${formatted}</dd></div>`;
       }).join('');
@@ -3248,13 +3253,16 @@
     const messages = [];
     const visible = new Set(calc.scenarios.map((scenario) => scenario.id));
     const hasSelf = visible.has('airbnb-self');
-    const hasAdmin = visible.has('airbnb-admin');
-    const hasRented = visible.has('airbnb-rented');
+    const hasOwnedAdmin = visible.has('airbnb-admin');
+    const hasRentedSelf = visible.has('airbnb-rented');
+    const hasRentedAdmin = visible.has('airbnb-rented-admin');
+    const hasAdmin = hasOwnedAdmin || hasRentedAdmin;
+    const hasRented = hasRentedSelf || hasRentedAdmin;
     const hasTraditional = visible.has('traditional');
     const hasInvestment = visible.has('investment');
     const hasAnyAirbnb = hasSelf || hasAdmin || hasRented;
-    const hasOwnedAirbnb = hasSelf || hasAdmin;
-    const hasOwnedPropertyComparison = hasSelf || hasAdmin || hasTraditional || hasInvestment;
+    const hasOwnedAirbnb = hasSelf || hasOwnedAdmin;
+    const hasOwnedPropertyComparison = hasSelf || hasOwnedAdmin || hasTraditional || hasInvestment;
 
     if (Math.abs(calc.totalDays - 365) > 0.001 && hasAnyAirbnb) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
     if (n(state.airbnb.taxPct) === 0 && hasAnyAirbnb) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
@@ -3268,22 +3276,25 @@
     const deficitScenarios = calc.scenarios.filter((scenario) => scenario.externalFundingRequired > 0);
     deficitScenarios.forEach((scenario) => messages.push({ warning: true, text: `${scenario.label} exige ${money.format(scenario.externalFundingRequired)} de aporte externo para cobrir o caixa negativo. Esse valor também foi somado ao capital do benchmark financeiro equivalente.` }));
 
-    const rentedScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-rented');
-    if (rentedScenario) {
-      messages.push({ text: `No Airbnb em imóvel alugado, o capital de oportunidade é ${money.format(rentedScenario.opportunityCapital)} — montagem/custos iniciais, capital vinculado e eventual aporte para déficit, sem incluir o valor do imóvel.` });
-      if (!calc.rentedSubleaseAuthorized) messages.push({ warning: true, text: 'O cenário financeiro do Airbnb alugado está calculado, mas a autorização contratual para sublocação/locação por temporada ainda não foi confirmada.' });
-      if (calc.rentedFurnished) messages.push({ text: 'O imóvel alugado está marcado como mobiliado: itens de CAPEX classificados como “só se não mobiliado” foram excluídos desse cenário.' });
+    const rentedScenarios = calc.scenarios.filter((scenario) => ['airbnb-rented','airbnb-rented-admin'].includes(scenario.id));
+    if (rentedScenarios.length) {
+      const labels = rentedScenarios.map((scenario) => `${scenario.label}: ${money.format(scenario.opportunityCapital)}`).join(' · ');
+      messages.push({ text: `Nos modos com imóvel alugado, o capital de oportunidade exclui o valor do imóvel e inclui montagem/contrato, capital vinculado e eventual aporte: ${labels}.` });
+      if (!calc.rentedSubleaseAuthorized) messages.push({ warning: true, text: 'Os cenários de Airbnb em imóvel alugado estão calculados, mas a autorização contratual para sublocação/locação por temporada ainda não foi confirmada.' });
+      if (calc.rentedFurnished) messages.push({ text: 'O imóvel alugado está marcado como mobiliado: itens de CAPEX classificados como “só se não mobiliado” foram excluídos dos dois modos de gestão.' });
     }
 
-    const adminScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-admin');
-    if (adminScenario) {
+    const adminScenarios = calc.scenarios.filter((scenario) => ['airbnb-admin','airbnb-rented-admin'].includes(scenario.id));
+    if (adminScenarios.length) {
       if (state.guidedSetup?.adminProposal?.configured && state.guidedSetup.adminProposal.provisionalAssumptions) {
         const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
         messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa premissas provisórias aprovadas em 24/10/2026. Revisar quando chegar a resposta formal da administradora (Issue #44).` });
       }
-      messages.push({ text: `No Airbnb administrado, o modelo estima ${number1.format(calc.workHours.admin)} horas suas por ano: tarefas não delegadas + supervisão residual da administradora.` });
-      if (n(state.airbnb.adminNightlyRateImpactPct) !== 0 || n(state.airbnb.adminOccupancyImpactPp) !== 0) {
-        messages.push({ text: `A administradora está configurada com impacto de ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}% na diária e ${number1.format(n(state.airbnb.adminOccupancyImpactPp))} p.p. na ocupação. Isso altera receita, reservas e custos variáveis do cenário administrado.` });
+      adminScenarios.forEach((scenario) => {
+        messages.push({ text: `${scenario.label} estima ${number1.format(scenario.workHoursAnnual)} horas suas por ano após tarefas delegadas e supervisão residual.` });
+      });
+      if (n(state.airbnb.adminNightlyRateImpactPct) !== 0 || n(state.airbnb.adminOccupancyImpactPp) !== 0 || n(state.airbnb.adminOccupancyImpactRelativePct) !== 0) {
+        messages.push({ text: `A gestão profissional está configurada com ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}% na diária, ${number1.format(n(state.airbnb.adminOccupancyImpactRelativePct))}% relativo na ocupação e ${number1.format(n(state.airbnb.adminOccupancyImpactPp))} p.p. adicionais. A mesma regra comercial é aplicada aos dois regimes de posse.` });
       }
     }
 
@@ -4045,7 +4056,8 @@
       const labels = {
         'airbnb-self':'Airbnb autogerido',
         'airbnb-admin':'Airbnb com administradora',
-        'airbnb-rented':'Airbnb em imóvel alugado',
+        'airbnb-rented':'Airbnb alugado + autogestão',
+        'airbnb-rented-admin':'Airbnb alugado + administradora',
         traditional:'Aluguel tradicional',
         investment:'Investimento financeiro'
       };
