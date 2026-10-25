@@ -9,7 +9,7 @@ const {
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===32,'estado deve estar na V32');
+assert(defaultState.version>=32,'estado deve preservar a arquitetura V32+');
 assert(defaultState.analysis.horizonYears===3,'resumo final deve abrir em 3 anos');
 
 const forced=finalComparisonState(defaultState);
@@ -43,3 +43,8 @@ assert(html.includes('id="restoreDefaultsButton"'),'botão de restaurar defaults
 assert(html.includes('Restaurar defaults'),'rótulo de reset ausente');
 
 console.log('V32 resumo final: oito cenários, filtros, 3 anos e reset passaram.');
+
+
+const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+assert(appSource.includes('média mensal equivalente do excedente nominal'),'mensal deve ser o destaque principal dos cards');
+assert(appSource.includes('Total · ${years} ano'),'total do horizonte deve continuar visível');
