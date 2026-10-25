@@ -404,10 +404,10 @@ td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space
 .final-scenario-topline { min-height: 38px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .final-scenario-name { font-weight: 800; font-size: .85rem; line-height: 1.2; }
 .best-badge { flex: 0 0 auto; padding: 3px 6px; border-radius: 999px; background: var(--green-soft); color: #21653a; font-size: .59rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-.final-annual { margin-top: 11px; font-size: clamp(1.35rem, 2.4vw, 1.85rem); line-height: 1; font-weight: 900; letter-spacing: -.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.final-annual { margin-top: 11px; font-size: clamp(1.8rem, 3.2vw, 2.55rem); line-height: .98; font-weight: 950; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .final-annual.negative { color: #ffb4aa; }
 .final-scenario-card.best .final-annual.negative { color: var(--danger); }
-.final-annual-label { margin-top: 4px; color: #aeb8c8; font-size: .67rem; }
+.final-annual-label { margin-top: 5px; color: #aeb8c8; font-size: .7rem; font-weight: 700; }
 .final-scenario-card.best .final-annual-label { color: var(--muted); }
 .final-bar-track { height: 5px; margin: 13px 0; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.10); }
 .final-bar-track span { display: block; height: 100%; border-radius: inherit; background: #7fb3ff; }
