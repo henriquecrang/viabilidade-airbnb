@@ -4276,7 +4276,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
+    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
