@@ -37,7 +37,7 @@ Essencial adiciona:
 - `airbnb-admin-essential`;
 - `airbnb-rented-admin-essential`.
 
-Antes da primeira aplicação do wizard da administradora, o cenário-base continua com as seis estratégias da V28. Isso evita aplicar silenciosamente a hipótese comercial de ocupação de 80%.
+Antes da primeira aplicação do wizard da administradora, o cenário-base continua com as seis estratégias da V28. Isso evita aplicar silenciosamente o piso default de ocupação de 80% informado pelo parceiro.
 
 Depois da configuração, a categoria “com administradora” do wizard principal se expande para as duas variantes de gestão.
 
