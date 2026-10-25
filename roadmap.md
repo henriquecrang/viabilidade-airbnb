@@ -295,6 +295,16 @@ Concluída em 25/10/2026 — Issue #51.
 - novo teste de sensibilidade cobre R$ 0/h × R$ 200/h;
 - suíte completa: 33/33 testes.
 
+### V35 — trabalho do proprietário no detalhamento
+Concluída em 25/10/2026 — Issue #52.
+
+- detalhamento anual mostra horas × valor/h = custo econômico;
+- custo é identificado como não-caixa;
+- projeções 1/3/5 acumulam horas próprias;
+- cards finais exibem a fórmula do trabalho do proprietário;
+- investimento e demais cenários seguem a mesma regra;
+- suíte completa: 34/34 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
