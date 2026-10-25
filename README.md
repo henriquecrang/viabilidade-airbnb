@@ -180,7 +180,7 @@ Premissas provisórias autorizadas em 24/10/2026:
 
 Essas premissas não são aplicadas silenciosamente ao cenário-base. Elas só alteram a simulação quando o usuário usa o wizard. A revisão formal está registrada na Issue #44; a espera pela resposta real continua em #32.
 
-A comparação simultânea **Essencial × Premium** foi separada na Issue #45 para preservar configurações independentes e editáveis de cada plano, em vez de duplicar cenários por hard-code.
+A comparação simultânea **Essencial × Premium** foi separada na Issue #45 e concluída na V29, com configurações independentes e editáveis por plano.
 
 A migração V25 → V26 preserva os resultados default; a suíte passou **26/26 testes**.
 
@@ -207,7 +207,7 @@ O novo modo **alugado + administradora**:
 
 A refatoração preservou numericamente os cinco cenários que já existiam na V26. A suíte completa passou **27/27 testes**.
 
-A V27 ainda usa um único conjunto ativo de premissas da administradora para os dois modos administrados. A comparação simultânea entre presets Essencial e Premium permanece na Issue #45.
+A V27 ainda usava um único conjunto ativo de premissas da administradora para os dois modos administrados. Essa limitação foi removida na V29.
 
 ## V28 — calibração oficial da administradora
 
@@ -230,6 +230,30 @@ A faixa de ocupação não foi tratada como dado de mercado auditado. A Issue #4
 O contrato enviado pela administradora foi classificado como **contrato de hospedagem direta com hóspede**, usado fora do Airbnb, e não como contrato proprietário × administradora. Por conter dados pessoais de terceiros, o PDF não foi adicionado ao repositório público; apenas notas sem PII foram registradas.
 
 O cenário-base continua economicamente neutro até o usuário aplicar o wizard. A migração V27 → V28 não altera silenciosamente os resultados existentes. A suíte completa V28 passou **28/28 testes**.
+
+
+## V29 — comparação simultânea Essencial × Premium
+
+A Issue #45 foi concluída com perfis independentes de gestão.
+
+Depois que o wizard **Administradora** é aplicado, a comparação passa a mostrar simultaneamente:
+- Airbnb próprio + Admin Essencial;
+- Airbnb próprio + Admin Premium;
+- Airbnb alugado + Admin Essencial;
+- Airbnb alugado + Admin Premium.
+
+Regras de compatibilidade e edição:
+- o cenário-base continua com seis estratégias enquanto nenhuma proposta de administradora tiver sido aplicada, preservando o comportamento V28 e evitando aplicar silenciosamente a hipótese comercial de 80%;
+- Premium mantém os IDs históricos `airbnb-admin` e `airbnb-rented-admin`;
+- Essencial usa `airbnb-admin-essential` e `airbnb-rented-admin-essential`;
+- cada plano guarda sua própria comissão, performance, tarefas gerenciadas, custos incluídos, supervisão e regras de CAPEX;
+- o plano ativo continua refletindo alterações feitas nos campos detalhados; ao trocar de plano no wizard, sua configuração é capturada antes da mudança;
+- os horizontes anuais de 1/3/5 anos projetam cada perfil separadamente;
+- o filtro do wizard principal continua trabalhando com a categoria “com administradora” e a expande para Essencial + Premium quando a comparação está ativa.
+
+A implementação não transforma o número de planos em regra do motor econômico: a separação fica concentrada na camada de perfis de gestão e reutiliza o mesmo motor posse × gestão da V27.
+
+Suíte completa: **29/29 testes**.
 
 ## Limitações atuais
 
