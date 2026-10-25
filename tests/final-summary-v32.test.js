@@ -47,4 +47,5 @@ console.log('V32 resumo final: oito cenários, filtros, 3 anos e reset passaram.
 
 const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
 assert(appSource.includes('resultado econômico real · média mensal equivalente'),'mensal econômico deve ser o destaque principal dos cards');
-assert(appSource.includes('Total · ${years} ano'),'total do horizonte deve continuar visível');
+assert(appSource.includes('Valor real mensal total'),'V40 deve substituir total do horizonte na caixa secundária');
+assert(appSource.includes('Horas de trabalho/mês'),'V40 deve exibir horas/mês na segunda caixa secundária');
