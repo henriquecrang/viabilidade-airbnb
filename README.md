@@ -392,6 +392,23 @@ A primeira caixa secundária equivale matematicamente ao ganho patrimonial real 
 
 Os antigos indicadores secundários “total do horizonte” e “média anual” foram removidos dessas duas caixas.
 
+## V41 — wizard principal integrado
+
+O botão **Configurar simulação** consolida as premissas que mais mudam a decisão, sem substituir os assistentes especializados.
+
+Em uma única passagem é possível configurar:
+- situação inicial;
+- cenários exibidos no quadro final;
+- horizonte;
+- valor econômico da hora;
+- base da ocupação (autogestão ou administrada);
+- ganho esperado da administradora em p.p.;
+- ocupação dos seis períodos sazonais;
+- estadia média e taxa de limpeza cobrada;
+- custos principais por reserva de limpeza, lavanderia, amenidades e check-in/out.
+
+A revisão final mostra as premissas materiais e compara as horas/mês estimadas de autogestão, Essencial e Premium. O wizard escreve diretamente nos mesmos campos do motor; não existe estado econômico paralelo.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
