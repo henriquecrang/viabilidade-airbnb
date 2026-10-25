@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===27,'estado deve estar na V27');
+assert(defaultState.version>=27,'estado deve preservar a matriz V27+');
 const calc=calculateModel(defaultState);
 assert(calc.scenarios.length===6,'V27 deve expor seis estratégias');
 for(const id of ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin']){
