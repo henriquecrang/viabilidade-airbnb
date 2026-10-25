@@ -566,13 +566,16 @@
       acquisition.configured
       && acquisition.position === 'buy'
       && acquisition.purchaseEconomicsComplete === true
-      && Math.max(0, n(acquisition.availableCapital)) > 0
-      && Math.max(0, n(acquisition.purchaseCapitalNeedKnown)) <= Math.max(0, n(acquisition.availableCapital)) + 1e-9
+      && Math.max(0, n(acquisition.purchaseFundingGap)) <= 1e-9
+      && (
+        Math.max(0, n(acquisition.ownCapitalPool, n(acquisition.availableCapital) + n(acquisition.additionalEquity))) > 0
+        || Math.max(0, n(acquisition.financingPrincipal)) > 0
+      )
     );
 
     const errors = [];
     if (!acquisitionReady) {
-      errors.push('Configure primeiro “Aquisição e venda” com capital suficiente para preço de compra + custos de aquisição + CAPEX + capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.');
+      errors.push('Configure primeiro “Aquisição e venda” com fontes explícitas suficientes: capital disponível, aporte adicional e/ou financiamento.');
     }
     if (hasScenarioFields && selectedFinalScenarioIds.length === 0) {
       errors.push('Selecione ao menos um cenário para a comparação final.');
@@ -3746,10 +3749,10 @@
     const salePreview = $('#saleConversionPreview');
     if (salePreview) {
       salePreview.innerHTML = calc.purchaseMode ? `
-        <article><span>Capital inicial disponível</span><strong>${money.format(calc.acquisitionAvailableCapital)}</strong><small>mesma base usada no benchmark financeiro</small></article>
+        <article><span>Capital próprio total</span><strong>${money.format(calc.acquisitionEquityCapital)}</strong><small>capital disponível + aporte adicional; mesma base própria usada no benchmark</small></article>
         <article><span>Preço de compra</span><strong>${money.format(calc.propertyValue)}</strong><small>convertido em patrimônio imobiliário</small></article>
-        <article><span>Custos de aquisição</span><strong>${money.format(calc.acquisitionPurchaseCosts)}</strong><small>consumidos uma única vez no início</small></article>
-        <article><span>Financiamento da compra</span><strong>Não modelado</strong><small>a compra precisa caber integralmente no capital disponível</small></article>`
+        <article><span>Custos de aquisição + crédito</span><strong>${money.format(calc.acquisitionPurchaseCosts + calc.acquisitionFinancingOriginationCosts)}</strong><small>consumidos uma única vez no início</small></article>
+        <article><span>Financiamento da compra</span><strong>${money.format(calc.acquisitionFinancingPrincipal)}</strong><small>parcela ano 1: ${money.format(calc.acquisitionFinancingYear1?.payment || 0)} · saldo após ano 1: ${money.format(calc.acquisitionFinancingYear1?.endingBalance || 0)}</small></article>`
         : `
         <article><span>Valor de mercado</span><strong>${money.format(calc.propertyValue)}</strong><small>patrimônio imobiliário de referência</small></article>
         <article><span>Valor esperado de venda</span><strong>${money.format(calc.salePrice)}</strong><small>após ajuste informado</small></article>
@@ -3997,10 +4000,11 @@
 
     if (hasOwnedPropertyComparison) {
       if (calc.purchaseMode) {
-        messages.push({ text: `Na posição “tenho capital”, compra e benchmark partem dos mesmos ${money.format(calc.acquisitionAvailableCapital)}. Custos de aquisição são consumidos uma única vez; qualquer sobra do pacote inicial permanece aplicada financeiramente.` });
+        messages.push({ text: `Na posição “tenho capital”, o benchmark recebe os mesmos ${money.format(calc.acquisitionEquityCapital)} de capital próprio. O financiamento de ${money.format(calc.acquisitionFinancingPrincipal)} é dívida, não riqueza, e não entra no benchmark.` });
         const invalidPurchases = calc.scenarios.filter((scenario) => scenario.purchaseMode && !scenario.acquisitionValid);
-        if (invalidPurchases.length) messages.push({ warning: true, text: 'As premissas detalhadas foram alteradas e a compra já não cabe no capital disponível. Esta versão não financia a diferença; ajuste preço, custos, CAPEX/capital de giro ou aumente o capital informado no wizard.' });
-        messages.push({ text: `No benchmark financeiro sem compra, todo o capital inicial permanece aplicado; ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação.` });
+        if (invalidPurchases.length) messages.push({ warning: true, text: 'As fontes explícitas da aquisição já não fecham a necessidade inicial. Ajuste capital, aporte, financiamento, preço, custos, CAPEX ou capital de giro.' });
+        if (calc.acquisitionFinancingPrincipal > 0) messages.push({ text: `Financiamento: parcela anual equivalente no primeiro ano ${money.format(calc.acquisitionFinancingYear1?.payment || 0)}, sendo ${money.format(calc.acquisitionFinancingYear1?.interest || 0)} de juros e saldo devedor ${money.format(calc.acquisitionFinancingYear1?.endingBalance || 0)} ao fim do ano.` });
+        messages.push({ text: `No benchmark financeiro sem compra, todo o capital próprio permanece aplicado; ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação.` });
       } else {
         messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
         if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
@@ -4385,7 +4389,7 @@
           ${moneyInput('otherCosts','Outros custos de liquidação',draft.otherCosts)}
         </div>
       </div>
-      <div class="concept-note"><strong>Regra atual de aquisição:</strong> compra à vista, sem financiamento nem aporte adicional. Preço + custos de aquisição + CAPEX + reservas iniciais + capital de giro precisam caber no capital disponível. A sobra permanece aplicada financeiramente. Para imóvel já possuído, o benchmark continua usando a venda líquida após custos.</div>`;
+      <div class="concept-note"><strong>Regra de aquisição:</strong> nenhuma fonte de recursos é criada automaticamente. Capital disponível, aporte adicional e financiamento são explícitos; a dívida reduz o patrimônio e suas parcelas reduzem o caixa. O benchmark recebe o mesmo capital próprio, nunca o dinheiro emprestado.</div>`;
   }
 
 
@@ -4922,8 +4926,9 @@
     if (activeWizard === 'property') {
       const x = patch.normalized;
       const capitalLine = x.position === 'buy'
-        ? `<li>Capital disponível: <strong>${money.format(x.availableCapital)}</strong> · necessidade inicial: <strong>${money.format(x.purchaseCapitalNeedKnown)}</strong> · sobra investida: <strong>${money.format(x.leftoverCapital)}</strong>.</li>
-           <li>Custos de aquisição entram uma única vez. Esta versão exige compra integralmente à vista e não cria financiamento/aporte adicional.</li>`
+        ? `<li>Capital próprio: <strong>${money.format(x.availableCapital)}</strong> disponível + <strong>${money.format(x.additionalEquity)}</strong> de aporte = <strong>${money.format(x.ownCapitalPool)}</strong>.</li>
+           <li>Financiamento: <strong>${money.format(x.financingPrincipal)}</strong> · taxa <strong>${number1.format(x.financingAnnualRatePct)}% a.a.</strong> · prazo <strong>${number1.format(x.financingTermYears)} anos</strong> · contratação <strong>${money.format(x.financingOriginationCosts)}</strong>.</li>
+           <li>Necessidade inicial: <strong>${money.format(x.purchaseCapitalNeedKnown)}</strong> · capital próprio requerido: <strong>${money.format(x.ownCapitalRequired)}</strong> · sobra investida: <strong>${money.format(x.leftoverCapital)}</strong>.</li>`
         : '';
       preview.innerHTML = `
         <h3>Revise antes de aplicar</h3>
