@@ -155,12 +155,33 @@ Nesta versão, **não existe financiamento nem aporte adicional para completar u
 
 Os horizontes continuam anuais (1/3/5 anos), e o comportamento default de quem já possui o imóvel permanece numericamente idêntico à V24.
 
+## V26 — presets provisórios da administradora
+
+O wizard **Administradora** traduz os planos **Essencial (15%)** e **Premium (25%)** para as mesmas premissas detalhadas usadas pelo motor.
+
+Premissas provisórias autorizadas em 24/10/2026:
+
+- a taxa do Airbnb é alocada entre proprietário e administradora conforme a parcela econômica de cada um;
+- **Essencial:** taxa de limpeza permanece na receita compartilhada e entra na base dos 15%;
+- **Premium:** taxa de limpeza é repassada integralmente à administradora e fica fora da base dos 25%;
+- o aumento informado de ocupação é interpretado provisoriamente como **+20% relativo**, não +20 pontos percentuais;
+- não há uplift de diária/ADR sem evidência adicional;
+- no Premium, o enxoval pago pela administradora não integra o patrimônio do proprietário;
+- no Premium, a administradora gerencia pequenos reparos/eletrodomésticos, mas o proprietário continua pagando esses reparos;
+- “Admin gerencia” e “Custo incluído” permanecem dimensões independentes e editáveis.
+
+Essas premissas não são aplicadas silenciosamente ao cenário-base. Elas só alteram a simulação quando o usuário usa o wizard. A revisão formal está registrada na Issue #44; a espera pela resposta real continua em #32.
+
+A comparação simultânea **Essencial × Premium** foi separada na Issue #45 para preservar configurações independentes e editáveis de cada plano, em vez de duplicar cenários por hard-code.
+
+A migração V25 → V26 preserva os resultados default; a suíte passou **26/26 testes**.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, operação e uso híbrido já estão disponíveis; o wizard de administradora (#26) ainda depende da calibração real da proposta (#5/#32).
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium da administradora são provisórios e devem ser revisados quando chegar a resposta formal (#44/#32).
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
