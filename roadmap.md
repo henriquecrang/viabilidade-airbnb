@@ -334,6 +334,16 @@ Concluída em 25/10/2026 — Issue #55.
 - migração restrita a presets Essencial legados não customizados;
 - suíte completa: 36/36 testes.
 
+### V40 — indicadores secundários mensais
+Concluída em 25/10/2026 — Issue #56.
+
+- indicador principal permanece como resultado econômico real mensal;
+- caixa secundária 1 passa a mostrar valor real mensal total = ganho econômico real + valor do trabalho;
+- caixa secundária 2 mostra horas de trabalho por mês;
+- total do horizonte e média anual saem das caixas secundárias;
+- a mesma fórmula vale para todos os cenários;
+- suíte completa: 37/37 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
