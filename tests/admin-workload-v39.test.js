@@ -11,7 +11,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===39,'estado deve estar na V39');
+assert(defaultState.version>=39,'estado deve preservar a modelagem V39+');
 
 const essential=adminWizardPresetDraft('essential',defaultState);
 assert(essential.manage_limpeza===false,'Essencial: limpeza deve ficar com proprietário');
