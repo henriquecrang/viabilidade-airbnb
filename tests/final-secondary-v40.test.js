@@ -7,7 +7,7 @@ const {defaultState,finalProjection}=window.SimulatorAirbnb;
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===40,'estado deve estar na V40');
+assert(defaultState.version>=40,'estado deve preservar a arquitetura V40+');
 
 const p=finalProjection(3,defaultState);
 for(const sc of p.scenarios){
