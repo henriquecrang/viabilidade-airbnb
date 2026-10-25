@@ -2968,8 +2968,10 @@
       economicGapVsBenchmark: 0,
       details: {
         ...(purchaseMode ? {
-          'Capital inicial disponível': acquisitionAvailableCapital,
-          'Capital integral investido no benchmark': acquisitionAvailableCapital,
+          'Capital inicialmente disponível': acquisitionAvailableCapital,
+          'Aporte adicional de capital próprio': acquisitionAdditionalEquity,
+          'Capital próprio integral investido no benchmark': acquisitionEquityCapital,
+          'Dinheiro emprestado no benchmark': 0,
           'Custos de venda aplicados': 0
         } : {
           'Valor de mercado do imóvel': propertyValue,
@@ -3051,7 +3053,9 @@
       propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation,
       salePrice, saleBrokerage, saleFixedCosts, saleMortgageBalance, saleCapitalGainsTax, saleOtherCosts,
       saleTransactionCosts, saleDeductionsTotal, netSaleProceeds, startingPropertyEquity,
-      purchaseMode, acquisitionAvailableCapital, acquisitionPurchaseCosts,
+      purchaseMode, acquisitionAvailableCapital, acquisitionAdditionalEquity, acquisitionEquityCapital,
+      acquisitionPurchaseCosts, acquisitionFinancingPrincipal, acquisitionFinancingOriginationCosts,
+      acquisitionFinancingYear1, acquisitionFundingMode: acquisitionMeta.fundingMode || 'cash',
       investmentGrossRate,
       investmentCapitalPreservationAmount: invCalc.capitalPreservationAmount,
       investmentNominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
