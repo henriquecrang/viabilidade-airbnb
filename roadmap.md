@@ -224,6 +224,20 @@ Concluída em 24/10/2026.
 - regressão do cenário-base V27 preservada;
 - suíte completa: 28/28 testes.
 
+
+### V29 — perfis independentes Essencial × Premium
+Concluída em 24/10/2026 — Issue #45.
+
+- perfis `essential` e `premium` persistidos separadamente;
+- comparação simultânea nos regimes próprio e alugado;
+- Premium preserva os IDs históricos para compatibilidade;
+- Essencial recebe IDs próprios;
+- edição do perfil ativo continua compatível com os controles detalhados;
+- troca de plano captura a configuração ativa antes de aplicar a outra;
+- horizontes 1/3/5 anos calculam cada perfil independentemente;
+- cenário-base V28 permanece com seis estratégias até o wizard da administradora ser aplicado;
+- suíte completa: 29/29 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
