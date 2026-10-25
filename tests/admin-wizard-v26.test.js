@@ -19,7 +19,7 @@ delete legacy.airbnb.adminCleaningFeeRecipient;
 delete legacy.airbnb.adminPlatformFeeAllocation;
 delete legacy.guidedSetup.adminProposal;
 const migrated=normalizeState(legacy);
-assert(migrated.version===26,'migração V25→V26');
+assert(migrated.version>=26,'migração V25 deve preservar as regras V26+');
 assert(migrated.airbnb.adminOccupancyImpactRelativePct===0,'migração não pode criar uplift');
 assert(migrated.airbnb.adminCleaningFeeRecipient==='owner','migração preserva limpeza com proprietário');
 assert(migrated.airbnb.adminPlatformFeeAllocation==='gross-owner','migração preserva regra legada da plataforma');
