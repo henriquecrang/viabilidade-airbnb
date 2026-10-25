@@ -3502,6 +3502,8 @@
     const saved = state.guidedSetup?.adminProposal || {};
     const plan = saved.configured ? (saved.plan === 'essential' ? 'essential' : 'premium') : 'premium';
     const draft = adminWizardPresetDraft(plan, state);
+    if (!saved.configured) return draft;
+
     draft.commissionPct = n(state.airbnb.adminFeePct, draft.commissionPct);
     draft.occupancyRelativePct = n(state.airbnb.adminOccupancyImpactRelativePct, draft.occupancyRelativePct);
     draft.nightlyRateImpactPct = n(state.airbnb.adminNightlyRateImpactPct, draft.nightlyRateImpactPct);
