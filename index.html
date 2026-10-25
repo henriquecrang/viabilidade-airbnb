@@ -123,7 +123,7 @@
             <div class="form-grid compact-fields">
               <label class="field-group"><span class="field-label">Airbnb próprio</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.airbnbSelf" type="number" min="0" step="100" /></div></label>
               <label class="field-group"><span class="field-label">Airbnb com administradora</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.airbnbAdmin" type="number" min="0" step="100" /></div></label>
-              <label class="field-group"><span class="field-label">Airbnb em imóvel alugado</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.rentedAirbnb" type="number" min="0" step="100" /></div></label>
+              <label class="field-group"><span class="field-label">Airbnb em imóvel alugado · ambos os modos</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.rentedAirbnb" type="number" min="0" step="100" /></div></label>
               <label class="field-group"><span class="field-label">Aluguel tradicional</span><div class="input-prefix money-control"><span>R$</span><input data-path="workingCapital.traditional" type="number" min="0" step="100" /></div></label>
             </div>
             <p class="helper">Como o motor atual é anual, este valor continua manual. Um futuro motor mensal poderá calcular picos de caixa; até lá, não inferimos necessidade mensal automaticamente.</p>
@@ -330,9 +330,9 @@
             <div class="table-card compact-table-card narrow-table">
               <div class="table-scroll">
                 <table class="percentage-cost-table admin-table">
-                  <thead><tr><th>Item</th><th>% da receita</th><th>Airbnb alugado</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <thead><tr><th>Item</th><th>% da receita</th><th>Airbnb alugado</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
                   <tbody id="percentageCostRows"></tbody>
-                  <tfoot><tr><th>Total</th><th id="percentageCostTotal">—</th><th colspan="4"></th></tr></tfoot>
+                  <tfoot><tr><th>Total</th><th id="percentageCostTotal">—</th><th colspan="5"></th></tr></tfoot>
                 </table>
               </div>
             </div>
