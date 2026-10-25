@@ -252,6 +252,18 @@ Concluída em 25/10/2026 — Issue #47.
 - migração V29 → V30 só para o cenário-base intacto;
 - simulações customizadas preservadas.
 
+### V31 — base de ocupação bidirecional
+Concluída em 25/10/2026 — Issue #48.
+
+- ganho esperado com administradora vira variável global calibrável;
+- default permanece +20 p.p.;
+- usuário escolhe se informa ocupação de autogestão ou já administrada;
+- tabela mostra ocupação informada e derivada lado a lado;
+- armazenamento interno permanece canônico em autogestão;
+- troca de base não altera a economia nem perde informação em tetos de 100%;
+- ajustes de perfil da administradora são adicionais ao delta global;
+- migração V30 → V31 evita duplicar o antigo +20 p.p.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
