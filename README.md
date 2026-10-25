@@ -222,10 +222,10 @@ Regras incorporadas:
 - **enxoval:** pertence a quem compra; quando a administradora compra no preset Premium, o ativo não integra o patrimônio do proprietário;
 - **manutenção de imóvel/equipamentos/bens:** responsabilidade financeira do proprietário; o preset não presume que reparos estejam incluídos nem que a administradora gerencie esses reparos;
 - **enxoval e amenidades:** a administradora declarou que repõe/troca esses itens; isso confirma responsabilidade operacional, mas o simulador não presume custo de amenidades incluído sem preço/contrato explícito;
-- **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. O wizard usa **80% como piso-alvo conservador**, preservando a sazonalidade, apenas quando o preset é aplicado;
+- **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. Desde a V30, o wizard usa **+20 pontos percentuais por período, com teto de 100%**, sobre a ocupação autogerida;
 - **diária/ADR:** uplift default permanece 0%, coerente com a resposta de que o ganho seria pequeno/insignificante.
 
-A faixa de ocupação é usada apenas como **default operacional informado pelo parceiro**, totalmente editável no wizard. Foi decidido não exigir validação histórica adicional para esse uso; a Issue #46 foi encerrada como não planejada.
+A diferença de ocupação é usada apenas como **default operacional informado pelo parceiro**, totalmente editável no wizard. Foi decidido não exigir validação histórica adicional para esse uso; a Issue #46 foi encerrada como não planejada.
 
 O contrato enviado pela administradora foi classificado como **contrato de hospedagem direta com hóspede**, usado fora do Airbnb, e não como contrato proprietário × administradora. Por conter dados pessoais de terceiros, o PDF não foi adicionado ao repositório público; apenas notas sem PII foram registradas.
 
@@ -255,12 +255,31 @@ A implementação não transforma o número de planos em regra do motor econômi
 
 Suíte completa: **29/29 testes**.
 
+
+## V30 — recalibração de ocupação e trabalho manual
+
+A Issue #47 revisa os defaults do cenário-base sem transformar a autogestão em uma operação altamente automatizada.
+
+**Ocupação autogerida:** Réveillon 100%, verão 75%, Carnaval 100%, outono 55%, inverno 50% e primavera 55%, resultando em aproximadamente **59,55% de ocupação anual ponderada**.
+
+**Gestão profissional:** o preset Essencial/Premium adiciona **20 pontos percentuais** à ocupação de cada período, limitado a 100%. Com a sazonalidade default, a ocupação ponderada administrada fica em aproximadamente **78,95%**. O uplift default de ADR permanece 0%.
+
+**Trabalho por reserva — autogestão manual:**
+- lavanderia: **2 h/reserva**;
+- limpeza: **0,5 h/reserva**;
+- amenidades/consumíveis: **0,5 h/reserva**;
+- check-in/out presencial: **1 h/reserva**.
+
+As horas mensais existentes foram mantidas nesta rodada. Com estadia média de 5,6 noites e a ocupação V30, a autogestão default estima cerca de **263,25 h/ano**, ou **21,94 h/mês**. A administradora continua retirando as horas das tarefas delegadas e mantendo apenas a supervisão residual configurada.
+
+A recalibração é aplicada automaticamente apenas ao antigo cenário-base V29 intacto. Simulações customizadas preservam seus valores.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium foram recalibrados com as respostas oficiais recebidas em 24/10/2026; 80% permanece um default operacional editável informado pelo parceiro, sem validação adicional planejada.
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium usam +20 p.p. de ocupação por período, com teto de 100%, como default operacional editável informado pelo parceiro.
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
@@ -302,7 +321,7 @@ O cenário-base passa a incorporar trabalho próprio e uma sazonalidade híbrida
 
 - valor econômico da hora: **R$ 100**;
 - horas distribuídas por tarefa e por reserva, em vez de um único número opaco;
-- ocupação recuperada da planilha original: Réveillon 100%, verão 90%, Carnaval 100%, outono 70%, inverno 60% e primavera 70%;
+- ocupação autogerida recalibrada na V30: Réveillon 100%, verão 75%, Carnaval 100%, outono 55%, inverno 50% e primavera 55% (59,55% ponderados no ano);
 - diárias calibradas a partir da proposta comercial recebida: R$ 750 em Réveillon/Carnaval, R$ 400 no verão e R$ 250 nos demais períodos;
 - tabela consolidada separa horas, custo econômico das horas e resultado econômico após trabalho.
 
