@@ -378,6 +378,20 @@ Essa diferença afeta diretamente o custo econômico do tempo e, portanto, o res
 
 Perfis Essencial antigos só são migrados automaticamente quando ainda coincidem exatamente com o antigo preset indiferenciado; customizações explícitas são preservadas.
 
+## V40 — indicadores secundários mensais nos cards
+
+Os dois indicadores secundários logo abaixo do resultado mensal principal foram redesenhados.
+
+O card agora mostra:
+
+- **Indicador principal:** resultado econômico real por mês, já descontando o custo econômico do próprio tempo;
+- **Valor real mensal total:** resultado econômico real mensal + valor econômico das horas trabalhadas no mês;
+- **Horas de trabalho/mês:** tempo médio mensal dedicado pelo proprietário.
+
+A primeira caixa secundária equivale matematicamente ao ganho patrimonial real mensal antes de imputar o custo do próprio trabalho. Ela não deve ser interpretada como fluxo de caixa puro, pois parte do ganho pode estar em patrimônio.
+
+Os antigos indicadores secundários “total do horizonte” e “média anual” foram removidos dessas duas caixas.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
