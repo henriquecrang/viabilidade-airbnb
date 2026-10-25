@@ -487,7 +487,6 @@
     const situation = ['owned','capital-buy','rent-third-party','primary-home','second-home'].includes(draft.situation)
       ? draft.situation
       : 'owned';
-    const compareFinancial = draft.compareFinancial !== false;
     const baseMap = {
       owned: ['airbnb-self','airbnb-admin','traditional'],
       'capital-buy': ['airbnb-self','airbnb-admin','traditional'],
@@ -495,9 +494,55 @@
       'primary-home': ['airbnb-self','airbnb-admin'],
       'second-home': ['airbnb-self','airbnb-admin','traditional']
     };
+
+    const hasScenarioFields = FINAL_SCENARIO_IDS.some((id) => Object.prototype.hasOwnProperty.call(draft, `scenario_${id}`));
+    const selectedFinalScenarioIds = hasScenarioFields
+      ? FINAL_SCENARIO_IDS.filter((id) => Boolean(draft[`scenario_${id}`]))
+      : finalVisibleScenarioIds(inputState);
+    const compareFinancial = hasScenarioFields
+      ? selectedFinalScenarioIds.includes('investment')
+      : draft.compareFinancial !== false;
+
     const enabledScenarios = [...baseMap[situation]];
     const standaloneInvestmentComparable = ['owned','capital-buy','primary-home','second-home'].includes(situation);
     if (compareFinancial && standaloneInvestmentComparable) enabledScenarios.push('investment');
+
+    const horizonYears = [1,3,5].includes(Number(draft.horizonYears))
+      ? Number(draft.horizonYears)
+      : ([1,3,5].includes(Number(inputState.analysis?.horizonYears)) ? Number(inputState.analysis.horizonYears) : 3);
+    const ownerHourlyValue = Object.prototype.hasOwnProperty.call(draft,'ownerHourlyValue')
+      ? Math.max(0, n(draft.ownerHourlyValue))
+      : Math.max(0, n(inputState.globals?.ownerHourlyValue));
+    const occupancyBasis = draft.occupancyInputBasis === 'admin' ? 'admin' : (draft.occupancyInputBasis === 'self' ? 'self' : occupancyInputBasis(inputState));
+    const managementDeltaPp = Object.prototype.hasOwnProperty.call(draft,'managementOccupancyDeltaPp')
+      ? clamp(n(draft.managementOccupancyDeltaPp),0,100)
+      : managementOccupancyDeltaPp(inputState);
+    const avgStayNights = Object.prototype.hasOwnProperty.call(draft,'avgStayNights')
+      ? Math.max(.1,n(draft.avgStayNights))
+      : Math.max(.1,n(inputState.airbnb?.avgStayNights,5.6));
+    const cleaningFeeRevenue = Object.prototype.hasOwnProperty.call(draft,'cleaningFeeRevenue')
+      ? Math.max(0,n(draft.cleaningFeeRevenue))
+      : Math.max(0,n(inputState.airbnb?.cleaningFeeRevenue));
+
+    const occupancyConversionState = structuredCloneSafe(inputState);
+    occupancyConversionState.airbnb.occupancyInputBasis = occupancyBasis;
+    occupancyConversionState.airbnb.managementOccupancyDeltaPp = managementDeltaPp;
+    const seasonUpdates = {};
+    for (const season of inputState.seasons || []) {
+      const key = `occupancy_${season.id}`;
+      if (!Object.prototype.hasOwnProperty.call(draft,key)) continue;
+      seasonUpdates[String(season.id)] = {
+        occupancyPct: selfOccupancyPctFromInput(clamp(n(draft[key]),0,100),occupancyConversionState)
+      };
+    }
+
+    const stayUpdates = {};
+    for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
+      const key = `cost_${id}`;
+      if (Object.prototype.hasOwnProperty.call(draft,key)) {
+        stayUpdates[id] = { amount: Math.max(0,n(draft[key])) };
+      }
+    }
 
     const acquisition = inputState?.guidedSetup?.acquisitionSale || {};
     const acquisitionReady = situation !== 'capital-buy' || (
@@ -507,32 +552,59 @@
       && Math.max(0, n(acquisition.availableCapital)) > 0
       && Math.max(0, n(acquisition.purchaseCapitalNeedKnown)) <= Math.max(0, n(acquisition.availableCapital)) + 1e-9
     );
-    const errors = acquisitionReady ? [] : [
-      'Configure primeiro “Aquisição e venda” com capital suficiente para preço de compra + custos de aquisição + CAPEX + capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.'
-    ];
+
+    const errors = [];
+    if (!acquisitionReady) {
+      errors.push('Configure primeiro “Aquisição e venda” com capital suficiente para preço de compra + custos de aquisição + CAPEX + capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.');
+    }
+    if (hasScenarioFields && selectedFinalScenarioIds.length === 0) {
+      errors.push('Selecione ao menos um cenário para a comparação final.');
+    }
+
     const startingPosition = situation === 'capital-buy'
       ? 'capital'
       : (situation === 'rent-third-party' ? 'rented' : 'property');
 
+    const values = {
+      'analysis.startingPosition': startingPosition,
+      'analysis.horizonYears': horizonYears,
+      'analysis.finalScenarioIds': selectedFinalScenarioIds,
+      'globals.ownerHourlyValue': ownerHourlyValue,
+      'airbnb.occupancyInputBasis': occupancyBasis,
+      'airbnb.managementOccupancyDeltaPp': managementDeltaPp,
+      'airbnb.avgStayNights': avgStayNights,
+      'airbnb.cleaningFeeRevenue': cleaningFeeRevenue,
+      'guidedSetup.main': {
+        configured: true,
+        situation,
+        compareFinancial,
+        enabledScenarios,
+        incompleteEconomicPath: !acquisitionReady,
+        modelGapIssue: null
+      }
+    };
+
     return {
       valid: errors.length === 0,
       errors,
-      values: {
-        'analysis.startingPosition': startingPosition,
-        'guidedSetup.main': {
-          configured: true,
-          situation,
-          compareFinancial,
-          enabledScenarios,
-          incompleteEconomicPath: !acquisitionReady,
-          modelGapIssue: null
-        }
+      values,
+      arrayValues: {
+        seasons: seasonUpdates,
+        stayCosts: stayUpdates
       },
-      arrayValues: {},
       normalized: {
         situation,
         compareFinancial,
         enabledScenarios,
+        selectedFinalScenarioIds,
+        horizonYears,
+        ownerHourlyValue,
+        occupancyInputBasis: occupancyBasis,
+        managementOccupancyDeltaPp: managementDeltaPp,
+        avgStayNights,
+        cleaningFeeRevenue,
+        seasonUpdates,
+        stayUpdates,
         incompleteEconomicPath: !acquisitionReady,
         acquisitionReady,
         startingPosition,
@@ -541,7 +613,6 @@
       }
     };
   }
-
 
   function buildFinancialWizardPatch(draft = {}, inputState = defaultState) {
     const applicationType = String(draft.applicationType || 'other');
