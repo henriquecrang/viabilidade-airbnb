@@ -331,6 +331,24 @@ A linha é identificada como **custo econômico; não sai do caixa**. Nos horizo
 
 A fórmula também aparece nos cards finais e na comparação 1/3/5.
 
+## V36 — horas e valor do trabalho por mês
+
+O detalhamento de todos os cenários passa a mostrar sempre:
+- **Horas trabalhadas por mês**;
+- **Valor das horas trabalhadas por mês**.
+
+Os campos aparecem mesmo quando o resultado é zero.
+
+No detalhamento anual:
+- horas/mês = horas anuais ÷ 12;
+- valor/mês = custo econômico anual das horas ÷ 12.
+
+Nos horizontes de 1, 3 e 5 anos:
+- horas/mês eq. = horas acumuladas ÷ meses do horizonte;
+- valor/mês eq. = custo real acumulado do trabalho ÷ meses do horizonte.
+
+A fórmula total de trabalho continua visível e o custo permanece explicitamente identificado como econômico, não caixa.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
