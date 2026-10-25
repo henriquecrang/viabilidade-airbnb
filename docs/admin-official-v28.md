@@ -74,3 +74,14 @@ O cenário-base permanece com modo `delta` e alvo 0 até o wizard ser aplicado. 
 Suíte completa: **28/28 testes**.
 
 A comparação direta contra a V27 confirmou zero diferença nos indicadores econômicos do cenário-base enquanto o wizard não é aplicado.
+
+
+### Diferença operacional Essencial × Premium
+
+A V39 corrige uma simplificação antiga: ambos os presets estavam marcando as mesmas tarefas como gerenciadas, produzindo o mesmo esforço residual de 1 h/mês.
+
+A proposta comercial original distinguia os planos:
+- Essencial: vendas/reservas/check-in/atendimento são gerenciados, mas limpeza, lavanderia e consumíveis continuam operados pelo proprietário;
+- Premium: essas tarefas operacionais também são assumidas pela administradora.
+
+A V39 passa a refletir essa diferença apenas no eixo **quem gerencia / horas próprias**. As respostas oficiais posteriores sobre quem paga cada custo continuam prevalecendo para o eixo financeiro.
