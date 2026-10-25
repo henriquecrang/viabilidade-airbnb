@@ -229,7 +229,7 @@ A faixa de ocupação não foi tratada como dado de mercado auditado. A Issue #4
 
 O contrato enviado pela administradora foi classificado como **contrato de hospedagem direta com hóspede**, usado fora do Airbnb, e não como contrato proprietário × administradora. Por conter dados pessoais de terceiros, o PDF não foi adicionado ao repositório público; apenas notas sem PII foram registradas.
 
-O cenário-base continua economicamente neutro até o usuário aplicar o wizard. A migração V27 → V28 não altera silenciosamente os resultados existentes.
+O cenário-base continua economicamente neutro até o usuário aplicar o wizard. A migração V27 → V28 não altera silenciosamente os resultados existentes. A suíte completa V28 passou **28/28 testes**.
 
 ## Limitações atuais
 
