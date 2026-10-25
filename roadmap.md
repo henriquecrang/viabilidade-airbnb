@@ -323,6 +323,17 @@ Concluída em 25/10/2026 — Issue #54.
 - corrigido overflow entre cards;
 - suíte completa: 35/35 testes.
 
+### V39 — workload Essencial × Premium
+Concluída em 25/10/2026 — Issue #55.
+
+- Essencial deixa limpeza, lavanderia e amenidades com o proprietário;
+- check-in, reservas, atendimento e comercial continuam delegados;
+- Premium mantém todas essas tarefas gerenciadas;
+- Essencial default próprio ≈ 13,9 h/mês;
+- Premium default próprio = 1,0 h/mês;
+- migração restrita a presets Essencial legados não customizados;
+- suíte completa: 36/36 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
