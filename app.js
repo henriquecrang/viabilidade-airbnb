@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 24;
+  const APP_VERSION = 25;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -38,7 +38,11 @@
         purchasePrice: 636000,
         purchaseCosts: 0,
         workingCapitalTarget: 'airbnbSelf',
-        workingCapitalAmount: 0
+        workingCapitalAmount: 0,
+        purchaseEconomicsComplete: true,
+        cashOnlyPurchase: true,
+        purchaseCapitalNeedKnown: 0,
+        leftoverCapital: 0
       },
       airbnbOps: {
         configured: false
@@ -416,38 +420,49 @@
     return next;
   }
 
-  function buildMainWizardPatch(draft = {}) {
+  function buildMainWizardPatch(draft = {}, inputState = defaultState) {
     const situation = ['owned','capital-buy','rent-third-party','primary-home','second-home'].includes(draft.situation)
       ? draft.situation
       : 'owned';
     const compareFinancial = draft.compareFinancial !== false;
     const baseMap = {
       owned: ['airbnb-self','airbnb-admin','traditional'],
-      'capital-buy': [],
+      'capital-buy': ['airbnb-self','airbnb-admin','traditional'],
       'rent-third-party': ['airbnb-rented'],
       'primary-home': ['airbnb-self','airbnb-admin'],
       'second-home': ['airbnb-self','airbnb-admin','traditional']
     };
     const enabledScenarios = [...baseMap[situation]];
-    const standaloneInvestmentComparable = ['owned','primary-home','second-home'].includes(situation);
+    const standaloneInvestmentComparable = ['owned','capital-buy','primary-home','second-home'].includes(situation);
     if (compareFinancial && standaloneInvestmentComparable) enabledScenarios.push('investment');
 
-    const incompleteEconomicPath = situation === 'capital-buy';
-    const errors = incompleteEconomicPath
-      ? ['O caminho “tenho capital e penso em comprar” depende da Issue #42: o motor ainda não incorpora capital inicial e custos de aquisição. Nenhuma comparação será aplicada até essa regra existir.']
-      : [];
+    const acquisition = inputState?.guidedSetup?.acquisitionSale || {};
+    const acquisitionReady = situation !== 'capital-buy' || (
+      acquisition.configured
+      && acquisition.position === 'buy'
+      && acquisition.purchaseEconomicsComplete === true
+      && Math.max(0, n(acquisition.availableCapital)) > 0
+      && Math.max(0, n(acquisition.purchaseCapitalNeedKnown)) <= Math.max(0, n(acquisition.availableCapital)) + 1e-9
+    );
+    const errors = acquisitionReady ? [] : [
+      'Configure primeiro “Aquisição e venda” com capital suficiente para preço de compra + custos de aquisição + CAPEX + capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.'
+    ];
+    const startingPosition = situation === 'capital-buy'
+      ? 'capital'
+      : (situation === 'rent-third-party' ? 'rented' : 'property');
 
     return {
       valid: errors.length === 0,
       errors,
       values: {
+        'analysis.startingPosition': startingPosition,
         'guidedSetup.main': {
           configured: true,
           situation,
           compareFinancial,
           enabledScenarios,
-          incompleteEconomicPath,
-          modelGapIssue: incompleteEconomicPath ? 42 : null
+          incompleteEconomicPath: !acquisitionReady,
+          modelGapIssue: null
         }
       },
       arrayValues: {},
@@ -455,12 +470,15 @@
         situation,
         compareFinancial,
         enabledScenarios,
-        incompleteEconomicPath,
+        incompleteEconomicPath: !acquisitionReady,
+        acquisitionReady,
+        startingPosition,
         standaloneInvestmentComparable,
         rentedBenchmarkEmbedded: situation === 'rent-third-party'
       }
     };
   }
+
 
   function buildFinancialWizardPatch(draft = {}, inputState = defaultState) {
     const applicationType = String(draft.applicationType || 'other');
@@ -566,10 +584,21 @@
       setupTotal += amount;
     }
 
-    const purchaseCapitalNeedKnown = propertyValue + purchaseCosts + setupTotal + workingCapitalAmount;
-    const purchaseFundingGap = position === 'buy' && availableCapital > 0
+    const reserveOpeningTotal = (inputState?.reserveFunds || []).reduce((sum, x) => sum + Math.max(0, n(x.openingBalance)), 0);
+    const purchaseCapitalNeedKnown = propertyValue + purchaseCosts + setupTotal + reserveOpeningTotal + workingCapitalAmount;
+    const purchaseFundingGap = position === 'buy'
       ? Math.max(0, purchaseCapitalNeedKnown - availableCapital)
       : 0;
+    const leftoverCapital = position === 'buy'
+      ? Math.max(0, availableCapital - purchaseCapitalNeedKnown)
+      : 0;
+    const errors = [];
+    if (position === 'buy' && availableCapital <= 0) errors.push('Informe um capital disponível maior que zero para o caminho de compra.');
+    if (position === 'buy' && purchasePrice <= 0) errors.push('Informe um preço de compra maior que zero.');
+    if (position === 'buy' && purchaseFundingGap > 1e-9) {
+      errors.push(`O capital disponível é insuficiente: faltam ${money.format(purchaseFundingGap)} para cobrir compra, custos de aquisição, CAPEX, reservas iniciais e capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.`);
+    }
+    const purchaseEconomicsComplete = position !== 'buy' || errors.length === 0;
 
     const meta = {
       configured: true,
@@ -579,14 +608,19 @@
       purchaseCosts,
       workingCapitalTarget,
       workingCapitalAmount,
-      purchaseEconomicsComplete: position !== 'buy',
-      modelGapIssue: position === 'buy' ? 42 : null
+      purchaseEconomicsComplete,
+      cashOnlyPurchase: true,
+      purchaseCapitalNeedKnown,
+      purchaseFundingGap,
+      leftoverCapital,
+      modelGapIssue: null
     };
 
     return {
-      valid: true,
-      errors: [],
+      valid: errors.length === 0,
+      errors,
       values: {
+        'analysis.startingPosition': position === 'buy' ? 'capital' : 'property',
         'globals.propertyValue': propertyValue,
         'propertySale.salePriceAdjustmentPct': salePriceAdjustmentPct,
         'propertySale.brokeragePct': brokeragePct,
@@ -605,11 +639,14 @@
         purchasePrice,
         purchaseCosts,
         setupTotal,
+        reserveOpeningTotal,
         workingCapitalTarget,
         workingCapitalAmount,
         purchaseCapitalNeedKnown,
         purchaseFundingGap,
-        purchaseCostsModeled: false,
+        leftoverCapital,
+        purchaseCostsModeled: true,
+        purchaseEconomicsComplete,
         salePriceAdjustmentPct,
         brokeragePct,
         fixedCosts,
@@ -1640,6 +1677,13 @@
   function calculateModel(inputState = state) {
     const currentState = inputState;
     const propertyValue = Math.max(0, n(currentState.globals.propertyValue));
+    const acquisitionMeta = currentState.guidedSetup?.acquisitionSale || {};
+    const purchaseMode = currentState.analysis?.startingPosition === 'capital'
+      && acquisitionMeta.configured
+      && acquisitionMeta.position === 'buy'
+      && acquisitionMeta.purchaseEconomicsComplete === true;
+    const acquisitionAvailableCapital = purchaseMode ? Math.max(0, n(acquisitionMeta.availableCapital)) : 0;
+    const acquisitionPurchaseCosts = purchaseMode ? Math.max(0, n(acquisitionMeta.purchaseCosts)) : 0;
     const inflation = n(currentState.globals.inflationPct) / 100;
     const realAppreciation = n(currentState.globals.propertyRealAppreciationPct) / 100;
     const nominalPropertyAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
@@ -1994,20 +2038,24 @@
     const propertyNominalGainBeyondInflation = propertyNominalGain - propertyInflationPreservation;
 
     const enrichScenarioWithBenchmark = (scenario, propertyBacked = false) => {
-      const extraCapital = propertyBacked ? Math.max(0, scenario.opportunityCapital - propertyValue) : 0;
-      const benchmarkInvestableCapital = propertyBacked
-        ? netSaleProceeds + extraCapital
-        : scenario.opportunityCapital;
-      const benchmarkWealthBasis = propertyBacked
-        ? startingPropertyEquity + extraCapital
-        : scenario.opportunityCapital;
+      const purchaseBenchmark = propertyBacked && purchaseMode;
+      const extraCapital = propertyBacked
+        ? Math.max(0, scenario.opportunityCapital - (purchaseBenchmark ? acquisitionAvailableCapital : propertyValue))
+        : 0;
+      const benchmarkInvestableCapital = purchaseBenchmark
+        ? acquisitionAvailableCapital + extraCapital
+        : (propertyBacked ? netSaleProceeds + extraCapital : scenario.opportunityCapital);
+      const benchmarkWealthBasis = purchaseBenchmark
+        ? acquisitionAvailableCapital + extraCapital
+        : (propertyBacked ? startingPropertyEquity + extraCapital : scenario.opportunityCapital);
       const benchmark = investmentForCapital(benchmarkInvestableCapital, benchmarkWealthBasis);
       return {
         ...scenario,
-        benchmarkUsesPropertySale: propertyBacked,
+        benchmarkUsesPropertySale: propertyBacked && !purchaseBenchmark,
+        benchmarkUsesStartingCapital: purchaseBenchmark,
         benchmarkInvestableCapital,
         benchmarkWealthBasis,
-        benchmarkSaleTransactionCosts: propertyBacked ? saleTransactionCosts : 0,
+        benchmarkSaleTransactionCosts: propertyBacked && !purchaseBenchmark ? saleTransactionCosts : 0,
         benchmarkRealGain: benchmark.realWealthCreation,
         benchmarkNominalGain: benchmark.operatingCash,
         benchmarkRealReturn: benchmark.realReturn,
@@ -2029,9 +2077,19 @@
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
       const workingCapitalValue = Math.max(0, n(workingCapitalAmount));
-      const baseInitialCapital = propertyValue + capex + reserveOpening + workingCapitalValue;
+      const purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + capex + reserveOpening + workingCapitalValue;
+      const acquisitionFundingGap = purchaseMode ? Math.max(0, purchaseCapitalRequired - acquisitionAvailableCapital) : 0;
+      const acquisitionValid = !purchaseMode || acquisitionFundingGap <= 1e-9;
+      const leftoverInvestmentInitial = purchaseMode && acquisitionValid
+        ? Math.max(0, acquisitionAvailableCapital - purchaseCapitalRequired)
+        : 0;
+      const leftoverInvestment = investmentForCapital(leftoverInvestmentInitial, leftoverInvestmentInitial);
+      const baseInitialCapital = purchaseMode
+        ? acquisitionAvailableCapital
+        : propertyValue + capex + reserveOpening + workingCapitalValue;
       const initialCapital = baseInitialCapital + externalFundingRequired;
-      const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue;
+      const endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue
+        + (purchaseMode ? leftoverInvestment.endNetWorth : 0);
       const wealthCreation = endNetWorth - initialCapital;
       const inflationFactor = 1 + inflation;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
@@ -2042,6 +2100,15 @@
       const cashYield = initialCapital > 0 ? freeCash / initialCapital : 0;
       const nominalTotalReturn = initialCapital > 0 ? wealthCreation / initialCapital : 0;
       const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
+      const scenarioDetails = purchaseMode ? {
+        ...details,
+        'Capital disponível antes da compra': acquisitionAvailableCapital,
+        'Preço de compra do imóvel': propertyValue,
+        'Custos de aquisição consumidos': acquisitionPurchaseCosts,
+        'Necessidade inicial da compra': purchaseCapitalRequired,
+        'Capital remanescente aplicado': leftoverInvestmentInitial,
+        'Valor final da sobra aplicada': leftoverInvestment.endNetWorth
+      } : details;
       return enrichScenarioWithBenchmark({
         id, label, grossRevenue, opCosts, tax, operatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve,
         workingCapital: workingCapitalValue, tiedCapital: linkedReserve + workingCapitalValue,
@@ -2050,7 +2117,10 @@
         laborCost, workHoursAnnual, economicResult: freeCash - laborCost, firstYearEconomic: freeCash - capex - laborCost,
         baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
         wealthCreation, realWealthCreation, capitalPreservationAmount, nominalExcessOverPreservation,
-        realFreeCash, cashYield, nominalTotalReturn, realTotalReturn, details
+        realFreeCash, cashYield, nominalTotalReturn, realTotalReturn,
+        purchaseMode, acquisitionValid, acquisitionCosts: acquisitionPurchaseCosts, purchaseCapitalRequired,
+        acquisitionFundingGap, leftoverInvestmentInitial, leftoverInvestmentEnd: purchaseMode ? leftoverInvestment.endNetWorth : 0,
+        details: scenarioDetails
       }, true);
     };
 
@@ -2185,9 +2255,11 @@
       }
     });
 
-    // Como o cenário-base parte de alguém que já possui o imóvel, a aplicação
-    // financeira nasce do capital líquido realizável após a venda.
-    const invCalc = investmentForCapital(netSaleProceeds, startingPropertyEquity);
+    // O benchmark financeiro respeita a posição inicial.
+    // Imóvel já possuído: vende e investe o líquido. Capital → compra: investe exatamente o mesmo capital disponível.
+    const investmentInvestableCapital = purchaseMode ? acquisitionAvailableCapital : netSaleProceeds;
+    const investmentWealthBasis = purchaseMode ? acquisitionAvailableCapital : startingPropertyEquity;
+    const invCalc = investmentForCapital(investmentInvestableCapital, investmentWealthBasis);
     const investment = {
       id: 'investment', label: 'Investimento financeiro', grossRevenue: invCalc.grossIncome, opCosts: invCalc.fees,
       tax: invCalc.tax, operatingCash: invCalc.operatingCash, cashPreservationRequirement: invCalc.capitalPreservationAmount, preservationShortfall: Math.max(0, -invCalc.sustainableCash),
@@ -2196,14 +2268,14 @@
       monthlyNet: invCalc.sustainableCash / 12, capex: 0, setupResidual: 0, setupDepreciation: 0, firstYearCash: invCalc.sustainableCash,
       laborCost: workCost.investment, workHoursAnnual: workHours.investment, economicResult: invCalc.sustainableCash - workCost.investment,
       firstYearEconomic: invCalc.sustainableCash - workCost.investment,
-      transactionCosts: saleTransactionCosts,
-      baseInitialCapital: startingPropertyEquity, initialCapital: startingPropertyEquity, opportunityCapital: netSaleProceeds,
+      transactionCosts: purchaseMode ? 0 : saleTransactionCosts,
+      baseInitialCapital: investmentWealthBasis, initialCapital: investmentWealthBasis, opportunityCapital: investmentInvestableCapital,
       endNetWorth: invCalc.endNetWorth, realEndNetWorth: invCalc.realEndNetWorth,
-      wealthCreation: invCalc.endNetWorth - startingPropertyEquity, realWealthCreation: invCalc.realWealthCreation,
+      wealthCreation: invCalc.endNetWorth - investmentWealthBasis, realWealthCreation: invCalc.realWealthCreation,
       capitalPreservationAmount: invCalc.capitalPreservationAmount, nominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
       realFreeCash: (1 + inflation) > 0 ? invCalc.sustainableCash / (1 + inflation) : invCalc.sustainableCash,
-      cashYield: startingPropertyEquity > 0 ? invCalc.sustainableCash / startingPropertyEquity : 0,
-      nominalTotalReturn: startingPropertyEquity > 0 ? (invCalc.endNetWorth - startingPropertyEquity) / startingPropertyEquity : 0,
+      cashYield: investmentWealthBasis > 0 ? invCalc.sustainableCash / investmentWealthBasis : 0,
+      nominalTotalReturn: investmentWealthBasis > 0 ? (invCalc.endNetWorth - investmentWealthBasis) / investmentWealthBasis : 0,
       realTotalReturn: invCalc.realReturn,
       benchmarkRealGain: invCalc.realWealthCreation, benchmarkNominalGain: invCalc.operatingCash,
       benchmarkRealReturn: invCalc.realReturn, benchmarkEndNetWorth: invCalc.endNetWorth,
@@ -2215,15 +2287,21 @@
       benchmarkEconomicRealGain: invCalc.realWealthCreation - workCost.investment,
       economicGapVsBenchmark: 0,
       details: {
-        'Valor de mercado do imóvel': propertyValue,
-        'Valor esperado de venda': salePrice,
-        'Corretagem na venda': saleBrokerage,
-        'Custos/documentação de venda': saleFixedCosts,
-        'Saldo de financiamento quitado': saleMortgageBalance,
-        'IR estimado sobre ganho de capital na venda': saleCapitalGainsTax,
-        'Outros custos de liquidação': saleOtherCosts,
-        'Custos de transação da venda': saleTransactionCosts,
-        'Capital líquido investido': netSaleProceeds,
+        ...(purchaseMode ? {
+          'Capital inicial disponível': acquisitionAvailableCapital,
+          'Capital integral investido no benchmark': acquisitionAvailableCapital,
+          'Custos de venda aplicados': 0
+        } : {
+          'Valor de mercado do imóvel': propertyValue,
+          'Valor esperado de venda': salePrice,
+          'Corretagem na venda': saleBrokerage,
+          'Custos/documentação de venda': saleFixedCosts,
+          'Saldo de financiamento quitado': saleMortgageBalance,
+          'IR estimado sobre ganho de capital na venda': saleCapitalGainsTax,
+          'Outros custos de liquidação': saleOtherCosts,
+          'Custos de transação da venda': saleTransactionCosts,
+          'Capital líquido investido': netSaleProceeds
+        }),
         'Taxa bruta nominal': investmentGrossRate, 'Custos / taxas do investimento': invCalc.fees, 'IR sobre rendimento': invCalc.tax,
         'Rendimento líquido nominal': invCalc.operatingCash,
         'Parcela retida para preservar poder de compra': invCalc.capitalPreservationAmount,
@@ -2286,6 +2364,7 @@
       propertyInflationPreservation, propertyNominalGain, propertyNominalGainBeyondInflation,
       salePrice, saleBrokerage, saleFixedCosts, saleMortgageBalance, saleCapitalGainsTax, saleOtherCosts,
       saleTransactionCosts, saleDeductionsTotal, netSaleProceeds, startingPropertyEquity,
+      purchaseMode, acquisitionAvailableCapital, acquisitionPurchaseCosts,
       investmentGrossRate,
       investmentCapitalPreservationAmount: invCalc.capitalPreservationAmount,
       investmentNominalExcessOverPreservation: invCalc.nominalExcessOverPreservation,
@@ -2491,6 +2570,8 @@
     const years = [1,3,5].includes(Number(horizonYears)) ? Number(horizonYears) : Math.max(1, Math.round(n(horizonYears, 5)));
     const baseState = structuredCloneSafe(inputState);
     const baseCalc = calculateModel(baseState);
+    const purchaseMode = Boolean(baseCalc.purchaseMode);
+    const acquisitionAvailableCapital = Math.max(0, n(baseCalc.acquisitionAvailableCapital));
     const inflation = n(baseState.globals.inflationPct) / 100;
     const realAppreciation = n(baseState.globals.propertyRealAppreciationPct) / 100;
     const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
@@ -2534,17 +2615,32 @@
       const setupResidual = setupResidualForHorizon(baseState, scenarioId, years);
       const workingCapital = Math.max(0, n(baseScenario.workingCapital));
       const securityDeposit = scenarioId === 'airbnb-rented' ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
-      const nominalCommittedCapital = Math.max(0, n(baseScenario.baseInitialCapital)) + externalFundingRequired;
-      const realInitialCapitalAtT0 = Math.max(0, n(baseScenario.baseInitialCapital)) + timing.realFundingBasis;
-      const endNetWorth = propertyEndValue + setupResidual + cashBalance + reserveBalance + workingCapital + securityDeposit;
+      const baseCapitalForScenario = purchaseMode && ownsProperty
+        ? acquisitionAvailableCapital
+        : Math.max(0, n(baseScenario.baseInitialCapital));
+      const nominalCommittedCapital = baseCapitalForScenario + externalFundingRequired;
+      const realInitialCapitalAtT0 = baseCapitalForScenario + timing.realFundingBasis;
+      const leftoverInvestmentInitial = purchaseMode && ownsProperty ? Math.max(0, n(baseScenario.leftoverInvestmentInitial)) : 0;
+      const leftoverInvestment = purchaseMode && ownsProperty
+        ? projectInvestmentOverHorizon(baseState, years, leftoverInvestmentInitial, leftoverInvestmentInitial)
+        : null;
+      const leftoverInvestmentEndWorth = leftoverInvestment?.endNetWorth || 0;
+      const endNetWorth = propertyEndValue + setupResidual + cashBalance + reserveBalance + workingCapital + securityDeposit + leftoverInvestmentEndWorth;
       const inflationFactor = Math.pow(1 + inflation, years);
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
       const realWealthCreation = realEndNetWorth - realInitialCapitalAtT0;
-      const nominalPreservationTarget = Math.max(0, n(baseScenario.baseInitialCapital)) * inflationFactor + timing.nominalPreservationAtHorizon;
+      const nominalPreservationTarget = baseCapitalForScenario * inflationFactor + timing.nominalPreservationAtHorizon;
       const nominalExcessOverPreservation = endNetWorth - nominalPreservationTarget;
 
       let benchmark;
-      if (ownsProperty) {
+      if (ownsProperty && purchaseMode) {
+        benchmark = projectInvestmentOverHorizon(
+          baseState,
+          years,
+          acquisitionAvailableCapital,
+          acquisitionAvailableCapital
+        );
+      } else if (ownsProperty) {
         const extraCapital = Math.max(0, n(baseScenario.baseInitialCapital) - propertyValue);
         benchmark = projectInvestmentOverHorizon(
           baseState,
@@ -2572,6 +2668,8 @@
         reserveBalance,
         workingCapital,
         securityDeposit,
+        leftoverInvestmentInitial,
+        leftoverInvestmentEndWorth,
         cumulativeCash: cashBalance,
         cumulativeFreeCashBeforeFunding,
         externalFundingRequired,
@@ -2597,14 +2695,14 @@
     const investment = projectInvestmentOverHorizon(
       baseState,
       years,
-      baseCalc.netSaleProceeds,
-      baseCalc.startingPropertyEquity
+      purchaseMode ? acquisitionAvailableCapital : baseCalc.netSaleProceeds,
+      purchaseMode ? acquisitionAvailableCapital : baseCalc.startingPropertyEquity
     );
     projectedScenarios.push({
       id: 'investment',
       label: 'Investimento financeiro',
       years,
-      initialCapital: baseCalc.startingPropertyEquity,
+      initialCapital: purchaseMode ? acquisitionAvailableCapital : baseCalc.startingPropertyEquity,
       initialCapex: 0,
       setupResidual: 0,
       propertyEndValue: 0,
@@ -2735,7 +2833,12 @@
     const investmentScenario = calc.scenarios.find((scenario) => scenario.id === 'investment');
     const salePreview = $('#saleConversionPreview');
     if (salePreview) {
-      salePreview.innerHTML = `
+      salePreview.innerHTML = calc.purchaseMode ? `
+        <article><span>Capital inicial disponível</span><strong>${money.format(calc.acquisitionAvailableCapital)}</strong><small>mesma base usada no benchmark financeiro</small></article>
+        <article><span>Preço de compra</span><strong>${money.format(calc.propertyValue)}</strong><small>convertido em patrimônio imobiliário</small></article>
+        <article><span>Custos de aquisição</span><strong>${money.format(calc.acquisitionPurchaseCosts)}</strong><small>consumidos uma única vez no início</small></article>
+        <article><span>Financiamento da compra</span><strong>Não modelado</strong><small>a compra precisa caber integralmente no capital disponível</small></article>`
+        : `
         <article><span>Valor de mercado</span><strong>${money.format(calc.propertyValue)}</strong><small>patrimônio imobiliário de referência</small></article>
         <article><span>Valor esperado de venda</span><strong>${money.format(calc.salePrice)}</strong><small>após ajuste informado</small></article>
         <article><span>Custos de transação</span><strong>${money.format(calc.saleTransactionCosts)}</strong><small>corretagem + documentação + IR de ganho + outros</small></article>
@@ -2937,9 +3040,16 @@
     messages.push({ text: `A maior criação de patrimônio em poder de compra de hoje entre os cenários exibidos é ${calc.bestRealWealth.label}: ${money.format(calc.bestRealWealth.realWealthCreation)}.` });
 
     if (hasOwnedPropertyComparison) {
-      messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
-      if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
-      messages.push({ text: `Na aplicação financeira baseada na venda do imóvel, ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação do patrimônio inicial; o excedente sustentável após a conversão é ${money.format(calc.investmentSustainableCash)}.` });
+      if (calc.purchaseMode) {
+        messages.push({ text: `Na posição “tenho capital”, compra e benchmark partem dos mesmos ${money.format(calc.acquisitionAvailableCapital)}. Custos de aquisição são consumidos uma única vez; qualquer sobra do pacote inicial permanece aplicada financeiramente.` });
+        const invalidPurchases = calc.scenarios.filter((scenario) => scenario.purchaseMode && !scenario.acquisitionValid);
+        if (invalidPurchases.length) messages.push({ warning: true, text: 'As premissas detalhadas foram alteradas e a compra já não cabe no capital disponível. Esta versão não financia a diferença; ajuste preço, custos, CAPEX/capital de giro ou aumente o capital informado no wizard.' });
+        messages.push({ text: `No benchmark financeiro sem compra, todo o capital inicial permanece aplicado; ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação.` });
+      } else {
+        messages.push({ text: `Para transformar o imóvel em investimento financeiro, o modelo estima ${money.format(calc.saleTransactionCosts)} de custos de transação e ${money.format(calc.netSaleProceeds)} de capital líquido investível, partindo de ${money.format(calc.salePrice)} de valor esperado de venda.` });
+        if (calc.saleMortgageBalance > 0) messages.push({ warning: true, text: 'Há saldo de financiamento informado. A venda quita essa dívida, mas os cenários que mantêm o imóvel ainda não modelam amortização/juros do financiamento; interprete os Δ de benchmark com cautela.' });
+        messages.push({ text: `Na aplicação financeira baseada na venda do imóvel, ${money.format(calc.investmentCapitalPreservationAmount)} de crescimento nominal são necessários para repor a inflação do patrimônio inicial; o excedente sustentável após a conversão é ${money.format(calc.investmentSustainableCash)}.` });
+      }
     }
 
     $('#diagnostics').innerHTML = messages.map((m) => `<div class="diagnostic ${m.warning ? 'warning' : ''}">${escapeHtml(m.text)}</div>`).join('');
@@ -3117,13 +3227,13 @@
         <h3>Qual é sua situação de partida?</h3>
         <div class="wizard-choice-grid">
           <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="owned" ${draft.situation==='owned'?'checked':''} /><span><strong>Já possuo o imóvel</strong><small>Airbnb próprio/administrado, aluguel tradicional e, opcionalmente, venda + investimento.</small></span></label>
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="capital-buy" ${draft.situation==='capital-buy'?'checked':''} /><span><strong>Tenho capital e penso em comprar</strong><small>A comparação de compra ainda depende da regra econômica da Issue #42.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="capital-buy" ${draft.situation==='capital-buy'?'checked':''} /><span><strong>Tenho capital e penso em comprar</strong><small>Compara compra à vista com manter exatamente o mesmo capital investido.</small></span></label>
           <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="rent-third-party" ${draft.situation==='rent-third-party'?'checked':''} /><span><strong>Quero alugar de terceiro para operar Airbnb</strong><small>Foca no cenário de arbitragem de locação.</small></span></label>
           <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="primary-home" ${draft.situation==='primary-home'?'checked':''} /><span><strong>É minha moradia principal</strong><small>Foca em Airbnb eventual do imóvel próprio; refine o uso no wizard híbrido.</small></span></label>
           <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="second-home" ${draft.situation==='second-home'?'checked':''} /><span><strong>É segunda residência / lazer</strong><small>Compara Airbnb, aluguel tradicional e uso híbrido.</small></span></label>
         </div>
       </div>
-      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir investimento financeiro standalone quando comparável</strong><small>Para imóvel já possuído, ele usa a venda líquida. No Airbnb de imóvel alugado, o benchmark financeiro já aparece dentro do próprio cenário; para “tenho capital”, a comparação standalone depende da #42.</small></span></label>
+      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir investimento financeiro standalone quando comparável</strong><small>Para imóvel já possuído, ele usa a venda líquida. Para “tenho capital”, investe o mesmo capital inicial. No Airbnb de imóvel alugado, o benchmark financeiro já aparece dentro do próprio cenário.</small></span></label>
       <div class="concept-note"><strong>O modelo detalhado continua inteiro:</strong> este wizard só filtra os cenários exibidos nos resultados. Ele não apaga premissas nem desativa cálculos internos.</div>`;
   }
 
@@ -3174,10 +3284,10 @@
               <option value="buy" ${draft.position==='buy'?'selected':''}>Tenho capital e penso em comprar</option>
             </select>
           </label>
-          ${moneyInput('availableCapital','Capital disponível para compra',draft.availableCapital,'Registrado para o caminho de aquisição; a comparação capital → compra depende da Issue #42.')}
+          ${moneyInput('availableCapital','Capital disponível para compra',draft.availableCapital,'É o patrimônio inicial comum: a compra precisa caber integralmente nele e o benchmark investe exatamente este mesmo valor.')}
           ${moneyInput('currentMarketValue','Valor de mercado atual do imóvel',draft.currentMarketValue)}
           ${moneyInput('purchasePrice','Preço de compra',draft.purchasePrice,'Usado como valor do imóvel quando a situação escolhida é “tenho capital”.')}
-          ${moneyInput('purchaseCosts','Custos de aquisição (ITBI, escritura, registro etc.)',draft.purchaseCosts,'Registrados, mas ainda não entram no motor econômico; rastreado na Issue #42.')}
+          ${moneyInput('purchaseCosts','Custos de aquisição (ITBI, escritura, registro etc.)',draft.purchaseCosts,'Entram uma única vez no início e são consumidos economicamente; não viram patrimônio.')}
         </div>
       </div>
       <div class="wizard-section">
@@ -3220,7 +3330,7 @@
           ${moneyInput('otherCosts','Outros custos de liquidação',draft.otherCosts)}
         </div>
       </div>
-      <div class="concept-note"><strong>Limite atual:</strong> a venda líquida já afeta o benchmark financeiro. No caminho “tenho capital e penso em comprar”, preço, CAPEX e capital de giro podem ser aplicados, mas capital disponível e custos de aquisição ainda não entram no cálculo; essa modelagem está registrada na Issue #42.</div>`;
+      <div class="concept-note"><strong>Regra atual de aquisição:</strong> compra à vista, sem financiamento nem aporte adicional. Preço + custos de aquisição + CAPEX + reservas iniciais + capital de giro precisam caber no capital disponível. A sobra permanece aplicada financeiramente. Para imóvel já possuído, o benchmark continua usando a venda líquida após custos.</div>`;
   }
 
 
@@ -3516,8 +3626,8 @@
         traditional:'Aluguel tradicional',
         investment:'Investimento financeiro'
       };
-      const incomplete = x.incompleteEconomicPath
-        ? `<li class="wizard-warning"><strong>Caminho de compra incompleto:</strong> os cenários imobiliários não serão exibidos como se a aquisição já estivesse modelada. A comparação fica restrita ao investimento financeiro até a Issue #42.</li>`
+      const purchaseRule = x.situation === 'capital-buy'
+        ? '<li>Na compra, todos os cenários partem do mesmo capital inicial; o benchmark financeiro investe esse valor integralmente e não aplica custos de venda de imóvel.</li>'
         : '';
       preview.innerHTML = `
         <h3>Revise antes de aplicar</h3>
@@ -3525,7 +3635,7 @@
           <li>Cenários exibidos: <strong>${x.enabledScenarios.map((id)=>labels[id]||id).map(escapeHtml).join(', ')}</strong>.</li>
           <li>O filtro afeta apenas a apresentação dos resultados; todas as premissas detalhadas permanecem salvas e editáveis.</li>
           ${x.rentedBenchmarkEmbedded ? '<li>No Airbnb em imóvel alugado, a comparação financeira permanece embutida no Δ benchmark do próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido.</li>' : ''}
-          ${incomplete}
+          ${purchaseRule}
         </ul>`;
       setWizardReviewMode(true);
       return;
@@ -3533,11 +3643,9 @@
 
     if (activeWizard === 'property') {
       const x = patch.normalized;
-      const purchaseWarning = x.position === 'buy'
-        ? `<li class="wizard-warning"><strong>Atenção:</strong> ${money.format(x.purchaseCosts)} de custos de aquisição e o capital disponível ficam registrados, mas ainda não entram no resultado econômico. A lacuna está na Issue #42.</li>`
-        : '';
-      const gapLine = x.position === 'buy' && x.availableCapital > 0
-        ? `<li>Necessidade conhecida (antes da modelagem dos custos de compra): <strong>${money.format(x.purchaseCapitalNeedKnown)}</strong>; diferença vs. capital informado: <strong>${money.format(x.purchaseFundingGap)}</strong>.</li>`
+      const capitalLine = x.position === 'buy'
+        ? `<li>Capital disponível: <strong>${money.format(x.availableCapital)}</strong> · necessidade inicial: <strong>${money.format(x.purchaseCapitalNeedKnown)}</strong> · sobra investida: <strong>${money.format(x.leftoverCapital)}</strong>.</li>
+           <li>Custos de aquisição entram uma única vez. Esta versão exige compra integralmente à vista e não cria financiamento/aporte adicional.</li>`
         : '';
       preview.innerHTML = `
         <h3>Revise antes de aplicar</h3>
@@ -3546,8 +3654,7 @@
           <li>CAPEX inicial distribuído nas categorias existentes: <strong>${money.format(x.setupTotal)}</strong>.</li>
           <li>Capital de giro: <strong>${money.format(x.workingCapitalAmount)}</strong> em <strong>${escapeHtml(x.workingCapitalTarget)}</strong>.</li>
           <li>Venda: ajuste ${number1.format(x.salePriceAdjustmentPct)}% · corretagem ${number1.format(x.brokeragePct)}% · custos fixos ${money.format(x.fixedCosts)} · financiamento ${money.format(x.mortgageBalance)} · IR ${money.format(x.capitalGainsTax)} · outros ${money.format(x.otherCosts)}.</li>
-          ${gapLine}
-          ${purchaseWarning}
+          ${capitalLine}
         </ul>`;
       setWizardReviewMode(true);
       return;
@@ -3616,7 +3723,7 @@
     autosave();
     renderAll();
     $('#wizardDialog').close();
-    showNotice('Premissas do benchmark financeiro aplicadas. Os campos detalhados continuam editáveis.');
+    showNotice('Premissas do assistente aplicadas. Os campos detalhados continuam editáveis.');
     activeWizard = null;
     activeWizardPatch = null;
   }
