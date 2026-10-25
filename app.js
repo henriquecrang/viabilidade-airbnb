@@ -5117,7 +5117,8 @@
     defaultState: structuredCloneSafe(defaultState), normalizeState,
     buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled,
     occupancyInputBasis, managementOccupancyDeltaPp, selfOccupancyPctFromInput, adminReferenceOccupancyPctFromInput, occupancyDisplayPct, convertOccupancyInputBasis,
-    finalComparisonState, finalVisibleScenarioIds, finalProjection
+    finalComparisonState, finalVisibleScenarioIds, finalProjection,
+    acquisitionFinancingSchedule
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
