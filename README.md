@@ -301,6 +301,12 @@ A Issue #49 reorganiza a seção final para funcionar como a principal tela de d
 
 A comparação final força internamente a expansão Essencial/Premium, mas o motor detalhado anterior continua preservando sua arquitetura e seus filtros próprios.
 
+## V33 — mensal como destaque principal
+
+Na comparação final, a **média mensal equivalente** passa a ser o valor principal em fonte grande de cada cenário. O **total do horizonte** e a **média anual** continuam imediatamente abaixo como valores secundários.
+
+A mudança é apenas de hierarquia visual: ranking, projeções e fórmulas permanecem inalterados. A média mensal continua sendo o total do horizonte dividido pelo número de meses, não um fluxo mensal real.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
