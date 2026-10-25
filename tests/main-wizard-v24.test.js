@@ -20,7 +20,7 @@ assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-s
 
 p=buildMainWizardPatch({situation:'rent-third-party',compareFinancial:true},defaultState);
 assert(p.valid,'imóvel alugado deve ser válido');
-assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-rented']),'standalone investment não deve usar venda do imóvel');
+assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-rented','airbnb-rented-admin']),'imóvel alugado deve oferecer autogestão e administradora sem investimento standalone');
 assert(p.normalized.rentedBenchmarkEmbedded===true,'benchmark deve permanecer embutido no cenário alugado');
 
 p=buildMainWizardPatch({situation:'capital-buy',compareFinancial:true},defaultState);
