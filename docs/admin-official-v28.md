@@ -42,9 +42,10 @@ Decisão de modelagem:
 - o piso nunca reduz uma ocupação que já esteja acima de 80%;
 - a sazonalidade é preservada por um ajuste uniforme em pontos percentuais, com teto de 100%;
 - uplift default de diária = 0%;
-- a alegação não entra como evidência no módulo de comparáveis de mercado.
+- o piso de 80% é aceito como **default operacional informado pelo parceiro**, mantendo-se editável no uso;
+- essa premissa não é usada como evidência independente no módulo de comparáveis de mercado.
 
-Validação futura: Issue #46.
+Decisão posterior: a Issue #46 foi descartada. Não será exigida validação adicional com histórico da administradora para sustentar esse default.
 
 ### Manutenção, enxoval e amenidades
 
