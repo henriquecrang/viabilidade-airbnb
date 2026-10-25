@@ -1,6 +1,6 @@
 {
   "app": "simulador-airbnb",
-  "version": 28,
+  "version": 29,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
     "version": 28,
@@ -1148,6 +1148,19 @@
         "provisionalAssumptions": false,
         "calibrationStatus": "official-response",
         "sourceDate": "2026-10-24"
+      }
+    }
+  },
+  "guidedSetup": {
+    "adminComparisonEnabled": false,
+    "adminProfiles": {
+      "essential": {
+        "configured": false,
+        "plan": "essential"
+      },
+      "premium": {
+        "configured": false,
+        "plan": "premium"
       }
     }
   }
