@@ -8,7 +8,7 @@ function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
 assert(defaultState.version>=17,'estado deve preservar horizontes da V17');
-assert(defaultState.analysis.horizonYears===5,'default deve destacar 5 anos');
+assert(defaultState.analysis.horizonYears===3,'default V32 deve destacar 3 anos');
 
 const p1=calculateHorizonProjection(defaultState,1);
 const p3=calculateHorizonProjection(defaultState,3);
@@ -48,7 +48,7 @@ const expectedProperty=defaultState.globals.propertyValue*Math.pow(
 );
 approx(self5.propertyEndValue,expectedProperty,.01,'valor imóvel 5 anos');
 
-// Migração do cenário-base V16 muda destaque para 5 anos.
+// Migração histórica do cenário-base V16 continua preservando a regra V17 de 5 anos.
 const legacy=clone(defaultState);
 legacy.version=16;legacy.analysis.horizonYears=1;
 const migrated=normalizeState(legacy);
