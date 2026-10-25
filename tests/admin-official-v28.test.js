@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===28,'estado deve estar na V28');
+assert(defaultState.version>=28,'estado deve preservar a calibração V28+');
 assert(defaultState.guidedSetup.adminProposal.provisionalAssumptions===false,'default não deve permanecer provisório');
 assert(defaultState.guidedSetup.adminProposal.calibrationStatus==='official-response','calibração oficial ausente');
 assert(defaultState.airbnb.adminOccupancyMode==='delta','default econômico deve permanecer neutro sem aplicar wizard');
@@ -64,7 +64,7 @@ approx(c.adminCleaningPassThrough,0,.01,'limpeza não vai integralmente à admin
 approx(c.adminPlatformFee,1536,.01,'Airbnb descontado primeiro do total');
 approx(c.adminPlatformFeeAttributedToAdmin,230.4,.01,'parte da taxa Airbnb atribuída à admin');
 approx(c.adminOwnerRevenueAfterPlatformAndSplit,6854.4,.01,'parcela líquida proprietário após Airbnb e divisão');
-approx(c.scenarios.find(x=>x.id==='airbnb-admin').operatingCash,6854.4,.01,'caixa Essencial oficial');
+approx(c.scenarios.find(x=>x.id==='airbnb-admin-essential').operatingCash,6854.4,.01,'caixa Essencial oficial');
 assert(s.guidedSetup.adminProposal.calibrationStatus==='official-response','metadado oficial');
 assert(s.guidedSetup.adminProposal.source==='respostas-oficiais-administradora-2026-10-24','fonte oficial');
 
