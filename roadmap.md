@@ -216,8 +216,8 @@ Concluída em 24/10/2026.
 - remoção do repasse integral da limpeza no Premium;
 - enxoval pertence a quem compra;
 - manutenção de imóvel/equipamentos permanece do proprietário;
-- ocupação administrada passa a aceitar piso-alvo;
-- preset oficial usa 80% como piso default informado pelo parceiro, sem uplift de ADR e com edição livre;
+- ocupação administrada suporta piso-alvo ou delta em p.p.;
+- a V30 substitui o antigo piso default de 80% por **+20 p.p. por período**, com teto de 100%, sem uplift de ADR e com edição livre;
 - #46 posteriormente descartada: não será exigido histórico adicional da administradora para sustentar esse default;
 - contrato enviado classificado como canal direto/hóspede, não contrato de administração;
 - #32 e #44 podem ser encerradas após incorporação;
@@ -237,6 +237,20 @@ Concluída em 24/10/2026 — Issue #45.
 - horizontes 1/3/5 anos calculam cada perfil independentemente;
 - cenário-base V28 permanece com seis estratégias até o wizard da administradora ser aplicado;
 - suíte completa: 29/29 testes.
+
+
+### V30 — recalibração de ocupação e autogestão manual
+Concluída em 25/10/2026 — Issue #47.
+
+- ocupação autogerida default reduzida para 59,55% ponderados;
+- sazonalidade: 100% / 75% / 100% / 55% / 50% / 55%;
+- administradora passa a usar +20 p.p. por período, com teto de 100%;
+- uplift de ADR permanece 0%;
+- trabalho manual por reserva recalibrado para 2 h lavanderia + 0,5 h limpeza + 0,5 h amenidades + 1 h check-in/out;
+- horas mensais existentes mantidas;
+- autogestão default passa a aproximadamente 263,25 h/ano;
+- migração V29 → V30 só para o cenário-base intacto;
+- simulações customizadas preservadas.
 
 ## Rodadas de execução
 
