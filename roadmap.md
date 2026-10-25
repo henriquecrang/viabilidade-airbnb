@@ -192,6 +192,21 @@ Concluída em 24/10/2026.
 - cenário-base V25 preservado numericamente;
 - suíte completa: 26/26 testes.
 
+### V27 — matriz posse × gestão do Airbnb
+Concluída em 24/10/2026 — Rodada D / Issues #11 e #12.
+
+- motor Airbnb compartilhado por **posse** (próprio/alugado) × **gestão** (autogestão/administradora);
+- quatro modos Airbnb gerados pela mesma estrutura;
+- novo cenário `airbnb-rented-admin`;
+- regras de contrato, caução, encargos e CAPEX alugado preservadas nos dois modos de gestão;
+- regras da administradora aplicáveis igualmente a imóvel próprio e alugado;
+- **Admin gerencia** separado de **Custo incluído** também em custos percentuais;
+- horizontes 1/3/5 anos incluem o quarto modo;
+- imóvel alugado + administradora não incorpora valor imobiliário ao patrimônio;
+- regressão numérica zero nos cinco cenários preexistentes da V26;
+- suíte completa: 27/27 testes;
+- Rodada D concluída.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
@@ -236,12 +251,12 @@ A #36 permanece aberta para custos de saída e integração plurianual.
 Revisar encargos contratuais, custos fixos, CAPEX e a distinção entre imóvel mobiliado e não mobiliado antes de consolidar a matriz posse × gestão.
 
 ### Rodada D — arquitetura dos cenários Airbnb
-**Delivery:** #11
+**Delivery:** #11 · **Concluída em 24/10/2026 — V27**
 
-Objetivo: refatorar o motor para a matriz **posse × gestão** depois de estabilizar as regras de administradora.
-
-Issue:
-- #12 — próprio/alugado × autogestão/administradora.
+Entregou:
+- #12 — motor compartilhado próprio/alugado × autogestão/administradora;
+- quarto modo Airbnb: alugado + administradora;
+- regressão dos modos anteriores e projeções 1/3/5 anos.
 
 ### Rodada E — horizonte anual 1/3/5 anos
 **Delivery:** #13
