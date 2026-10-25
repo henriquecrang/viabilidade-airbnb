@@ -1536,6 +1536,9 @@
           hydrateStaticInputs();
         } else {
           setPath(state, input.dataset.path, value);
+          if (input.dataset.path === 'exitStrategy.rentedAirbnb') {
+            state.rentedAirbnb.contractEndStrategy = value === 'liquidate' ? 'terminate' : 'renew';
+          }
         }
         autosave();
         if (input.dataset.path === 'rentedAirbnb.furnished') renderSetupCosts();
@@ -3133,14 +3136,20 @@
     }
 
     const inflationFactor = Math.pow(1 + inflation, years);
-    const endNetWorth = principal + cumulativeCash;
+    const liquidateAtEnd = baseState.exitStrategy?.investment === 'liquidate';
+    const liquidationCostRate = clamp(n(baseState.exitStrategy?.investmentLiquidationCostPct), 0, 100) / 100;
+    const liquidationCost = liquidateAtEnd ? principal * liquidationCostRate : 0;
+    const endPrincipal = Math.max(0, principal - liquidationCost);
+    const endNetWorth = endPrincipal + cumulativeCash;
     const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
     const realWealthCreation = realEndNetWorth - initialWealth;
     return {
       years,
       initialWealth,
       investableCapital: Math.max(0, n(investableCapital)),
-      endPrincipal: principal,
+      exitStrategy: liquidateAtEnd ? 'liquidate' : 'continue',
+      liquidationCost,
+      endPrincipal,
       cumulativeCash,
       cumulativeGrossIncome,
       cumulativeTax,
@@ -3271,7 +3280,43 @@
         ? projectInvestmentOverHorizon(baseState, years, leftoverInvestmentInitial, leftoverInvestmentInitial)
         : null;
       const leftoverInvestmentEndWorth = leftoverInvestment?.endNetWorth || 0;
-      const endNetWorth = propertyEndValue + setupResidual + cashBalance + reserveBalance + workingCapital + securityDeposit + leftoverInvestmentEndWorth;
+
+      const exitConfig = projectionState.exitStrategy || {};
+      const isTraditional = underlyingScenarioId === 'traditional';
+      const isOwnedAirbnb = ownsProperty && underlyingScenarioId !== 'traditional';
+      const exitStrategy = rentedPossession
+        ? (exitConfig.rentedAirbnb === 'liquidate' ? 'liquidate' : 'continue')
+        : (isTraditional
+          ? (exitConfig.traditional === 'liquidate' ? 'liquidate' : 'continue')
+          : (exitConfig.ownedAirbnb === 'liquidate' ? 'liquidate' : 'continue'));
+
+      let terminalPropertyValue = propertyEndValue;
+      let terminalSetupResidual = setupResidual;
+      let terminalSecurityDeposit = securityDeposit;
+      let exitCosts = 0;
+      let propertySaleAtExit = 0;
+      let exitProceeds = 0;
+
+      if (exitStrategy === 'liquidate' && rentedPossession) {
+        terminalSetupResidual = setupResidual * clamp(n(exitConfig.rentedAssetRecoveryPct, 100), 0, 100) / 100;
+        terminalSecurityDeposit = securityDeposit * clamp(n(exitConfig.rentedDepositRecoveryPct, 100), 0, 100) / 100;
+        exitCosts = Math.max(0, n(exitConfig.rentedExitCosts));
+        exitProceeds = terminalSetupResidual + terminalSecurityDeposit - exitCosts;
+      } else if (exitStrategy === 'liquidate' && ownsProperty) {
+        propertySaleAtExit = Math.max(0, propertyEndValue * (1 + n(projectionState.propertySale.salePriceAdjustmentPct) / 100));
+        const brokerage = propertySaleAtExit * Math.max(0, n(projectionState.propertySale.brokeragePct)) / 100;
+        const fixedCosts = Math.max(0, n(projectionState.propertySale.fixedCosts));
+        const capitalGainsTax = Math.max(0, n(projectionState.propertySale.capitalGainsTax));
+        const otherCosts = Math.max(0, n(projectionState.propertySale.otherCosts));
+        const mortgageBalance = Math.max(0, n(projectionState.propertySale.mortgageBalance));
+        exitCosts = brokerage + fixedCosts + capitalGainsTax + otherCosts + mortgageBalance;
+        terminalPropertyValue = Math.max(0, propertySaleAtExit - exitCosts);
+        terminalSetupResidual = setupResidual * clamp(n(exitConfig.ownedAssetRecoveryPct, 100), 0, 100) / 100;
+        exitProceeds = terminalPropertyValue + terminalSetupResidual;
+      }
+
+      const endNetWorth = terminalPropertyValue + terminalSetupResidual + cashBalance + reserveBalance + workingCapital + terminalSecurityDeposit + leftoverInvestmentEndWorth
+        - (exitStrategy === 'liquidate' && rentedPossession ? exitCosts : 0);
       const inflationFactor = Math.pow(1 + inflation, years);
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
       const realWealthCreation = realEndNetWorth - realInitialCapitalAtT0;
@@ -3309,11 +3354,17 @@
         initialCapital: nominalCommittedCapital,
         realInitialCapitalAtT0,
         initialCapex: baseScenario.capex,
-        setupResidual,
-        propertyEndValue,
+        setupResidual: terminalSetupResidual,
+        propertyEndValue: terminalPropertyValue,
+        grossPropertyEndValue: propertyEndValue,
+        propertySaleAtExit,
+        exitStrategy,
+        exitCosts,
+        exitProceeds,
         reserveBalance,
         workingCapital,
-        securityDeposit,
+        securityDeposit: terminalSecurityDeposit,
+        grossSecurityDeposit: securityDeposit,
         leftoverInvestmentInitial,
         leftoverInvestmentEndWorth,
         cumulativeCash: cashBalance,
@@ -3353,6 +3404,11 @@
       initialCapex: 0,
       setupResidual: 0,
       propertyEndValue: 0,
+      grossPropertyEndValue: 0,
+      propertySaleAtExit: 0,
+      exitStrategy: investment.exitStrategy,
+      exitCosts: investment.liquidationCost,
+      exitProceeds: investment.endPrincipal,
       reserveBalance: 0,
       workingCapital: 0,
       securityDeposit: 0,
