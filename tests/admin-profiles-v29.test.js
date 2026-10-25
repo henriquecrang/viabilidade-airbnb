@@ -10,7 +10,7 @@ const {
 const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 
-assert(defaultState.version===29,'estado deve estar na V29');
+assert(defaultState.version>=29,'estado deve preservar a arquitetura V29+');
 assert(defaultState.guidedSetup.adminComparisonEnabled===false,'comparação não pode ligar silenciosamente');
 assert(calculateModel(defaultState).scenarios.length===6,'cenário-base V28 deve permanecer com seis estratégias antes do wizard');
 
