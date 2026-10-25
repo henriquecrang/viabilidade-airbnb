@@ -37,7 +37,7 @@ for (const s of calc.scenarios) assert(Number.isFinite(s.nominalExcessOverPreser
 const inv = calc.scenarios.find(s=>s.id==='investment');
 approx(inv.nominalExcessOverPreservation, inv.freeCash, 1e-6, 'investimento: excedente vs caixa sustentável');
 
-assert(appSource.includes('b.nominalExcessOverPreservation - a.nominalExcessOverPreservation'), 'resumo final não ordena pelo excedente');
+assert(appSource.includes('b.economicRealWealthCreation - a.economicRealWealthCreation'), 'resumo final não ordena pelo resultado econômico');
 assert(appSource.includes('Maior excedente em'), 'rótulo principal do horizonte não atualizado');
 
 const css = fs.readFileSync(path.join(root,'styles.css'),'utf8');
