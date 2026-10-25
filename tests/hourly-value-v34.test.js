@@ -8,7 +8,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function assert(c,m){if(!c)throw new Error(m);}
 function approx(a,b,t=1e-6,m=''){if(Math.abs(a-b)>t)throw new Error(`${m}: esperado ${b}, obtido ${a}`);}
 
-assert(defaultState.version===34,'estado deve estar na V34');
+assert(defaultState.version>=34,'estado deve preservar a sensibilidade V34+');
 
 const low=clone(defaultState);
 low.globals.ownerHourlyValue=0;
