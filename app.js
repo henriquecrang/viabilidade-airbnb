@@ -1379,6 +1379,7 @@
         <td><input class="row-name" data-array="percentageCosts" data-field="name" data-id="${escapeAttr(item.id)}" type="text" value="${escapeAttr(item.name)}" /></td>
         <td><input data-array="percentageCosts" data-field="pct" data-id="${escapeAttr(item.id)}" type="number" min="0" step="0.1" value="${n(item.pct)}" /></td>
         <td class="center-cell"><input data-array="percentageCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} aria-label="Aplica ao Airbnb em imóvel alugado" /></td>
+        <td class="center-cell"><input data-array="percentageCosts" data-field="adminManages" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminManages ? 'checked' : ''} aria-label="Administradora gerencia este custo percentual" /></td>
         <td class="center-cell"><input data-array="percentageCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="percentageCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} /></td>
         <td><button class="button icon" type="button" data-remove-array="percentageCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
@@ -1413,8 +1414,8 @@
         <td class="center-cell"><input data-array="setupCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="rentedOnlyIfUnfurnished" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedOnlyIfUnfurnished ? 'checked' : ''} ${item.rentedAirbnb ? '' : 'disabled'} aria-label="Aplicar ao cenário alugado apenas se não mobiliado" /></td>
         <td class="center-cell"><input data-array="setupCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
-        <td class="center-cell"><input data-array="setupCosts" data-field="adminPays" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminPays ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
-        <td class="center-cell"><input data-array="setupCosts" data-field="adminAssetBelongsToOwner" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminAssetBelongsToOwner ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="adminPays" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminPays ? 'checked' : ''} ${(item.airbnb || item.rentedAirbnb) ? '' : 'disabled'} /></td>
+        <td class="center-cell"><input data-array="setupCosts" data-field="adminAssetBelongsToOwner" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminAssetBelongsToOwner ? 'checked' : ''} ${(item.airbnb || item.rentedAirbnb) ? '' : 'disabled'} /></td>
         <td><button class="button icon" type="button" data-remove-array="setupCosts" data-id="${escapeAttr(item.id)}">Remover</button></td>
       </tr>`;
     }).join('');
@@ -1666,7 +1667,7 @@
   function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
   function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, hybridIncremental: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
-  function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
   function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
   function refreshDynamic() { autosave(); renderDynamicTables(); calculateAndRender(); }
