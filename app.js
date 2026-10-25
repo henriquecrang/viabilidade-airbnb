@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 27;
+  const APP_VERSION = 28;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -50,8 +50,9 @@
       adminProposal: {
         configured: false,
         plan: 'premium',
-        provisionalAssumptions: true,
-        reviewIssue: 44
+        provisionalAssumptions: false,
+        calibrationStatus: 'official-response',
+        sourceDate: '2026-10-24'
       },
       hybrid: {
         configured: false,
@@ -275,6 +276,8 @@
       adminNightlyRateImpactPct: 0,
       adminOccupancyImpactPp: 0,
       adminOccupancyImpactRelativePct: 0,
+      adminOccupancyMode: 'delta',
+      adminOccupancyTargetPct: 0,
       adminCommissionBaseIncludesCleaning: true,
       adminCleaningFeeRecipient: 'owner',
       adminPlatformFeeAllocation: 'gross-owner',
@@ -671,7 +674,10 @@
   function buildAdminWizardPatch(draft = {}, inputState = defaultState) {
     const plan = draft.plan === 'essential' ? 'essential' : 'premium';
     const commissionPct = clamp(n(draft.commissionPct, plan === 'premium' ? 25 : 15), 0, 100);
-    const occupancyRelativePct = n(draft.occupancyRelativePct, 20);
+    const occupancyMode = draft.occupancyMode === 'target-floor' ? 'target-floor' : 'delta';
+    const occupancyTargetPct = clamp(n(draft.occupancyTargetPct, 80), 0, 100);
+    const occupancyRelativePct = n(draft.occupancyRelativePct, 0);
+    const occupancyImpactPp = n(draft.occupancyImpactPp, 0);
     const nightlyRateImpactPct = n(draft.nightlyRateImpactPct, 0);
     const monthlyFee = Math.max(0, n(draft.monthlyFee));
     const onboardingFee = Math.max(0, n(draft.onboardingFee));
@@ -703,22 +709,13 @@
     const linenBelongsToOwner = Boolean(draft.linenBelongsToOwner);
 
     const normalized = {
-      plan,
-      commissionPct,
-      occupancyRelativePct,
-      nightlyRateImpactPct,
-      monthlyFee,
-      onboardingFee,
-      supervisionHoursMonthly,
-      cleaningFeeRecipient,
-      cleaningInCommissionBase,
-      platformFeeAllocation,
-      maintenanceManaged,
-      maintenanceIncluded,
-      linenAdminPays,
-      linenBelongsToOwner,
-      provisionalAssumptions: true,
-      reviewIssue: 44
+      plan, commissionPct, occupancyMode, occupancyTargetPct, occupancyRelativePct, occupancyImpactPp,
+      nightlyRateImpactPct, monthlyFee, onboardingFee, supervisionHoursMonthly,
+      cleaningFeeRecipient, cleaningInCommissionBase, platformFeeAllocation,
+      maintenanceManaged, maintenanceIncluded, linenAdminPays, linenBelongsToOwner,
+      provisionalAssumptions: false,
+      calibrationStatus: 'official-response',
+      sourceDate: '2026-10-24'
     };
 
     return {
@@ -729,8 +726,10 @@
         'airbnb.adminMonthlyFee': monthlyFee,
         'airbnb.adminOnboardingFee': onboardingFee,
         'airbnb.adminNightlyRateImpactPct': nightlyRateImpactPct,
-        'airbnb.adminOccupancyImpactPp': 0,
+        'airbnb.adminOccupancyImpactPp': occupancyImpactPp,
         'airbnb.adminOccupancyImpactRelativePct': occupancyRelativePct,
+        'airbnb.adminOccupancyMode': occupancyMode,
+        'airbnb.adminOccupancyTargetPct': occupancyTargetPct,
         'airbnb.adminCommissionBaseIncludesCleaning': cleaningInCommissionBase,
         'airbnb.adminCleaningFeeRecipient': cleaningFeeRecipient,
         'airbnb.adminPlatformFeeAllocation': platformFeeAllocation,
@@ -740,7 +739,7 @@
         'guidedSetup.adminProposal': {
           configured: true,
           ...normalized,
-          source: 'premissas-provisorias-aprovadas-2026-10-24'
+          source: 'respostas-oficiais-administradora-2026-10-24'
         }
       },
       arrayValues: {
@@ -762,7 +761,6 @@
       }
     };
   }
-
 
   function buildAirbnbOpsWizardPatch(draft = {}) {
     const normalized = {
@@ -1827,14 +1825,39 @@
       return { ...season, ...availability, occupancy, nightlyRate, occupiedNights, revenue };
     });
 
-    // Rodada B / V26: o cenário administrado pode ter performance comercial distinta.
-    // A diária usa impacto relativo. A ocupação aceita uplift relativo e, para compatibilidade, pontos percentuais.
+    // V28: performance administrada pode usar deltas legados ou um piso-alvo de ocupação.
+    // O piso preserva a sazonalidade e adiciona apenas os p.p. necessários, com teto de 100%.
     const adminNightlyRateImpact = n(currentState.airbnb.adminNightlyRateImpactPct) / 100;
     const adminOccupancyImpactPp = n(currentState.airbnb.adminOccupancyImpactPp);
     const adminOccupancyImpactRelative = n(currentState.airbnb.adminOccupancyImpactRelativePct) / 100;
+    const adminOccupancyMode = currentState.airbnb.adminOccupancyMode === 'target-floor' ? 'target-floor' : 'delta';
+    const adminOccupancyTargetPct = clamp(n(currentState.airbnb.adminOccupancyTargetPct), 0, 100);
+    const adminBaseOccupancyPct = (season) =>
+      n(season.occupancyPct) * Math.max(0, 1 + adminOccupancyImpactRelative) + adminOccupancyImpactPp;
+    const targetAvailableDays = seasonDetails.reduce((sum, season) => sum + season.availableDays, 0);
+    const weightedAdminOccupancyPctForExtra = (extraPp) => {
+      if (targetAvailableDays <= 0) return 0;
+      const occupied = currentState.seasons.reduce((sum, season) => {
+        const availability = classifySeasonAvailability(season);
+        return sum + availability.availableDays * clamp(adminBaseOccupancyPct(season) + extraPp, 0, 100) / 100;
+      }, 0);
+      return occupied / targetAvailableDays * 100;
+    };
+    let adminOccupancyTargetExtraPp = 0;
+    if (adminOccupancyMode === 'target-floor' && adminOccupancyTargetPct > 0
+      && weightedAdminOccupancyPctForExtra(0) + 1e-9 < adminOccupancyTargetPct) {
+      let low = 0;
+      let high = 100;
+      for (let i = 0; i < 50; i += 1) {
+        const mid = (low + high) / 2;
+        if (weightedAdminOccupancyPctForExtra(mid) >= adminOccupancyTargetPct) high = mid;
+        else low = mid;
+      }
+      adminOccupancyTargetExtraPp = high;
+    }
     const adminSeasonDetails = currentState.seasons.map((season) => {
       const availability = classifySeasonAvailability(season);
-      const occupancyPct = n(season.occupancyPct) * Math.max(0, 1 + adminOccupancyImpactRelative) + adminOccupancyImpactPp;
+      const occupancyPct = adminBaseOccupancyPct(season) + adminOccupancyTargetExtraPp;
       const occupancy = clamp(occupancyPct, 0, 100) / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate)) * Math.max(0, 1 + adminNightlyRateImpact);
       const occupiedNights = availability.availableDays * occupancy;
@@ -3605,22 +3628,25 @@
     const draft = {
       plan: premium ? 'premium' : 'essential',
       commissionPct: premium ? 25 : 15,
-      occupancyRelativePct: 20,
+      occupancyMode: 'target-floor',
+      occupancyTargetPct: 80,
+      occupancyRelativePct: 0,
+      occupancyImpactPp: 0,
       nightlyRateImpactPct: 0,
       monthlyFee: 0,
       onboardingFee: 0,
       supervisionHoursMonthly: 1,
-      cleaningFeeRecipient: premium ? 'admin' : 'owner',
-      cleaningInCommissionBase: !premium,
+      cleaningFeeRecipient: 'owner',
+      cleaningInCommissionBase: true,
       platformFeeAllocation: 'split-shares',
-      maintenanceManaged: premium,
+      maintenanceManaged: false,
       maintenanceIncluded: false,
       linenAdminPays: premium,
       linenBelongsToOwner: !premium
     };
     for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
       draft[`manage_${id}`] = true;
-      draft[`include_${id}`] = premium && id === 'limpeza';
+      draft[`include_${id}`] = false;
     }
     for (const id of ['marketing','presales','guest-support','local-support','software','pricing']) {
       draft[`manage_${id}`] = true;
@@ -3636,7 +3662,10 @@
     if (!saved.configured) return draft;
 
     draft.commissionPct = n(state.airbnb.adminFeePct, draft.commissionPct);
+    draft.occupancyMode = state.airbnb.adminOccupancyMode === 'target-floor' ? 'target-floor' : 'delta';
+    draft.occupancyTargetPct = n(state.airbnb.adminOccupancyTargetPct, draft.occupancyTargetPct);
     draft.occupancyRelativePct = n(state.airbnb.adminOccupancyImpactRelativePct, draft.occupancyRelativePct);
+    draft.occupancyImpactPp = n(state.airbnb.adminOccupancyImpactPp, draft.occupancyImpactPp);
     draft.nightlyRateImpactPct = n(state.airbnb.adminNightlyRateImpactPct, draft.nightlyRateImpactPct);
     draft.monthlyFee = n(state.airbnb.adminMonthlyFee);
     draft.onboardingFee = n(state.airbnb.adminOnboardingFee);
