@@ -4557,8 +4557,8 @@
     activeWizard = 'main';
     activeWizardPatch = null;
     const draft = mainWizardDraftFromState();
-    $('#wizardTitle').textContent = 'Situação inicial';
-    $('#wizardDescription').textContent = 'Escolha quais estratégias fazem sentido comparar sem alterar silenciosamente o motor econômico.';
+    $('#wizardTitle').textContent = 'Configurar simulação';
+    $('#wizardDescription').textContent = 'Revise em uma única passagem as premissas que mais mudam a decisão; os assistentes especializados continuam disponíveis para detalhes.';
     $('#wizardBody').innerHTML = mainWizardFormHtml(draft);
     $('#wizardPreview').innerHTML = '';
     setWizardReviewMode(false);
@@ -4659,22 +4659,35 @@
     if (activeWizard === 'main') {
       const x = patch.normalized;
       const labels = {
-        'airbnb-self':'Airbnb autogerido',
-        'airbnb-admin':'Airbnb com administradora',
-        'airbnb-rented':'Airbnb alugado + autogestão',
-        'airbnb-rented-admin':'Airbnb alugado + administradora',
+        'airbnb-self':'Airbnb próprio · autogestão',
+        'airbnb-admin-essential':'Airbnb próprio · Admin Essencial',
+        'airbnb-admin':'Airbnb próprio · Admin Premium',
+        'airbnb-rented':'Airbnb alugado · autogestão',
+        'airbnb-rented-admin-essential':'Airbnb alugado · Admin Essencial',
+        'airbnb-rented-admin':'Airbnb alugado · Admin Premium',
         traditional:'Aluguel tradicional',
         investment:'Investimento financeiro'
       };
+      const previewState = applyWizardPatch(state, patch);
+      const previewCalc = calculateModel(previewState);
+      const previewProjection = finalProjection(1, previewState);
+      const hoursFor = (id) => {
+        const scenario = previewProjection.scenarios.find((item)=>item.id===id);
+        return scenario ? n(scenario.cumulativeWorkHours) / 12 : 0;
+      };
       const purchaseRule = x.situation === 'capital-buy'
-        ? '<li>Na compra, todos os cenários partem do mesmo capital inicial; o benchmark financeiro investe esse valor integralmente e não aplica custos de venda de imóvel.</li>'
+        ? '<li>Na compra, a aquisição detalhada precisa estar configurada no assistente “Aquisição e venda”.</li>'
         : '';
       preview.innerHTML = `
-        <h3>Revise antes de aplicar</h3>
+        <h3>Revise as premissas que mais importam</h3>
         <ul class="wizard-change-list">
-          <li>Cenários exibidos: <strong>${x.enabledScenarios.map((id)=>labels[id]||id).map(escapeHtml).join(', ')}</strong>.</li>
-          <li>O filtro afeta apenas a apresentação dos resultados; todas as premissas detalhadas permanecem salvas e editáveis.</li>
-          ${x.rentedBenchmarkEmbedded ? '<li>No Airbnb em imóvel alugado, a comparação financeira permanece embutida no Δ benchmark do próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido.</li>' : ''}
+          <li>Cenários no quadro final: <strong>${x.selectedFinalScenarioIds.map((id)=>labels[id]||id).map(escapeHtml).join(', ')}</strong>.</li>
+          <li>Horizonte: <strong>${x.horizonYears} ano${x.horizonYears>1?'s':''}</strong> · valor da hora: <strong>${money.format(x.ownerHourlyValue)}/h</strong>.</li>
+          <li>Ocupação informada como <strong>${x.occupancyInputBasis==='self'?'autogestão':'administrada'}</strong> · autogestão ponderada resultante <strong>${percent.format(previewCalc.weightedOccupancy)}</strong> · administrada <strong>${percent.format(previewCalc.adminWeightedOccupancy)}</strong> · delta global <strong>+${number1.format(x.managementOccupancyDeltaPp)} p.p.</strong>.</li>
+          <li>Estadia média: <strong>${number1.format(x.avgStayNights)} noites</strong> · taxa de limpeza cobrada: <strong>${money.format(x.cleaningFeeRevenue)}</strong>.</li>
+          <li>Trabalho estimado: autogestão <strong>${number1.format(hoursFor('airbnb-self'))} h/mês</strong> · Essencial <strong>${number1.format(hoursFor('airbnb-admin-essential'))} h/mês</strong> · Premium <strong>${number1.format(hoursFor('airbnb-admin'))} h/mês</strong>.</li>
+          <li>Os campos avançados que não aparecem neste assistente permanecem intactos.</li>
+          ${x.rentedBenchmarkEmbedded ? '<li>No Airbnb em imóvel alugado, o benchmark financeiro permanece embutido no Δ do próprio cenário.</li>' : ''}
           ${purchaseRule}
         </ul>`;
       setWizardReviewMode(true);
