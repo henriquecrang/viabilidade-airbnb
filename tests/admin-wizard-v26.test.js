@@ -28,6 +28,7 @@ function controlled(){
   const s=clone(defaultState);
   s.seasons=[{id:'only',name:'Only',days:100,nightlyRate:100,occupancyPct:50,personalUseDays:0,habitualUseDays:0,operationalUnavailableDays:0,unavailableDays:0}];
   s.airbnb.avgStayNights=5;
+  s.airbnb.managementOccupancyDeltaPp=0;
   s.airbnb.cleaningFeeRevenue=100;
   s.airbnb.otherGuestFeeRevenue=0;
   s.airbnb.taxPct=0;
