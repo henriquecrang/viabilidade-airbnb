@@ -34,9 +34,9 @@ function auditState(state,label){
       approx(s.initialCapital,calc.propertyValue+s.capex+s.reserveOpening+s.workingCapital+s.externalFundingRequired,.01,`${label}/${s.id} capital inicial imóvel`);
       approx(s.endNetWorth,calc.propertyEndValue+s.setupResidual+s.distributableCash+s.linkedReserve+s.workingCapital,.01,`${label}/${s.id} patrimônio final imóvel`);
     }
-    if(s.id==='airbnb-rented'){
-      approx(s.initialCapital,s.capex+s.reserveOpening+calc.rentedSecurityDeposit+s.workingCapital+s.externalFundingRequired,.01,`${label}/rented capital inicial`);
-      approx(s.endNetWorth,s.setupResidual+s.distributableCash+s.linkedReserve+calc.rentedSecurityDeposit+s.workingCapital,.01,`${label}/rented patrimônio final`);
+    if(['airbnb-rented','airbnb-rented-admin'].includes(s.id)){
+      approx(s.initialCapital,s.capex+s.reserveOpening+calc.rentedSecurityDeposit+s.workingCapital+s.externalFundingRequired,.01,`${label}/${s.id} capital inicial`);
+      approx(s.endNetWorth,s.setupResidual+s.distributableCash+s.linkedReserve+calc.rentedSecurityDeposit+s.workingCapital,.01,`${label}/${s.id} patrimônio final`);
     }
   }
   return calc;
