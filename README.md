@@ -209,12 +209,34 @@ A refatoração preservou numericamente os cinco cenários que já existiam na V
 
 A V27 ainda usa um único conjunto ativo de premissas da administradora para os dois modos administrados. A comparação simultânea entre presets Essencial e Premium permanece na Issue #45.
 
+## V28 — calibração oficial da administradora
+
+As respostas formais recebidas em 24/10/2026 substituem os presets provisórios da V26.
+
+Regras incorporadas:
+
+- **ordem financeira:** a taxa Airbnb é descontada do valor total e a divisão 15%/25% ocorre depois; o motor agora exibe essa decomposição explicitamente, sem mudar o resultado líquido equivalente;
+- **taxa de limpeza:** entra no valor pago pelo hóspede e na divisão em **ambos** os planos; não é repassada 100% à administradora no Premium;
+- **Essencial:** 15%;
+- **Premium:** 25%;
+- **enxoval:** pertence a quem compra; quando a administradora compra no preset Premium, o ativo não integra o patrimônio do proprietário;
+- **manutenção de imóvel/equipamentos/bens:** responsabilidade financeira do proprietário; o preset não presume que reparos estejam incluídos nem que a administradora gerencie esses reparos;
+- **enxoval e amenidades:** a administradora declarou que repõe/troca esses itens; isso confirma responsabilidade operacional, mas o simulador não presume custo de amenidades incluído sem preço/contrato explícito;
+- **ocupação:** a administradora declarou que um Superhost costuma operar acima de 80%, contra abaixo de 60% sem apoio. O wizard usa **80% como piso-alvo conservador**, preservando a sazonalidade, apenas quando o preset é aplicado;
+- **diária/ADR:** uplift default permanece 0%, coerente com a resposta de que o ganho seria pequeno/insignificante.
+
+A faixa de ocupação não foi tratada como dado de mercado auditado. A Issue #46 foi criada para validar a alegação com histórico real.
+
+O contrato enviado pela administradora foi classificado como **contrato de hospedagem direta com hóspede**, usado fora do Airbnb, e não como contrato proprietário × administradora. Por conter dados pessoais de terceiros, o PDF não foi adicionado ao repositório público; apenas notas sem PII foram registradas.
+
+O cenário-base continua economicamente neutro até o usuário aplicar o wizard. A migração V27 → V28 não altera silenciosamente os resultados existentes.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
-- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium da administradora são provisórios e devem ser revisados quando chegar a resposta formal (#44/#32).
+- Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. Os presets Essencial/Premium foram recalibrados com as respostas oficiais recebidas em 24/10/2026; a alegação de ocupação >80% permanece hipótese comercial a validar (#46).
 - Tributação continua sendo uma aproximação anual: a alíquota efetiva é informada pelo usuário e a aplicação não substitui Carnê-Leão, declaração ou orientação tributária individual.
 
 ## Testes de regressão
