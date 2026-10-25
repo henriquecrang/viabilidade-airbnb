@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 33;
+  const APP_VERSION = 34;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -3311,13 +3311,13 @@
     const ids = finalVisibleScenarioIds(state);
     const selectedProjection = projections.get(selected);
     const selectedCandidates = selectedProjection.scenarios.filter((x)=>ids.includes(x.id));
-    const selectedBest = selectedCandidates.reduce((best,item)=>!best || item.realWealthCreation>best.realWealthCreation?item:best,null);
+    const selectedBest = selectedCandidates.reduce((best,item)=>!best || item.economicRealWealthCreation>best.economicRealWealthCreation?item:best,null);
     const labelFor = (id) => projections.get(1).scenarios.find((x)=>x.id===id)?.label || id;
     root.innerHTML = `
       <div class="horizon-highlight">
         <span>Horizonte em destaque: ${selected} ano${selected>1?'s':''}</span>
         <strong>${escapeHtml(selectedBest?.label || 'Nenhum cenário')}</strong>
-        <small>${selectedBest ? `maior ganho patrimonial real: ${money.format(selectedBest.realWealthCreation)}` : 'selecione ao menos um cenário acima'}</small>
+        <small>${selectedBest ? `melhor resultado econômico real: ${money.format(selectedBest.economicRealWealthCreation)}` : 'selecione ao menos um cenário acima'}</small>
       </div>
       <div class="table-card horizon-table-card"><div class="table-scroll"><table class="horizon-table">
         <thead><tr><th>Cenário</th>${[1,3,5].map((h)=>`<th class="${h===selected?'selected-horizon':''}">${h} ano${h>1?'s':''}</th>`).join('')}</tr></thead>
@@ -3325,7 +3325,8 @@
           const sc=projections.get(h).scenarios.find((x)=>x.id===id);
           if (!sc) return '<td>—</td>';
           const payback=sc.paybackYear==null?'sem payback':sc.paybackYear===0?'sem CAPEX':`payback ano ${sc.paybackYear}`;
-          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.realWealthCreation)}</strong><small>ganho real</small><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média anual: ${money.format(sc.averageAnnualFreeCash)}</span><span>Média mensal eq.: ${money.format(sc.monthlyEquivalentFreeCash)}</span><span class="${sc.financialGapVsBenchmark>=0?'positive-text':'negative'}">Δ benchmark: ${money.format(sc.financialGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
+          const economicMonthly = sc.economicRealWealthCreation / (h * 12);
+          return `<td class="${h===selected?'selected-horizon':''}"><strong>${money.format(sc.economicRealWealthCreation)}</strong><small>resultado econômico real · ${money.format(economicMonthly)}/mês eq.</small><span>Ganho patrimonial real: ${money.format(sc.realWealthCreation)}</span><span>Caixa livre acumulado: ${money.format(sc.cumulativeFreeCashBeforeFunding)}</span><span>Média caixa/ano: ${money.format(sc.averageAnnualFreeCash)}</span><span class="${sc.economicGapVsBenchmark>=0?'positive-text':'negative'}">Δ econômico vs. benchmark: ${money.format(sc.economicGapVsBenchmark)}</span>${sc.externalFundingRequired>0?`<span>Aportes: ${money.format(sc.externalFundingRequired)} · ${(sc.fundingSchedule||[]).length} ano(s)</span>`:''}<span>${payback}</span></td>`;
         }).join('')}</tr>`).join('')}</tbody>
       </table></div></div>
       <p class="helper">Motor anual: receitas, aluguel e custos monetários evoluem ano a ano; CAPEX e venda entram uma única vez. Médias anual e mensal são equivalentes aritméticos do acumulado do horizonte, não um fluxo mensal real.</p>`;
@@ -3691,36 +3692,36 @@
       return;
     }
 
-    const sorted = [...scenarios].sort((a, b) => b.nominalExcessOverPreservation - a.nominalExcessOverPreservation);
+    const sorted = [...scenarios].sort((a, b) => b.economicRealWealthCreation - a.economicRealWealthCreation);
     const best = sorted[0];
     const second = sorted[1] || best;
-    const lead = best.nominalExcessOverPreservation - second.nominalExcessOverPreservation;
-    const maxAbsExcess = Math.max(...scenarios.map((s) => Math.abs(s.nominalExcessOverPreservation)), 1);
-    const annualBest = best.nominalExcessOverPreservation / years;
-    const monthlyBest = best.nominalExcessOverPreservation / (years * 12);
+    const lead = best.economicRealWealthCreation - second.economicRealWealthCreation;
+    const maxAbsEconomic = Math.max(...scenarios.map((s) => Math.abs(s.economicRealWealthCreation)), 1);
+    const annualBest = best.economicRealWealthCreation / years;
+    const monthlyBest = best.economicRealWealthCreation / (years * 12);
     const leadText = sorted.length === 1
       ? 'único cenário exibido'
       : (lead > 0 ? `${money.format(lead)} acima do 2º colocado no horizonte` : 'empate no maior resultado');
 
     $('#finalWinner').innerHTML = `
-      <span class="final-winner-label">Maior excedente em ${years} ano${years>1?'s':''}</span>
+      <span class="final-winner-label">Melhor resultado econômico em ${years} ano${years>1?'s':''}</span>
       <strong>${escapeHtml(best.label)}</strong>
-      <span>${money.format(best.nominalExcessOverPreservation)} no total</span>
+      <span>${money.format(best.economicRealWealthCreation)} no total real</span>
       <small>${money.format(annualBest)}/ano · ${money.format(monthlyBest)}/mês eq. · ${leadText}</small>`;
 
     $('#finalScenarioGrid').innerHTML = scenarios.map((scenario) => {
       const isBest = scenario.id === best.id;
-      const total = scenario.nominalExcessOverPreservation;
+      const total = scenario.economicRealWealthCreation;
       const annual = total / years;
       const monthly = total / (years * 12);
-      const diff = total - best.nominalExcessOverPreservation;
-      const barWidth = Math.max(4, Math.abs(total) / maxAbsExcess * 100);
+      const diff = total - best.economicRealWealthCreation;
+      const barWidth = Math.max(4, Math.abs(total) / maxAbsEconomic * 100);
       const payback = scenario.paybackYear == null ? 'sem payback no horizonte' : scenario.paybackYear === 0 ? 'sem CAPEX' : `payback no ano ${scenario.paybackYear}`;
       return `
         <article class="final-scenario-card ${isBest ? 'best' : ''}">
-          <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Maior excedente</span>' : ''}</div>
+          <div class="final-scenario-topline"><span class="final-scenario-name">${escapeHtml(scenario.label)}</span>${isBest ? '<span class="best-badge">Melhor resultado</span>' : ''}</div>
           <div class="final-annual ${monthly < 0 ? 'negative' : ''}">${money.format(monthly)}</div>
-          <div class="final-annual-label">média mensal equivalente do excedente nominal</div>
+          <div class="final-annual-label">resultado econômico real · média mensal equivalente</div>
           <div class="final-period-equivalents">
             <div><span>Total · ${years} ano${years>1?'s':''}</span><strong>${money.format(total)}</strong></div>
             <div><span>Média anual</span><strong>${money.format(annual)}</strong></div>
@@ -3729,7 +3730,7 @@
           <div class="money-lenses">
             <div class="money-lens"><span>Caixa livre acumulado</span><strong>${money.format(scenario.cumulativeFreeCashBeforeFunding)}</strong><small>${money.format(scenario.averageAnnualFreeCash)}/ano · ${money.format(scenario.monthlyEquivalentFreeCash)}/mês eq.</small></div>
             <div class="money-lens"><span>Ganho patrimonial real</span><strong>${money.format(scenario.realWealthCreation)}</strong><small>total do horizonte, em poder de compra de hoje</small></div>
-            <div class="money-lens"><span>Resultado econômico real</span><strong>${money.format(scenario.economicRealWealthCreation)}</strong><small>ganho real após custo econômico do trabalho</small></div>
+            <div class="money-lens"><span>Excedente financeiro nominal</span><strong>${money.format(scenario.nominalExcessOverPreservation)}</strong><small>além da preservação do capital; não desconta o valor do seu tempo</small></div>
           </div>
           <div class="final-scenario-metrics final-scenario-metrics-v3">
             <div><span>Capital inicial comprometido</span><strong>${money.format(scenario.initialCapital)}</strong></div>
@@ -3746,7 +3747,7 @@
             <div><span>Δ econômico vs. benchmark</span><strong class="${scenario.economicGapVsBenchmark >= 0 ? 'positive-text' : 'negative'}">${money.format(scenario.economicGapVsBenchmark)}</strong></div>
             <div><span>Payback</span><strong>${escapeHtml(payback)}</strong></div>
           </div>
-          <div class="final-difference ${isBest ? 'best-difference' : ''}">${isBest ? `Maior excedente no horizonte de ${years} anos` : `${money.format(Math.abs(diff))} a menos que o melhor cenário no horizonte`}</div>
+          <div class="final-difference ${isBest ? 'best-difference' : ''}">${isBest ? `Melhor resultado econômico real no horizonte de ${years} anos` : `${money.format(Math.abs(diff))} a menos de resultado econômico real que o melhor cenário`}</div>
         </article>`;
     }).join('');
   }
