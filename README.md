@@ -409,6 +409,44 @@ Em uma única passagem é possível configurar:
 
 A revisão final mostra as premissas materiais e compara as horas/mês estimadas de autogestão, Essencial e Premium. O wizard escreve diretamente nos mesmos campos do motor; não existe estado econômico paralelo.
 
+## V42 — estratégia de saída ao fim do horizonte
+
+A Issue #40 passa a estar implementada.
+
+O default continua sendo **continuar/renovar**. Opcionalmente, o usuário pode encerrar no fim do horizonte:
+
+- Airbnb próprio: vender o imóvel;
+- Airbnb alugado: encerrar, recuperar caução e realizar o residual do CAPEX;
+- aluguel tradicional: encerrar e vender o imóvel;
+- investimento financeiro: liquidar o saldo final.
+
+A saída só altera o patrimônio terminal. Custos recorrentes continuam separados.
+
+### Imóvel próprio / aluguel tradicional
+
+A venda no horizonte usa o valor nominal projetado do imóvel e reaproveita as premissas explícitas já existentes de:
+- ajuste de preço;
+- corretagem;
+- custos fixos;
+- saldo a quitar;
+- IR sobre ganho de capital;
+- outros custos.
+
+O residual do CAPEX pode ter percentual próprio de recuperação.
+
+### Airbnb em imóvel alugado
+
+São configuráveis:
+- percentual de recuperação do residual do CAPEX;
+- percentual de recuperação da caução;
+- custos explícitos de saída.
+
+### Investimento
+
+Pode permanecer aplicado ou ser liquidado ao fim do horizonte. O custo percentual de liquidação é explícito e default 0%.
+
+A comparação final mostra a estratégia terminal e os custos/deduções de saída.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
