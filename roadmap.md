@@ -285,6 +285,16 @@ Concluída em 25/10/2026 — Issue #50.
 - nenhuma fórmula ou regra de ranking foi alterada;
 - suíte completa: 32/32 testes.
 
+### V34 — resultado principal sensível ao valor da hora
+Concluída em 25/10/2026 — Issue #51.
+
+- cards e ranking final passam a usar resultado econômico real;
+- valor da hora passa a afetar diretamente o número principal;
+- excedente nominal permanece como lente financeira secundária;
+- comparação 1/3/5 também prioriza o resultado econômico;
+- novo teste de sensibilidade cobre R$ 0/h × R$ 200/h;
+- suíte completa: 33/33 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
