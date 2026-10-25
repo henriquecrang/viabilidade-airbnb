@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 40;
+  const APP_VERSION = 41;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -3913,26 +3913,87 @@
 
   function mainWizardDraftFromState() {
     const saved = state.guidedSetup?.main || {};
-    return {
+    const draft = {
       situation: saved.configured ? saved.situation : 'owned',
-      compareFinancial: saved.configured ? saved.compareFinancial !== false : true
+      compareFinancial: saved.configured ? saved.compareFinancial !== false : true,
+      horizonYears: [1,3,5].includes(Number(state.analysis?.horizonYears)) ? Number(state.analysis.horizonYears) : 3,
+      ownerHourlyValue: Math.max(0, n(state.globals?.ownerHourlyValue)),
+      occupancyInputBasis: occupancyInputBasis(state),
+      managementOccupancyDeltaPp: managementOccupancyDeltaPp(state),
+      avgStayNights: Math.max(.1, n(state.airbnb?.avgStayNights, 5.6)),
+      cleaningFeeRevenue: Math.max(0, n(state.airbnb?.cleaningFeeRevenue)),
+      cost_limpeza: Math.max(0, n(state.stayCosts.find((x)=>x.id==='limpeza')?.amount)),
+      cost_lavanderia: Math.max(0, n(state.stayCosts.find((x)=>x.id==='lavanderia')?.amount)),
+      cost_amenidades: Math.max(0, n(state.stayCosts.find((x)=>x.id==='amenidades')?.amount)),
+      cost_checkin: Math.max(0, n(state.stayCosts.find((x)=>x.id==='checkin')?.amount))
     };
+    const visible = new Set(finalVisibleScenarioIds(state));
+    for (const id of FINAL_SCENARIO_IDS) draft[`scenario_${id}`] = visible.has(id);
+    for (const season of state.seasons) draft[`occupancy_${season.id}`] = occupancyDisplayPct(season.occupancyPct, state);
+    return draft;
   }
 
   function mainWizardFormHtml(draft) {
+    const scenarioLabels = {
+      'airbnb-self':'Airbnb próprio · autogestão',
+      'airbnb-admin-essential':'Airbnb próprio · Admin Essencial',
+      'airbnb-admin':'Airbnb próprio · Admin Premium',
+      'airbnb-rented':'Airbnb alugado · autogestão',
+      'airbnb-rented-admin-essential':'Airbnb alugado · Admin Essencial',
+      'airbnb-rented-admin':'Airbnb alugado · Admin Premium',
+      traditional:'Aluguel tradicional',
+      investment:'Investimento financeiro'
+    };
+    const seasonRows = state.seasons.map((season)=>`
+      <label class="field-group"><span class="field-label">${escapeHtml(season.name)}</span>
+        <div class="input-suffix compact-control"><input data-wizard-field="occupancy_${escapeAttr(season.id)}" type="number" min="0" max="100" step="1" value="${escapeAttr(draft[`occupancy_${season.id}`])}" /><span>%</span></div>
+      </label>`).join('');
     return `
       <div class="wizard-section">
-        <h3>Qual é sua situação de partida?</h3>
+        <h3>1. Situação inicial</h3>
         <div class="wizard-choice-grid">
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="owned" ${draft.situation==='owned'?'checked':''} /><span><strong>Já possuo o imóvel</strong><small>Airbnb próprio/administrado, aluguel tradicional e, opcionalmente, venda + investimento.</small></span></label>
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="capital-buy" ${draft.situation==='capital-buy'?'checked':''} /><span><strong>Tenho capital e penso em comprar</strong><small>Compara compra à vista com manter exatamente o mesmo capital investido.</small></span></label>
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="rent-third-party" ${draft.situation==='rent-third-party'?'checked':''} /><span><strong>Quero alugar de terceiro para operar Airbnb</strong><small>Foca no cenário de arbitragem de locação.</small></span></label>
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="primary-home" ${draft.situation==='primary-home'?'checked':''} /><span><strong>É minha moradia principal</strong><small>Foca em Airbnb eventual do imóvel próprio; refine o uso no wizard híbrido.</small></span></label>
-          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="second-home" ${draft.situation==='second-home'?'checked':''} /><span><strong>É segunda residência / lazer</strong><small>Compara Airbnb, aluguel tradicional e uso híbrido.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="owned" ${draft.situation==='owned'?'checked':''} /><span><strong>Já possuo o imóvel</strong><small>Airbnb próprio/administrado, aluguel tradicional e investimento após eventual venda.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="capital-buy" ${draft.situation==='capital-buy'?'checked':''} /><span><strong>Tenho capital e penso em comprar</strong><small>A aquisição detalhada continua no assistente “Aquisição e venda”.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="rent-third-party" ${draft.situation==='rent-third-party'?'checked':''} /><span><strong>Quero alugar de terceiro para operar Airbnb</strong><small>Compara arbitragem de locação com seu benchmark financeiro.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="primary-home" ${draft.situation==='primary-home'?'checked':''} /><span><strong>É minha moradia principal</strong><small>Use depois o assistente híbrido para dias de uso próprio.</small></span></label>
+          <label class="wizard-choice"><input data-wizard-field="situation" type="radio" name="wizardSituation" value="second-home" ${draft.situation==='second-home'?'checked':''} /><span><strong>É segunda residência / lazer</strong><small>Permite comparar renda, uso e patrimônio.</small></span></label>
         </div>
       </div>
-      <label class="field-group checkbox-field"><input data-wizard-field="compareFinancial" type="checkbox" ${draft.compareFinancial?'checked':''} /><span><strong>Incluir investimento financeiro standalone quando comparável</strong><small>Para imóvel já possuído, ele usa a venda líquida. Para “tenho capital”, investe o mesmo capital inicial. No Airbnb de imóvel alugado, o benchmark financeiro já aparece dentro do próprio cenário.</small></span></label>
-      <div class="concept-note"><strong>O modelo detalhado continua inteiro:</strong> este wizard só filtra os cenários exibidos nos resultados. Ele não apaga premissas nem desativa cálculos internos.</div>`;
+      <div class="wizard-section">
+        <h3>2. Cenários que quero ver na comparação final</h3>
+        <div class="wizard-form-grid">
+          ${FINAL_SCENARIO_IDS.map((id)=>`<label class="field-group checkbox-field"><input data-wizard-field="scenario_${escapeAttr(id)}" type="checkbox" ${draft[`scenario_${id}`]?'checked':''} /><span><strong>${escapeHtml(scenarioLabels[id])}</strong></span></label>`).join('')}
+        </div>
+        <p class="helper">Este filtro muda apenas o quadro final. O motor continua preservando as demais premissas.</p>
+      </div>
+      <div class="wizard-section">
+        <h3>3. Horizonte e valor do seu tempo</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Horizonte principal</span><select data-wizard-field="horizonYears"><option value="1" ${draft.horizonYears===1?'selected':''}>1 ano</option><option value="3" ${draft.horizonYears===3?'selected':''}>3 anos</option><option value="5" ${draft.horizonYears===5?'selected':''}>5 anos</option></select></label>
+          <label class="field-group"><span class="field-label">Valor econômico da sua hora</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="ownerHourlyValue" type="number" min="0" step="10" value="${escapeAttr(draft.ownerHourlyValue)}" /></div></label>
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>4. Ocupação</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Os percentuais abaixo representam</span><select data-wizard-field="occupancyInputBasis"><option value="self" ${draft.occupancyInputBasis==='self'?'selected':''}>Autogestão / sem administradora</option><option value="admin" ${draft.occupancyInputBasis==='admin'?'selected':''}>Operação com administradora</option></select></label>
+          <label class="field-group"><span class="field-label">Ganho esperado com administradora</span><div class="input-suffix compact-control"><input data-wizard-field="managementOccupancyDeltaPp" type="number" min="0" max="100" step="0.5" value="${escapeAttr(draft.managementOccupancyDeltaPp)}" /><span>p.p.</span></div></label>
+        </div>
+        <div class="wizard-form-grid">${seasonRows}</div>
+        <p class="helper">Ao aplicar, o motor guarda a autogestão como base canônica e deriva a outra visão pelo delta configurado.</p>
+      </div>
+      <div class="wizard-section">
+        <h3>5. Operação essencial</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Estadia média</span><div class="input-suffix compact-control"><input data-wizard-field="avgStayNights" type="number" min="0.1" step="0.1" value="${escapeAttr(draft.avgStayNights)}" /><span>noites</span></div></label>
+          <label class="field-group"><span class="field-label">Taxa de limpeza cobrada do hóspede</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="cleaningFeeRevenue" type="number" min="0" step="10" value="${escapeAttr(draft.cleaningFeeRevenue)}" /></div></label>
+          <label class="field-group"><span class="field-label">Custo de limpeza por reserva</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="cost_limpeza" type="number" min="0" step="10" value="${escapeAttr(draft.cost_limpeza)}" /></div></label>
+          <label class="field-group"><span class="field-label">Custo de lavanderia por reserva</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="cost_lavanderia" type="number" min="0" step="10" value="${escapeAttr(draft.cost_lavanderia)}" /></div></label>
+          <label class="field-group"><span class="field-label">Amenidades por reserva</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="cost_amenidades" type="number" min="0" step="10" value="${escapeAttr(draft.cost_amenidades)}" /></div></label>
+          <label class="field-group"><span class="field-label">Check-in/out por reserva</span><div class="input-prefix money-control"><span>R$</span><input data-wizard-field="cost_checkin" type="number" min="0" step="10" value="${escapeAttr(draft.cost_checkin)}" /></div></label>
+        </div>
+      </div>
+      <div class="concept-note"><strong>Configuração avançada continua disponível:</strong> benchmark, aquisição/venda, administradora, operação Airbnb e uso híbrido podem ser refinados nos assistentes específicos sem duplicar o motor.</div>`;
   }
 
   function propertyWizardDraftFromState() {
