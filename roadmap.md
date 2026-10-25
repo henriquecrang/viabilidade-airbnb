@@ -264,6 +264,18 @@ Concluída em 25/10/2026 — Issue #48.
 - ajustes de perfil da administradora são adicionais ao delta global;
 - migração V30 → V31 evita duplicar o antigo +20 p.p.
 
+### V32 — resumo final filtrável e horizonte de 3 anos
+Concluída em 25/10/2026 — Issue #49.
+
+- comparação final força Essencial e Premium como cenários separados;
+- até oito cenários finais podem ser exibidos/ocultados individualmente;
+- filtro final é de apresentação e não altera premissas;
+- horizonte padrão passa a 3 anos;
+- cards exibem total do horizonte, média anual e média mensal equivalente;
+- comparação 1/3/5 respeita o mesmo filtro;
+- botão no topo restaura todos os defaults após confirmação;
+- suíte completa: 32/32 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
