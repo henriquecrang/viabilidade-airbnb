@@ -81,7 +81,7 @@ const bad=buildPropertyWizardPatch({
 },defaultState);
 assert(!bad.valid,'compra que excede capital deve ser bloqueada');
 approx(bad.normalized.purchaseFundingGap,30000,.01,'gap bloqueado');
-assert(bad.errors.some(x=>x.includes('não cria financiamento')),'erro deve explicitar ausência de financiamento');
+assert(bad.errors.some(x=>x.includes('fontes explícitas')),'erro deve explicitar insuficiência das fontes configuradas');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 assert(html.includes('id="openPropertyWizard"'),'launcher de aquisição/venda ausente');
