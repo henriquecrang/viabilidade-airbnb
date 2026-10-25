@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 28;
+  const APP_VERSION = 29;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -53,6 +53,11 @@
         provisionalAssumptions: false,
         calibrationStatus: 'official-response',
         sourceDate: '2026-10-24'
+      },
+      adminComparisonEnabled: false,
+      adminProfiles: {
+        essential: { configured: false, plan: 'essential' },
+        premium: { configured: false, plan: 'premium' }
       },
       hybrid: {
         configured: false,
@@ -717,6 +722,15 @@
       calibrationStatus: 'official-response',
       sourceDate: '2026-10-24'
     };
+    const profile = { configured: true, ...normalized };
+    for (const id of stayIds) {
+      profile[`manage_${id}`] = Boolean(draft[`manage_${id}`]);
+      profile[`include_${id}`] = Boolean(draft[`include_${id}`]);
+    }
+    for (const id of monthlyIds) {
+      profile[`manage_${id}`] = Boolean(draft[`manage_${id}`]);
+      profile[`include_${id}`] = Boolean(draft[`include_${id}`]);
+    }
 
     return {
       valid: true,
@@ -740,7 +754,9 @@
           configured: true,
           ...normalized,
           source: 'respostas-oficiais-administradora-2026-10-24'
-        }
+        },
+        'guidedSetup.adminComparisonEnabled': true,
+        [`guidedSetup.adminProfiles.${plan}`]: profile
       },
       arrayValues: {
         stayCosts: stayUpdates,
@@ -1780,7 +1796,7 @@
     };
   }
 
-  function calculateModel(inputState = state) {
+  function calculateModelSingle(inputState = state) {
     const currentState = inputState;
     const propertyValue = Math.max(0, n(currentState.globals.propertyValue));
     const acquisitionMeta = currentState.guidedSetup?.acquisitionSale || {};
@@ -2692,6 +2708,61 @@
     };
   }
 
+  function adminComparisonEnabled(inputState = state) {
+    const profiles = inputState?.guidedSetup?.adminProfiles || {};
+    return Boolean(
+      inputState?.guidedSetup?.adminComparisonEnabled
+      || inputState?.guidedSetup?.adminProposal?.configured
+      || profiles.essential?.configured
+      || profiles.premium?.configured
+    );
+  }
+
+  function applyAdminPlanToState(inputState, plan) {
+    const normalizedPlan = plan === 'essential' ? 'essential' : 'premium';
+    const active = inputState?.guidedSetup?.adminProposal || {};
+    if (active.configured && active.plan === normalizedPlan) return structuredCloneSafe(inputState);
+    const draft = adminWizardDraftForPlan(normalizedPlan, inputState);
+    return applyWizardPatch(inputState, buildAdminWizardPatch(draft, inputState));
+  }
+
+  function calculateModel(inputState = state) {
+    const base = calculateModelSingle(inputState);
+    if (!adminComparisonEnabled(inputState)) return base;
+
+    const essentialCalc = calculateModelSingle(applyAdminPlanToState(inputState, 'essential'));
+    const premiumCalc = calculateModelSingle(applyAdminPlanToState(inputState, 'premium'));
+    const scenario = (calc, id) => calc.scenarios.find((x) => x.id === id);
+    const variant = (source, id, label, plan) => source ? ({ ...source, id, label, adminPlan: plan }) : null;
+
+    const scenarios = [
+      scenario(base, 'airbnb-self'),
+      variant(scenario(essentialCalc, 'airbnb-admin'), 'airbnb-admin-essential', 'Airbnb próprio + Admin Essencial', 'essential'),
+      variant(scenario(premiumCalc, 'airbnb-admin'), 'airbnb-admin', 'Airbnb próprio + Admin Premium', 'premium'),
+      scenario(base, 'airbnb-rented'),
+      variant(scenario(essentialCalc, 'airbnb-rented-admin'), 'airbnb-rented-admin-essential', 'Airbnb alugado + Admin Essencial', 'essential'),
+      variant(scenario(premiumCalc, 'airbnb-rented-admin'), 'airbnb-rented-admin', 'Airbnb alugado + Admin Premium', 'premium'),
+      scenario(base, 'traditional'),
+      scenario(base, 'investment')
+    ].filter(Boolean);
+
+    const by = (field) => [...scenarios].sort((a, b) => n(b[field]) - n(a[field]))[0];
+    return {
+      ...base,
+      scenarios,
+      bestCash: by('freeCash'),
+      bestFirstYear: by('firstYearCash'),
+      bestEconomic: by('economicResult'),
+      bestWealth: by('wealthCreation'),
+      bestRealWealth: by('realWealthCreation'),
+      bestReal: by('realTotalReturn'),
+      adminPlanSummaries: {
+        essential: { managedAdminItems: essentialCalc.managedAdminItems || [], includedAdminItems: essentialCalc.includedAdminItems || [] },
+        premium: { managedAdminItems: premiumCalc.managedAdminItems || [], includedAdminItems: premiumCalc.includedAdminItems || [] }
+      }
+    };
+  }
+
   function inflateRecurringStateForYear(baseState, yearIndex) {
     const projected = structuredCloneSafe(baseState);
     const inflation = n(baseState.globals.inflationPct) / 100;
@@ -2876,10 +2947,20 @@
     const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
     const propertyValue = Math.max(0, n(baseState.globals.propertyValue));
     const initialHourly = Math.max(0, n(baseState.globals.ownerHourlyValue));
-    const scenarioIds = ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional'];
+    const scenarioIds = baseCalc.scenarios.filter((x) => x.id !== 'investment').map((x) => x.id);
 
     const projectedScenarios = scenarioIds.map((scenarioId) => {
-      const baseScenario = baseCalc.scenarios.find((x) => x.id === scenarioId);
+      const displayScenario = baseCalc.scenarios.find((x) => x.id === scenarioId);
+      const essentialVariant = scenarioId === 'airbnb-admin-essential' || scenarioId === 'airbnb-rented-admin-essential';
+      const premiumVariant = adminComparisonEnabled(baseState) && (scenarioId === 'airbnb-admin' || scenarioId === 'airbnb-rented-admin');
+      const adminPlan = essentialVariant ? 'essential' : (premiumVariant ? 'premium' : null);
+      const projectionState = adminPlan ? applyAdminPlanToState(baseState, adminPlan) : baseState;
+      const underlyingScenarioId = scenarioId === 'airbnb-admin-essential'
+        ? 'airbnb-admin'
+        : (scenarioId === 'airbnb-rented-admin-essential' ? 'airbnb-rented-admin' : scenarioId);
+      const baseScenario = adminPlan
+        ? calculateModelSingle(projectionState).scenarios.find((x) => x.id === underlyingScenarioId)
+        : displayScenario;
       let cumulativeFreeCashBeforeFunding = 0;
       let reserveBalance = Math.max(0, n(baseScenario.reserveOpening));
       let realLaborCost = 0;
@@ -2887,9 +2968,9 @@
       const yearsDetail = [];
 
       for (let y = 0; y < years; y += 1) {
-        const yearState = inflateRecurringStateForYear(baseState, y);
-        const yearCalc = calculateModel(yearState);
-        const sc = yearCalc.scenarios.find((x) => x.id === scenarioId);
+        const yearState = inflateRecurringStateForYear(projectionState, y);
+        const yearCalc = calculateModelSingle(yearState);
+        const sc = yearCalc.scenarios.find((x) => x.id === underlyingScenarioId);
         cumulativeFreeCashBeforeFunding += sc.freeCash;
         reserveBalance += sc.reserveContribution;
         realLaborCost += sc.laborCost / Math.pow(1 + inflation, y);
@@ -2909,11 +2990,12 @@
       const timing = buildAnnualFundingSchedule(yearsDetail, inflation);
       const cashBalance = timing.endingCashBalance;
       const externalFundingRequired = timing.externalFundingRequired;
-      const ownsProperty = !['airbnb-rented','airbnb-rented-admin'].includes(scenarioId);
+      const rentedPossession = baseScenario?.possession === 'rented';
+      const ownsProperty = !rentedPossession;
       const propertyEndValue = ownsProperty ? propertyValue * Math.pow(1 + nominalAppreciation, years) : 0;
-      const setupResidual = setupResidualForHorizon(baseState, scenarioId, years);
+      const setupResidual = setupResidualForHorizon(projectionState, underlyingScenarioId, years);
       const workingCapital = Math.max(0, n(baseScenario.workingCapital));
-      const securityDeposit = ['airbnb-rented','airbnb-rented-admin'].includes(scenarioId) ? Math.max(0, n(baseState.rentedAirbnb.securityDeposit)) : 0;
+      const securityDeposit = rentedPossession ? Math.max(0, n(projectionState.rentedAirbnb.securityDeposit)) : 0;
       const baseCapitalForScenario = purchaseMode && ownsProperty
         ? acquisitionAvailableCapital
         : Math.max(0, n(baseScenario.baseInitialCapital));
@@ -2957,7 +3039,7 @@
 
       return {
         id: scenarioId,
-        label: baseScenario.label,
+        label: displayScenario.label,
         years,
         initialCapital: nominalCommittedCapital,
         realInitialCapitalAtT0,
@@ -3190,19 +3272,27 @@
 
   function renderAdminPackage(calc) {
     const root = $('#adminIncludedSummary');
-    const managed = calc.managedAdminItems || [];
-    const included = calc.includedAdminItems || [];
-    if (!managed.length && !included.length) {
+    const renderPlan = (label, summary) => {
+      const managed = summary?.managedAdminItems || [];
+      const included = summary?.includedAdminItems || [];
+      const managedHtml = managed.length
+        ? `<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong>${managed.map((name) => `<span class="admin-tag">↳ ${escapeHtml(name)}</span>`).join('')}</div>`
+        : '<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong><span class="admin-empty">Nenhuma atividade</span></div>';
+      const includedHtml = included.length
+        ? `<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong>${included.map((name) => `<span class="admin-tag">✓ ${escapeHtml(name)}</span>`).join('')}</div>`
+        : '<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong><span class="admin-empty">Nenhum custo</span></div>';
+      return `<div class="admin-plan-summary"><h4>${escapeHtml(label)}</h4>${managedHtml}${includedHtml}</div>`;
+    };
+    if (calc.adminPlanSummaries) {
+      root.innerHTML = renderPlan('Essencial', calc.adminPlanSummaries.essential) + renderPlan('Premium', calc.adminPlanSummaries.premium);
+      return;
+    }
+    const summary = { managedAdminItems: calc.managedAdminItems || [], includedAdminItems: calc.includedAdminItems || [] };
+    if (!summary.managedAdminItems.length && !summary.includedAdminItems.length) {
       root.innerHTML = '<span class="admin-empty">Nenhuma atividade delegada e nenhum custo marcado como incluído.</span>';
       return;
     }
-    const managedHtml = managed.length
-      ? `<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong>${managed.map((name) => `<span class="admin-tag">↳ ${escapeHtml(name)}</span>`).join('')}</div>`
-      : '<div class="admin-tag-group"><strong>Gerencia / reduz seu tempo</strong><span class="admin-empty">Nenhuma atividade</span></div>';
-    const includedHtml = included.length
-      ? `<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong>${included.map((name) => `<span class="admin-tag">✓ ${escapeHtml(name)}</span>`).join('')}</div>`
-      : '<div class="admin-tag-group"><strong>Custos incluídos na comissão</strong><span class="admin-empty">Nenhum custo</span></div>';
-    root.innerHTML = managedHtml + includedHtml;
+    root.innerHTML = renderPlan('Configuração ativa', summary);
   }
 
   function renderDayStatus(totalDays) {
@@ -3219,10 +3309,19 @@
 
   function enabledScenarioIds(inputState = state) {
     const configured = inputState?.guidedSetup?.main;
-    const known = ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'];
+    const comparePlans = adminComparisonEnabled(inputState);
+    const known = comparePlans
+      ? ['airbnb-self','airbnb-admin-essential','airbnb-admin','airbnb-rented','airbnb-rented-admin-essential','airbnb-rented-admin','traditional','investment']
+      : ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'];
     if (!configured?.configured || !Array.isArray(configured.enabledScenarios) || configured.enabledScenarios.length === 0) return known;
-    const selected = configured.enabledScenarios.filter((id) => known.includes(id));
-    return selected.length ? selected : known;
+    const selected = [];
+    for (const id of configured.enabledScenarios) {
+      if (comparePlans && id === 'airbnb-admin') selected.push('airbnb-admin-essential','airbnb-admin');
+      else if (comparePlans && id === 'airbnb-rented-admin') selected.push('airbnb-rented-admin-essential','airbnb-rented-admin');
+      else if (known.includes(id)) selected.push(id);
+    }
+    const unique = [...new Set(selected)];
+    return unique.length ? unique : known;
   }
 
   function scenarioView(calc, inputState = state) {
@@ -3684,41 +3783,66 @@
     return draft;
   }
 
-  function adminWizardDraftFromState() {
-    const saved = state.guidedSetup?.adminProposal || {};
-    const plan = saved.configured ? (saved.plan === 'essential' ? 'essential' : 'premium') : 'premium';
-    const draft = adminWizardPresetDraft(plan, state);
-    if (!saved.configured) return draft;
-
-    draft.commissionPct = n(state.airbnb.adminFeePct, draft.commissionPct);
-    draft.occupancyMode = state.airbnb.adminOccupancyMode === 'target-floor' ? 'target-floor' : 'delta';
-    draft.occupancyTargetPct = n(state.airbnb.adminOccupancyTargetPct, draft.occupancyTargetPct);
-    draft.occupancyRelativePct = n(state.airbnb.adminOccupancyImpactRelativePct, draft.occupancyRelativePct);
-    draft.occupancyImpactPp = n(state.airbnb.adminOccupancyImpactPp, draft.occupancyImpactPp);
-    draft.nightlyRateImpactPct = n(state.airbnb.adminNightlyRateImpactPct, draft.nightlyRateImpactPct);
-    draft.monthlyFee = n(state.airbnb.adminMonthlyFee);
-    draft.onboardingFee = n(state.airbnb.adminOnboardingFee);
-    draft.supervisionHoursMonthly = n(state.work.supervisionAdminHoursMonthly, 1);
-    draft.cleaningFeeRecipient = state.airbnb.adminCleaningFeeRecipient === 'admin' ? 'admin' : 'owner';
-    draft.cleaningInCommissionBase = Boolean(state.airbnb.adminCommissionBaseIncludesCleaning);
-    draft.platformFeeAllocation = state.airbnb.adminPlatformFeeAllocation === 'split-shares' ? 'split-shares' : 'gross-owner';
+  function adminDraftFromActiveState(plan, inputState = state) {
+    const draft = adminWizardPresetDraft(plan, inputState);
+    draft.commissionPct = n(inputState.airbnb.adminFeePct, draft.commissionPct);
+    draft.occupancyMode = inputState.airbnb.adminOccupancyMode === 'target-floor' ? 'target-floor' : 'delta';
+    draft.occupancyTargetPct = n(inputState.airbnb.adminOccupancyTargetPct, draft.occupancyTargetPct);
+    draft.occupancyRelativePct = n(inputState.airbnb.adminOccupancyImpactRelativePct, draft.occupancyRelativePct);
+    draft.occupancyImpactPp = n(inputState.airbnb.adminOccupancyImpactPp, draft.occupancyImpactPp);
+    draft.nightlyRateImpactPct = n(inputState.airbnb.adminNightlyRateImpactPct, draft.nightlyRateImpactPct);
+    draft.monthlyFee = n(inputState.airbnb.adminMonthlyFee);
+    draft.onboardingFee = n(inputState.airbnb.adminOnboardingFee);
+    draft.supervisionHoursMonthly = n(inputState.work.supervisionAdminHoursMonthly, 1);
+    draft.cleaningFeeRecipient = inputState.airbnb.adminCleaningFeeRecipient === 'admin' ? 'admin' : 'owner';
+    draft.cleaningInCommissionBase = Boolean(inputState.airbnb.adminCommissionBaseIncludesCleaning);
+    draft.platformFeeAllocation = inputState.airbnb.adminPlatformFeeAllocation === 'split-shares' ? 'split-shares' : 'gross-owner';
     for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
-      const item = state.stayCosts.find((x) => x.id === id);
+      const item = inputState.stayCosts.find((x) => x.id === id);
       draft[`manage_${id}`] = Boolean(item?.adminManages);
       draft[`include_${id}`] = Boolean(item?.adminIncluded);
     }
     for (const id of ['marketing','presales','guest-support','local-support','software','pricing']) {
-      const item = state.monthlyCosts.find((x) => x.id === id);
+      const item = inputState.monthlyCosts.find((x) => x.id === id);
       draft[`manage_${id}`] = Boolean(item?.adminManages);
       draft[`include_${id}`] = Boolean(item?.adminIncluded);
     }
-    const maintenance = state.percentageCosts.find((x) => x.id === 'maintenance');
+    const maintenance = inputState.percentageCosts.find((x) => x.id === 'maintenance');
     draft.maintenanceManaged = Boolean(maintenance?.adminManages);
     draft.maintenanceIncluded = Boolean(maintenance?.adminIncluded);
-    const linen = state.setupCosts.find((x) => x.id === 'enxoval');
+    const linen = inputState.setupCosts.find((x) => x.id === 'enxoval');
     draft.linenAdminPays = Boolean(linen?.adminPays);
     draft.linenBelongsToOwner = linen?.adminAssetBelongsToOwner !== false;
     return draft;
+  }
+
+  function adminWizardDraftForPlan(plan = 'premium', inputState = state) {
+    const normalizedPlan = plan === 'essential' ? 'essential' : 'premium';
+    const active = inputState.guidedSetup?.adminProposal || {};
+    if (active.configured && active.plan === normalizedPlan) {
+      return adminDraftFromActiveState(normalizedPlan, inputState);
+    }
+    const stored = inputState.guidedSetup?.adminProfiles?.[normalizedPlan];
+    if (stored?.configured) {
+      return { ...adminWizardPresetDraft(normalizedPlan, inputState), ...structuredCloneSafe(stored), plan: normalizedPlan };
+    }
+    return adminWizardPresetDraft(normalizedPlan, inputState);
+  }
+
+  function adminWizardDraftFromState() {
+    const saved = state.guidedSetup?.adminProposal || {};
+    const plan = saved.configured ? (saved.plan === 'essential' ? 'essential' : 'premium') : 'premium';
+    return adminWizardDraftForPlan(plan, state);
+  }
+
+  function captureActiveAdminProfile(inputState = state) {
+    const active = inputState.guidedSetup?.adminProposal || {};
+    if (!active.configured) return structuredCloneSafe(inputState);
+    const plan = active.plan === 'essential' ? 'essential' : 'premium';
+    const next = structuredCloneSafe(inputState);
+    if (!next.guidedSetup.adminProfiles) next.guidedSetup.adminProfiles = {};
+    next.guidedSetup.adminProfiles[plan] = { configured: true, ...adminDraftFromActiveState(plan, inputState) };
+    return next;
   }
 
   function adminWizardFormHtml(draft) {
@@ -3813,7 +3937,7 @@
   function bindAdminWizardPresetChange() {
     const select = $('#wizardBody [data-wizard-field="plan"]');
     select?.addEventListener('change', () => {
-      $('#wizardBody').innerHTML = adminWizardFormHtml(adminWizardPresetDraft(select.value, state));
+      $('#wizardBody').innerHTML = adminWizardFormHtml(adminWizardDraftForPlan(select.value, state));
       bindAdminWizardPresetChange();
     });
   }
@@ -4058,7 +4182,7 @@
     activeWizardPatch = null;
     const draft = adminWizardDraftFromState();
     $('#wizardTitle').textContent = 'Proposta da administradora';
-    $('#wizardDescription').textContent = 'Traduza os planos Essencial/Premium em comissão, performance, gestão, custos incluídos e CAPEX — com premissas provisórias auditáveis.';
+    $('#wizardDescription').textContent = 'Edite Essencial e Premium separadamente; os dois permanecem salvos e aparecem lado a lado na comparação.';
     $('#wizardBody').innerHTML = adminWizardFormHtml(draft);
     bindAdminWizardPresetChange();
     $('#wizardPreview').innerHTML = '';
@@ -4240,7 +4364,8 @@
 
   function applyActiveWizard() {
     if (!activeWizardPatch?.valid) return;
-    state = applyWizardPatch(state, activeWizardPatch);
+    const baseState = activeWizard === 'admin' ? captureActiveAdminProfile(state) : state;
+    state = applyWizardPatch(baseState, activeWizardPatch);
     autosave();
     renderAll();
     $('#wizardDialog').close();
@@ -4291,7 +4416,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
+    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, adminWizardPresetDraft, adminWizardDraftForPlan, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView, adminComparisonEnabled
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
