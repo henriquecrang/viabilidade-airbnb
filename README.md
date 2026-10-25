@@ -1,6 +1,6 @@
 # Simulador patrimonial — Airbnb × aluguel × investimento
 
-Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar seis estratégias:
+Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar seis categorias-base de estratégia:
 
 1. Airbnb em imóvel próprio, autogerido
 2. Airbnb em imóvel próprio, com administradora
@@ -8,6 +8,8 @@ Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comp
 4. Airbnb em imóvel alugado, com administradora
 5. Aluguel tradicional
 6. Investimento financeiro
+
+Na comparação final, os modos “com administradora” são desdobrados em **Essencial** e **Premium**, resultando em até oito cenários simultâneos.
 
 Pode ser aberta localmente ou publicada no GitHub Pages. As simulações podem ser exportadas/importadas em JSON.
 
@@ -284,9 +286,24 @@ O simulador mantém internamente a autogestão como base canônica e deriva a ou
 
 Trocar a base de preenchimento não altera os resultados econômicos: muda apenas a forma de exibir e editar os mesmos valores. A tabela mostra simultaneamente a ocupação informada e a derivada. Ajustes específicos dos perfis Essencial/Premium continuam disponíveis como ajustes adicionais ao delta global e começam em zero.
 
+## V32 — resumo final filtrável em 3 anos
+
+A Issue #49 reorganiza a seção final para funcionar como a principal tela de decisão:
+
+- **3 anos** passam a ser o horizonte padrão;
+- os cards finais usam a projeção plurianual, e não apenas o resultado do primeiro ano;
+- o indicador principal mostra **total do horizonte**, **média anual** (total ÷ anos) e **média mensal equivalente** (total ÷ meses);
+- Essencial e Premium são sempre disponibilizados separadamente na comparação final, mesmo antes de abrir o wizard da administradora;
+- os oito cenários podem ser exibidos ou ocultados individualmente por um seletor acima dos cards;
+- esse filtro altera apenas a apresentação final, não as premissas econômicas;
+- a tabela 1/3/5 anos respeita o mesmo conjunto de cenários selecionados;
+- o topo da aplicação ganhou **Restaurar defaults**, que recompõe toda a simulação a partir da configuração padrão atual após confirmação.
+
+A comparação final força internamente a expansão Essencial/Premium, mas o motor detalhado anterior continua preservando sua arquitetura e seus filtros próprios.
+
 ## Limitações atuais
 
-- O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 5); valores mensais são apenas médias mensais equivalentes.
+- O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
 - Não existe calendário mensal, sazonalidade por mês nem timing intranual de aportes; essa evolução está na Issue #41.
 - A estratégia de saída/liquidação ao fim do horizonte ainda não é calculada; por default, assume-se continuidade/renovação (#40).
 - Os wizards de situação inicial, benchmark financeiro, aquisição/venda, administradora, operação e uso híbrido já estão disponíveis. O ganho esperado de ocupação com administradora é global e editável (default +20 p.p.); ajustes específicos de Essencial/Premium são adicionais e começam neutros.
@@ -463,7 +480,7 @@ A metodologia está em `docs/market-methodology.md`.
 
 A primeira camada plurianual da Issue #35 adiciona:
 
-- horizonte principal selecionável em 1, 3 ou 5 anos (default: 5);
+- horizonte principal selecionável em 1, 3 ou 5 anos (default: 3);
 - comparação 1 × 3 × 5 sempre visível no resumo;
 - CAPEX inicial aplicado apenas no início;
 - custo de venda do imóvel aplicado apenas na conversão para investimento;
