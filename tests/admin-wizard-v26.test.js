@@ -83,7 +83,7 @@ approx(c.adminCleaningPassThrough,0,.01,'limpeza não é repasse integral no Ess
 approx(c.adminPlatformFee,1152,.01,'Airbnb é descontado do total antes da divisão');
 approx(c.adminPlatformFeeAttributedToAdmin,172.8,.01,'parcela do Airbnb atribuída à admin');
 approx(c.adminOwnerRevenueAfterPlatformAndSplit,5140.8,.01,'parcela líquida do proprietário');
-approx(c.scenarios.find(x=>x.id==='airbnb-admin').operatingCash,5140.8,.01,'caixa Essencial');
+approx(c.scenarios.find(x=>x.id==='airbnb-admin-essential').operatingCash,5140.8,.01,'caixa Essencial');
 
 s=controlled();
 patch=buildAdminWizardPatch({
@@ -122,4 +122,4 @@ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 assert(html.includes('id="openAdminWizard"'),'launcher da administradora ausente');
 assert(html.includes('Administradora'),'texto do launcher ausente');
 
-console.log('V26 wizard administradora: compatibilidade de configuração preservada na V28.');
+console.log('V26 wizard administradora: compatibilidade de configuração preservada na V29.');
