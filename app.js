@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 42;
+  const APP_VERSION = 43;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -47,6 +47,12 @@
         availableCapital: 0,
         purchasePrice: 636000,
         purchaseCosts: 0,
+        additionalEquity: 0,
+        financingPrincipal: 0,
+        financingAnnualRatePct: 0,
+        financingTermYears: 20,
+        financingOriginationCosts: 0,
+        fundingMode: 'cash',
         workingCapitalTarget: 'airbnbSelf',
         workingCapitalAmount: 0,
         purchaseEconomicsComplete: true,
@@ -4150,6 +4156,11 @@
       currentMarketValue: n(state.globals.propertyValue),
       purchasePrice: useSaved ? n(saved.purchasePrice, state.globals.propertyValue) : n(state.globals.propertyValue),
       purchaseCosts: useSaved ? n(saved.purchaseCosts) : 0,
+      additionalEquity: useSaved ? n(saved.additionalEquity) : 0,
+      financingPrincipal: useSaved ? n(saved.financingPrincipal) : 0,
+      financingAnnualRatePct: useSaved ? n(saved.financingAnnualRatePct) : 0,
+      financingTermYears: useSaved ? Math.max(1,n(saved.financingTermYears,20)) : 20,
+      financingOriginationCosts: useSaved ? n(saved.financingOriginationCosts) : 0,
       workingCapitalTarget: useSaved ? (saved.workingCapitalTarget || 'airbnbSelf') : 'airbnbSelf',
       workingCapitalAmount: useSaved ? n(saved.workingCapitalAmount) : n(state.workingCapital.airbnbSelf),
       salePriceAdjustmentPct: n(state.propertySale.salePriceAdjustmentPct),
@@ -4191,6 +4202,17 @@
           ${moneyInput('currentMarketValue','Valor de mercado atual do imóvel',draft.currentMarketValue)}
           ${moneyInput('purchasePrice','Preço de compra',draft.purchasePrice,'Usado como valor do imóvel quando a situação escolhida é “tenho capital”.')}
           ${moneyInput('purchaseCosts','Custos de aquisição (ITBI, escritura, registro etc.)',draft.purchaseCosts,'Entram uma única vez no início e são consumidos economicamente; não viram patrimônio.')}
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Capital próprio e financiamento</h3>
+        <p class="helper">Nada é criado implicitamente. Se houver financiamento ou aporte adicional, informe-os explicitamente; zeros preservam a compra à vista.</p>
+        <div class="wizard-form-grid">
+          ${moneyInput('additionalEquity','Aporte adicional de capital próprio',draft.additionalEquity,'Capital próprio além do valor inicialmente disponível. O benchmark recebe o mesmo aporte no tempo zero.')}
+          ${moneyInput('financingPrincipal','Principal financiado',draft.financingPrincipal,'Dívida usada para completar a aquisição; não entra como riqueza no benchmark.')}
+          <label class="field-group"><span class="field-label">Taxa efetiva do financiamento</span><div class="input-suffix compact-control"><input data-wizard-field="financingAnnualRatePct" type="number" min="0" step="0.1" value="${escapeAttr(draft.financingAnnualRatePct)}" /><span>% a.a.</span></div></label>
+          <label class="field-group"><span class="field-label">Prazo do financiamento</span><div class="input-suffix compact-control"><input data-wizard-field="financingTermYears" type="number" min="1" step="1" value="${escapeAttr(draft.financingTermYears)}" /><span>anos</span></div><small class="field-help">Motor anual: usa parcela anual fixa equivalente e acompanha juros, amortização e saldo.</small></label>
+          ${moneyInput('financingOriginationCosts','Custos de contratação do crédito',draft.financingOriginationCosts,'Entram uma vez na necessidade inicial e são consumidos economicamente.')}
         </div>
       </div>
       <div class="wizard-section">
