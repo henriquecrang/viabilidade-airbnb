@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 25;
+  const APP_VERSION = 26;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -46,6 +46,12 @@
       },
       airbnbOps: {
         configured: false
+      },
+      adminProposal: {
+        configured: false,
+        plan: 'premium',
+        provisionalAssumptions: true,
+        reviewIssue: 44
       },
       hybrid: {
         configured: false,
@@ -268,6 +274,10 @@
       adminOnboardingFee: 0,
       adminNightlyRateImpactPct: 0,
       adminOccupancyImpactPp: 0,
+      adminOccupancyImpactRelativePct: 0,
+      adminCommissionBaseIncludesCleaning: true,
+      adminCleaningFeeRecipient: 'owner',
+      adminPlatformFeeAllocation: 'gross-owner',
       adminIncludesPlatformFee: false,
       platformFeeDeductibleIR: true,
       adminFeeDeductibleIR: true,
@@ -658,6 +668,102 @@
   }
 
 
+  function buildAdminWizardPatch(draft = {}, inputState = defaultState) {
+    const plan = draft.plan === 'essential' ? 'essential' : 'premium';
+    const commissionPct = clamp(n(draft.commissionPct, plan === 'premium' ? 25 : 15), 0, 100);
+    const occupancyRelativePct = n(draft.occupancyRelativePct, 20);
+    const nightlyRateImpactPct = n(draft.nightlyRateImpactPct, 0);
+    const monthlyFee = Math.max(0, n(draft.monthlyFee));
+    const onboardingFee = Math.max(0, n(draft.onboardingFee));
+    const supervisionHoursMonthly = Math.max(0, n(draft.supervisionHoursMonthly, 1));
+    const cleaningFeeRecipient = draft.cleaningFeeRecipient === 'admin' ? 'admin' : 'owner';
+    const cleaningInCommissionBase = Boolean(draft.cleaningInCommissionBase);
+    const platformFeeAllocation = draft.platformFeeAllocation === 'split-shares' ? 'split-shares' : 'gross-owner';
+
+    const stayIds = ['limpeza','lavanderia','amenidades','checkin'];
+    const monthlyIds = ['marketing','presales','guest-support','local-support','software','pricing'];
+    const stayUpdates = {};
+    const monthlyUpdates = {};
+    for (const id of stayIds) {
+      stayUpdates[id] = {
+        adminManages: Boolean(draft[`manage_${id}`]),
+        adminIncluded: Boolean(draft[`include_${id}`])
+      };
+    }
+    for (const id of monthlyIds) {
+      monthlyUpdates[id] = {
+        adminManages: Boolean(draft[`manage_${id}`]),
+        adminIncluded: Boolean(draft[`include_${id}`])
+      };
+    }
+
+    const maintenanceManaged = Boolean(draft.maintenanceManaged);
+    const maintenanceIncluded = Boolean(draft.maintenanceIncluded);
+    const linenAdminPays = Boolean(draft.linenAdminPays);
+    const linenBelongsToOwner = Boolean(draft.linenBelongsToOwner);
+
+    const normalized = {
+      plan,
+      commissionPct,
+      occupancyRelativePct,
+      nightlyRateImpactPct,
+      monthlyFee,
+      onboardingFee,
+      supervisionHoursMonthly,
+      cleaningFeeRecipient,
+      cleaningInCommissionBase,
+      platformFeeAllocation,
+      maintenanceManaged,
+      maintenanceIncluded,
+      linenAdminPays,
+      linenBelongsToOwner,
+      provisionalAssumptions: true,
+      reviewIssue: 44
+    };
+
+    return {
+      valid: true,
+      errors: [],
+      values: {
+        'airbnb.adminFeePct': commissionPct,
+        'airbnb.adminMonthlyFee': monthlyFee,
+        'airbnb.adminOnboardingFee': onboardingFee,
+        'airbnb.adminNightlyRateImpactPct': nightlyRateImpactPct,
+        'airbnb.adminOccupancyImpactPp': 0,
+        'airbnb.adminOccupancyImpactRelativePct': occupancyRelativePct,
+        'airbnb.adminCommissionBaseIncludesCleaning': cleaningInCommissionBase,
+        'airbnb.adminCleaningFeeRecipient': cleaningFeeRecipient,
+        'airbnb.adminPlatformFeeAllocation': platformFeeAllocation,
+        'airbnb.adminIncludesPlatformFee': false,
+        'airbnb.adminFeeDeductibleIR': true,
+        'work.supervisionAdminHoursMonthly': supervisionHoursMonthly,
+        'guidedSetup.adminProposal': {
+          configured: true,
+          ...normalized,
+          source: 'premissas-provisorias-aprovadas-2026-10-24'
+        }
+      },
+      arrayValues: {
+        stayCosts: stayUpdates,
+        monthlyCosts: monthlyUpdates,
+        percentageCosts: {
+          maintenance: { adminManages: maintenanceManaged, adminIncluded: maintenanceIncluded }
+        },
+        setupCosts: {
+          enxoval: { adminPays: linenAdminPays, adminAssetBelongsToOwner: linenBelongsToOwner }
+        }
+      },
+      normalized: {
+        ...normalized,
+        managedStayCount: stayIds.filter((id) => Boolean(draft[`manage_${id}`])).length,
+        includedStayCount: stayIds.filter((id) => Boolean(draft[`include_${id}`])).length,
+        managedMonthlyCount: monthlyIds.filter((id) => Boolean(draft[`manage_${id}`])).length,
+        includedMonthlyCount: monthlyIds.filter((id) => Boolean(draft[`include_${id}`])).length
+      }
+    };
+  }
+
+
   function buildAirbnbOpsWizardPatch(draft = {}) {
     const normalized = {
       avgStayNights: Math.max(0.1, n(draft.avgStayNights, 1)),
@@ -857,6 +963,7 @@
       return {
         ...item,
         rentedAirbnb: item.rentedAirbnb == null ? Boolean(def?.rentedAirbnb ?? true) : Boolean(item.rentedAirbnb),
+        adminManages: Boolean(item.adminManages),
         adminIncluded: Boolean(item.adminIncluded),
         deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
       };
@@ -1719,13 +1826,15 @@
       return { ...season, ...availability, occupancy, nightlyRate, occupiedNights, revenue };
     });
 
-    // Rodada B: o cenário administrado pode ter performance comercial distinta.
-    // A diária usa impacto relativo; a ocupação usa pontos percentuais.
+    // Rodada B / V26: o cenário administrado pode ter performance comercial distinta.
+    // A diária usa impacto relativo. A ocupação aceita uplift relativo e, para compatibilidade, pontos percentuais.
     const adminNightlyRateImpact = n(currentState.airbnb.adminNightlyRateImpactPct) / 100;
     const adminOccupancyImpactPp = n(currentState.airbnb.adminOccupancyImpactPp);
+    const adminOccupancyImpactRelative = n(currentState.airbnb.adminOccupancyImpactRelativePct) / 100;
     const adminSeasonDetails = currentState.seasons.map((season) => {
       const availability = classifySeasonAvailability(season);
-      const occupancy = clamp(n(season.occupancyPct) + adminOccupancyImpactPp, 0, 100) / 100;
+      const occupancyPct = n(season.occupancyPct) * Math.max(0, 1 + adminOccupancyImpactRelative) + adminOccupancyImpactPp;
+      const occupancy = clamp(occupancyPct, 0, 100) / 100;
       const nightlyRate = Math.max(0, n(season.nightlyRate)) * Math.max(0, 1 + adminNightlyRateImpact);
       const occupiedNights = availability.availableDays * occupancy;
       const revenue = occupiedNights * nightlyRate;
@@ -1759,7 +1868,9 @@
     const adminAverageNightlyRate = adminOccupiedNights > 0 ? adminAccommodationRevenue / adminOccupiedNights : 0;
     const adminAdr = adminAverageNightlyRate;
     const adminReservations = adminOccupiedNights / avgStay;
-    const adminGuestFeeRevenue = adminReservations * (Math.max(0, n(currentState.airbnb.cleaningFeeRevenue)) + Math.max(0, n(currentState.airbnb.otherGuestFeeRevenue)));
+    const adminCleaningFeeRevenue = adminReservations * Math.max(0, n(currentState.airbnb.cleaningFeeRevenue));
+    const adminOtherGuestFeeRevenue = adminReservations * Math.max(0, n(currentState.airbnb.otherGuestFeeRevenue));
+    const adminGuestFeeRevenue = adminCleaningFeeRevenue + adminOtherGuestFeeRevenue;
     const adminAirbnbRevenue = adminAccommodationRevenue + adminGuestFeeRevenue;
     const adminTotalAdr = adminOccupiedNights > 0 ? adminAirbnbRevenue / adminOccupiedNights : 0;
     const adminRevPar = availableDays > 0 ? adminAccommodationRevenue / availableDays : 0;
@@ -1884,14 +1995,27 @@
     const hybridLinkedPatrimony = hybridReserveContribution + hybridIncrementalCapexResidual;
     const hybridEconomicIncrement = hybridFreeCash + hybridConsumptionBenefit - hybridIncrementalCapexDepreciation;
 
-    const adminFee = adminAirbnbRevenue * Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
+    const adminCommissionBase = adminAccommodationRevenue
+      + adminOtherGuestFeeRevenue
+      + (currentState.airbnb.adminCommissionBaseIncludesCleaning ? adminCleaningFeeRevenue : 0);
+    const adminFee = adminCommissionBase * Math.max(0, n(currentState.airbnb.adminFeePct)) / 100;
+    const adminCleaningPassThrough = currentState.airbnb.adminCleaningFeeRecipient === 'admin'
+      ? adminCleaningFeeRevenue
+      : 0;
+    const adminGrossShare = adminFee + adminCleaningPassThrough;
+    const adminOwnerRevenueBeforePlatform = Math.max(0, adminAirbnbRevenue - adminGrossShare);
     const adminMonthlyFee = Math.max(0, n(currentState.airbnb.adminMonthlyFee)) * 12;
-    const adminPlatformFee = currentState.airbnb.adminIncludesPlatformFee ? 0 : adminPlatformFeeGross;
-    const adminOperatingCosts = adminFee + adminMonthlyFee + adminPlatformFee + adminStayCosts + adminFixedAirbnb + adminPctCosts;
+    const adminPlatformFee = currentState.airbnb.adminIncludesPlatformFee
+      ? 0
+      : (currentState.airbnb.adminPlatformFeeAllocation === 'split-shares'
+        ? adminOwnerRevenueBeforePlatform * Math.max(0, n(currentState.airbnb.platformFeePct)) / 100
+        : adminPlatformFeeGross);
+    const adminOperatingCosts = adminFee + adminCleaningPassThrough + adminMonthlyFee + adminPlatformFee + adminStayCosts + adminFixedAirbnb + adminPctCosts;
     const adminPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? adminPlatformFee : 0;
     const adminManagementTaxDeductions = (currentState.airbnb.adminFeeDeductibleIR ? adminFee : 0)
       + (currentState.airbnb.adminMonthlyFeeDeductibleIR ? adminMonthlyFee : 0);
-    const adminTaxDeductions = adminPlatformTaxDeduction + adminManagementTaxDeductions + adminStayTaxDeductions + adminMonthlyTaxDeductions + adminPctTaxDeductions;
+    const adminTaxDeductions = adminPlatformTaxDeduction + adminManagementTaxDeductions + adminCleaningPassThrough
+      + adminStayTaxDeductions + adminMonthlyTaxDeductions + adminPctTaxDeductions;
     const adminTaxBase = Math.max(0, adminAirbnbRevenue - adminTaxDeductions);
     const adminTax = adminTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
     const adminOperatingCash = adminAirbnbRevenue - adminOperatingCosts - adminTax;
@@ -2218,9 +2342,14 @@
       workingCapitalAmount: workingCapital.admin, capex: adminSetup, setupResidual: adminSetupResidual, setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
       details: {
         'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
-        'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
-        'Comissão da administradora': adminFee, 'Mensalidade da administradora': adminMonthlyFee,
-        'Taxa da plataforma não incluída': adminPlatformFee, 'Custos por reservas não incluídos': adminStayCosts,
+        'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação relativo': adminOccupancyImpactRelative,
+        'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
+        'Base da comissão da administradora': adminCommissionBase,
+        'Comissão da administradora': adminFee,
+        'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
+        'Receita bruta restante do proprietário antes da plataforma': adminOwnerRevenueBeforePlatform,
+        'Mensalidade da administradora': adminMonthlyFee,
+        'Taxa da plataforma atribuída ao proprietário': adminPlatformFee, 'Custos por reservas não incluídos': adminStayCosts,
         'Custos mensais não incluídos': adminFixedAirbnb, 'OPEX % não incluído': adminPctCosts,
         'Deduções consideradas na base de IR': adminTaxDeductions, 'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax,
         'Caixa antes das reservas': adminOperatingCash, 'Aporte às reservas vinculadas': adminReserveContribution,
@@ -2336,6 +2465,7 @@
     if (currentState.airbnb.adminIncludesPlatformFee) includedAdminItems.push('Taxa da plataforma');
     currentState.stayCosts.filter((x) => x.adminManages).forEach((x) => managedAdminItems.push(x.name));
     currentState.monthlyCosts.filter((x) => x.airbnb && x.adminManages).forEach((x) => managedAdminItems.push(x.name));
+    currentState.percentageCosts.filter((x) => x.adminManages).forEach((x) => managedAdminItems.push(x.name));
     currentState.stayCosts.filter((x) => x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
     currentState.monthlyCosts.filter((x) => x.airbnb && x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
     currentState.percentageCosts.filter((x) => x.adminIncluded).forEach((x) => includedAdminItems.push(x.name));
@@ -2348,7 +2478,8 @@
       averageNightlyRate, adr, totalAdr, revPar, totalRevPar,
       accommodationRevenue, guestFeeRevenue, airbnbRevenue, reservations, stayCostPerReservation,
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
-      adminReservations, adminGuestFeeRevenue, adminAirbnbRevenue,
+      adminReservations, adminCleaningFeeRevenue, adminOtherGuestFeeRevenue, adminGuestFeeRevenue, adminAirbnbRevenue,
+      adminCommissionBase, adminFee, adminCleaningPassThrough, adminOwnerRevenueBeforePlatform, adminPlatformFee,
       fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, fixedTraditional, pctCostRate, adminPctCostRate,
       reserveRate, adminReserveRate, reserveOpening, adminReserveOpening, selfReserveContribution, adminReserveContribution,
       selfLinkedReserveEnd, adminLinkedReserveEnd, selfSetup, adminSetup, rentedSetup, rentedSetupAssets, traditionalSetup,
@@ -2985,7 +3116,7 @@
     $('#breakdownGrid').innerHTML = calc.scenarios.map((scenario) => {
       const lines = Object.entries(scenario.details).map(([key, value]) => {
         const lowerKey = key.toLowerCase();
-        const isRate = lowerKey.includes('taxa bruta nominal') || lowerKey.includes('impacto admin. na diária');
+        const isRate = lowerKey.includes('taxa bruta nominal') || lowerKey.includes('impacto admin. na diária') || lowerKey.includes('ocupação relativo');
         const isPercentagePoint = lowerKey.includes('impacto admin. na ocupação');
         const formatted = isPercentagePoint ? `${number1.format(value)} p.p.` : (isRate ? percent.format(value) : money.format(value));
         return `<div><dt>${escapeHtml(key)}</dt><dd>${formatted}</dd></div>`;
@@ -3027,6 +3158,10 @@
 
     const adminScenario = calc.scenarios.find((scenario) => scenario.id === 'airbnb-admin');
     if (adminScenario) {
+      if (state.guidedSetup?.adminProposal?.configured && state.guidedSetup.adminProposal.provisionalAssumptions) {
+        const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
+        messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa premissas provisórias aprovadas em 24/10/2026. Revisar quando chegar a resposta formal da administradora (Issue #44).` });
+      }
       messages.push({ text: `No Airbnb administrado, o modelo estima ${number1.format(calc.workHours.admin)} horas suas por ano: tarefas não delegadas + supervisão residual da administradora.` });
       if (n(state.airbnb.adminNightlyRateImpactPct) !== 0 || n(state.airbnb.adminOccupancyImpactPp) !== 0) {
         messages.push({ text: `A administradora está configurada com impacto de ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}% na diária e ${number1.format(n(state.airbnb.adminOccupancyImpactPp))} p.p. na ocupação. Isso altera receita, reservas e custos variáveis do cenário administrado.` });
@@ -3334,6 +3469,157 @@
   }
 
 
+  function adminWizardPresetDraft(plan = 'premium', inputState = state) {
+    const premium = plan !== 'essential';
+    const draft = {
+      plan: premium ? 'premium' : 'essential',
+      commissionPct: premium ? 25 : 15,
+      occupancyRelativePct: 20,
+      nightlyRateImpactPct: 0,
+      monthlyFee: 0,
+      onboardingFee: 0,
+      supervisionHoursMonthly: 1,
+      cleaningFeeRecipient: premium ? 'admin' : 'owner',
+      cleaningInCommissionBase: !premium,
+      platformFeeAllocation: 'split-shares',
+      maintenanceManaged: premium,
+      maintenanceIncluded: false,
+      linenAdminPays: premium,
+      linenBelongsToOwner: !premium
+    };
+    for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
+      draft[`manage_${id}`] = true;
+      draft[`include_${id}`] = premium && id === 'limpeza';
+    }
+    for (const id of ['marketing','presales','guest-support','local-support','software','pricing']) {
+      draft[`manage_${id}`] = true;
+      draft[`include_${id}`] = false;
+    }
+    return draft;
+  }
+
+  function adminWizardDraftFromState() {
+    const saved = state.guidedSetup?.adminProposal || {};
+    const plan = saved.configured ? (saved.plan === 'essential' ? 'essential' : 'premium') : 'premium';
+    const draft = adminWizardPresetDraft(plan, state);
+    draft.commissionPct = n(state.airbnb.adminFeePct, draft.commissionPct);
+    draft.occupancyRelativePct = n(state.airbnb.adminOccupancyImpactRelativePct, draft.occupancyRelativePct);
+    draft.nightlyRateImpactPct = n(state.airbnb.adminNightlyRateImpactPct, draft.nightlyRateImpactPct);
+    draft.monthlyFee = n(state.airbnb.adminMonthlyFee);
+    draft.onboardingFee = n(state.airbnb.adminOnboardingFee);
+    draft.supervisionHoursMonthly = n(state.work.supervisionAdminHoursMonthly, 1);
+    draft.cleaningFeeRecipient = state.airbnb.adminCleaningFeeRecipient === 'admin' ? 'admin' : 'owner';
+    draft.cleaningInCommissionBase = Boolean(state.airbnb.adminCommissionBaseIncludesCleaning);
+    draft.platformFeeAllocation = state.airbnb.adminPlatformFeeAllocation === 'split-shares' ? 'split-shares' : 'gross-owner';
+    for (const id of ['limpeza','lavanderia','amenidades','checkin']) {
+      const item = state.stayCosts.find((x) => x.id === id);
+      draft[`manage_${id}`] = Boolean(item?.adminManages);
+      draft[`include_${id}`] = Boolean(item?.adminIncluded);
+    }
+    for (const id of ['marketing','presales','guest-support','local-support','software','pricing']) {
+      const item = state.monthlyCosts.find((x) => x.id === id);
+      draft[`manage_${id}`] = Boolean(item?.adminManages);
+      draft[`include_${id}`] = Boolean(item?.adminIncluded);
+    }
+    const maintenance = state.percentageCosts.find((x) => x.id === 'maintenance');
+    draft.maintenanceManaged = Boolean(maintenance?.adminManages);
+    draft.maintenanceIncluded = Boolean(maintenance?.adminIncluded);
+    const linen = state.setupCosts.find((x) => x.id === 'enxoval');
+    draft.linenAdminPays = Boolean(linen?.adminPays);
+    draft.linenBelongsToOwner = linen?.adminAssetBelongsToOwner !== false;
+    return draft;
+  }
+
+  function adminWizardFormHtml(draft) {
+    const pctInput = (field,label,value) => `
+      <label class="field-group"><span class="field-label">${escapeHtml(label)}</span>
+        <div class="input-suffix compact-control"><input data-wizard-field="${escapeAttr(field)}" type="number" step="0.5" value="${escapeAttr(value)}" /><span>%</span></div>
+      </label>`;
+    const moneyInput = (field,label,value) => `
+      <label class="field-group"><span class="field-label">${escapeHtml(label)}</span>
+        <div class="input-prefix money-control"><span>R$</span><input data-wizard-field="${escapeAttr(field)}" type="number" min="0" step="10" value="${escapeAttr(value)}" /></div>
+      </label>`;
+    const taskRow = (id,label) => `
+      <tr><td><strong>${escapeHtml(label)}</strong></td>
+        <td><input data-wizard-field="manage_${escapeAttr(id)}" type="checkbox" ${draft[`manage_${id}`]?'checked':''} /></td>
+        <td><input data-wizard-field="include_${escapeAttr(id)}" type="checkbox" ${draft[`include_${id}`]?'checked':''} /></td></tr>`;
+    return `
+      <div class="wizard-section">
+        <h3>Preset provisório</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Plano</span>
+            <select data-wizard-field="plan">
+              <option value="essential" ${draft.plan==='essential'?'selected':''}>Essencial — 15%</option>
+              <option value="premium" ${draft.plan==='premium'?'selected':''}>Premium — 25%</option>
+            </select>
+          </label>
+          ${pctInput('commissionPct','Comissão',draft.commissionPct)}
+          ${pctInput('occupancyRelativePct','Aumento relativo de ocupação',draft.occupancyRelativePct)}
+          ${pctInput('nightlyRateImpactPct','Impacto na diária/ADR',draft.nightlyRateImpactPct)}
+          ${moneyInput('monthlyFee','Mensalidade adicional',draft.monthlyFee)}
+          ${moneyInput('onboardingFee','Onboarding / setup',draft.onboardingFee)}
+          <label class="field-group"><span class="field-label">Supervisão residual do proprietário</span><div class="input-suffix compact-control"><input data-wizard-field="supervisionHoursMonthly" type="number" min="0" step="0.5" value="${escapeAttr(draft.supervisionHoursMonthly)}" /><span>h/mês</span></div></label>
+        </div>
+        <p class="helper">O +20% de ocupação é provisoriamente interpretado como aumento relativo, não como +20 pontos percentuais. A diária permanece sem uplift por falta de evidência.</p>
+      </div>
+      <div class="wizard-section">
+        <h3>Comissão, Airbnb e limpeza</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group"><span class="field-label">Taxa de limpeza vai para</span>
+            <select data-wizard-field="cleaningFeeRecipient">
+              <option value="owner" ${draft.cleaningFeeRecipient==='owner'?'selected':''}>Proprietário / entra na divisão</option>
+              <option value="admin" ${draft.cleaningFeeRecipient==='admin'?'selected':''}>Administradora integralmente</option>
+            </select>
+          </label>
+          <label class="field-group"><span class="field-label">Taxa do Airbnb</span>
+            <select data-wizard-field="platformFeeAllocation">
+              <option value="split-shares" ${draft.platformFeeAllocation==='split-shares'?'selected':''}>Cada parte paga sobre sua parcela</option>
+              <option value="gross-owner" ${draft.platformFeeAllocation==='gross-owner'?'selected':''}>Proprietário suporta sobre o bruto</option>
+            </select>
+          </label>
+          <label class="field-group checkbox-field"><input data-wizard-field="cleaningInCommissionBase" type="checkbox" ${draft.cleaningInCommissionBase?'checked':''} /><span><strong>Limpeza entra na base da comissão</strong><small>Essencial: sim. Premium provisório: não.</small></span></label>
+        </div>
+      </div>
+      <div class="wizard-section">
+        <h3>Atividades e custos</h3>
+        <p class="helper">“Gerencia” reduz suas horas. “Custo incluído” remove o desembolso separado do cenário administrado. Não marque incluído quando a administradora apenas coordena um terceiro pago pelo proprietário.</p>
+        <div class="table-card"><div class="table-scroll"><table class="wizard-season-table">
+          <thead><tr><th>Atividade</th><th>Admin gerencia</th><th>Custo incluído</th></tr></thead>
+          <tbody>
+            ${taskRow('limpeza','Limpeza')}
+            ${taskRow('lavanderia','Lavanderia')}
+            ${taskRow('amenidades','Amenidades / consumíveis')}
+            ${taskRow('checkin','Check-in / check-out')}
+            ${taskRow('marketing','Marketing / comercial')}
+            ${taskRow('presales','Reservas / pré-venda')}
+            ${taskRow('guest-support','Atendimento ao hóspede')}
+            ${taskRow('local-support','Suporte operacional local')}
+            ${taskRow('software','PMS / software')}
+            ${taskRow('pricing','Pricing dinâmico')}
+          </tbody>
+        </table></div></div>
+      </div>
+      <div class="wizard-section">
+        <h3>Enxoval e manutenção</h3>
+        <div class="wizard-form-grid">
+          <label class="field-group checkbox-field"><input data-wizard-field="linenAdminPays" type="checkbox" ${draft.linenAdminPays?'checked':''} /><span><strong>Administradora paga o enxoval inicial</strong><small>Premissa provisória do Premium.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="linenBelongsToOwner" type="checkbox" ${draft.linenBelongsToOwner?'checked':''} /><span><strong>Enxoval fica com o proprietário</strong><small>No Premium provisório, fica desmarcado.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceManaged" type="checkbox" ${draft.maintenanceManaged?'checked':''} /><span><strong>Admin gerencia pequenos reparos/eletrodomésticos</strong><small>Gerenciar não significa pagar.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Premissa provisória: desmarcado; proprietário paga.</small></span></label>
+        </div>
+      </div>
+      <div class="concept-note"><strong>Premissas provisórias:</strong> este preset foi autorizado para permitir avanço antes da resposta formal da administradora. A revisão obrigatória está registrada na Issue #44.</div>`;
+  }
+
+  function bindAdminWizardPresetChange() {
+    const select = $('#wizardBody [data-wizard-field="plan"]');
+    select?.addEventListener('change', () => {
+      $('#wizardBody').innerHTML = adminWizardFormHtml(adminWizardPresetDraft(select.value, state));
+      bindAdminWizardPresetChange();
+    });
+  }
+
+
   function airbnbOpsWizardDraftFromState() {
     const saved = state.guidedSetup?.airbnbOps || {};
     const useSaved = Boolean(saved.configured);
@@ -3568,6 +3854,20 @@
   }
 
 
+  function openAdminWizard() {
+    activeWizard = 'admin';
+    activeWizardPatch = null;
+    const draft = adminWizardDraftFromState();
+    $('#wizardTitle').textContent = 'Proposta da administradora';
+    $('#wizardDescription').textContent = 'Traduza os planos Essencial/Premium em comissão, performance, gestão, custos incluídos e CAPEX — com premissas provisórias auditáveis.';
+    $('#wizardBody').innerHTML = adminWizardFormHtml(draft);
+    bindAdminWizardPresetChange();
+    $('#wizardPreview').innerHTML = '';
+    setWizardReviewMode(false);
+    $('#wizardDialog').showModal();
+  }
+
+
   function openAirbnbOpsWizard() {
     activeWizard = 'airbnbOps';
     activeWizardPatch = null;
@@ -3601,11 +3901,13 @@
         ? buildFinancialWizardPatch(draft, state)
         : activeWizard === 'property'
           ? buildPropertyWizardPatch(draft, state)
-          : activeWizard === 'airbnbOps'
-            ? buildAirbnbOpsWizardPatch(draft, state)
-            : activeWizard === 'hybrid'
-              ? buildHybridWizardPatch(draft, state)
-              : null;
+          : activeWizard === 'admin'
+            ? buildAdminWizardPatch(draft, state)
+            : activeWizard === 'airbnbOps'
+              ? buildAirbnbOpsWizardPatch(draft, state)
+              : activeWizard === 'hybrid'
+                ? buildHybridWizardPatch(draft, state)
+                : null;
     if (!patch) return;
     activeWizardPatch = patch;
     const preview = $('#wizardPreview');
@@ -3655,6 +3957,25 @@
           <li>Capital de giro: <strong>${money.format(x.workingCapitalAmount)}</strong> em <strong>${escapeHtml(x.workingCapitalTarget)}</strong>.</li>
           <li>Venda: ajuste ${number1.format(x.salePriceAdjustmentPct)}% · corretagem ${number1.format(x.brokeragePct)}% · custos fixos ${money.format(x.fixedCosts)} · financiamento ${money.format(x.mortgageBalance)} · IR ${money.format(x.capitalGainsTax)} · outros ${money.format(x.otherCosts)}.</li>
           ${capitalLine}
+        </ul>`;
+      setWizardReviewMode(true);
+      return;
+    }
+
+    if (activeWizard === 'admin') {
+      const x = patch.normalized;
+      const planLabel = x.plan === 'essential' ? 'Essencial' : 'Premium';
+      preview.innerHTML = `
+        <h3>Revise antes de aplicar</h3>
+        <ul class="wizard-change-list">
+          <li>Preset provisório: <strong>Administradora ${planLabel}</strong> · comissão <strong>${number1.format(x.commissionPct)}%</strong>.</li>
+          <li>Performance: <strong>+${number1.format(x.occupancyRelativePct)}% relativo</strong> na ocupação · <strong>${number1.format(x.nightlyRateImpactPct)}%</strong> na diária.</li>
+          <li>Airbnb: <strong>${x.platformFeeAllocation==='split-shares'?'cada parte paga a taxa sobre sua parcela':'proprietário suporta a taxa sobre o bruto'}</strong>.</li>
+          <li>Limpeza: <strong>${x.cleaningFeeRecipient==='admin'?'100% para a administradora':'permanece na parcela compartilhada'}</strong> · ${x.cleaningInCommissionBase?'entra':'não entra'} na base da comissão.</li>
+          <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
+          <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'não integra o patrimônio do proprietário'}.</li>
+          <li>Manutenção: ${x.maintenanceManaged?'administradora gerencia':'sem gestão presumida'} · ${x.maintenanceIncluded?'custo incluído':'proprietário paga os reparos'}.</li>
+          <li class="wizard-warning"><strong>Provisório:</strong> revisar quando vier a resposta formal da administradora — Issue #44.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
@@ -3732,6 +4053,7 @@
     $('#openMainWizard')?.addEventListener('click', openMainWizard);
     $('#openFinancialWizard')?.addEventListener('click', openFinancialWizard);
     $('#openPropertyWizard')?.addEventListener('click', openPropertyWizard);
+    $('#openAdminWizard')?.addEventListener('click', openAdminWizard);
     $('#openAirbnbOpsWizard')?.addEventListener('click', openAirbnbOpsWizard);
     $('#openHybridWizard')?.addEventListener('click', openHybridWizard);
     $('#wizardReviewButton')?.addEventListener('click', reviewActiveWizard);
@@ -3769,7 +4091,7 @@
   if (typeof window !== 'undefined') window.SimulatorAirbnb = {
     calculateModel, calculateMarketComparables, calculateMarketSuggestion, calculateHorizonProjection,
     defaultState: structuredCloneSafe(defaultState), normalizeState,
-    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
+    buildMainWizardPatch, buildFinancialWizardPatch, buildPropertyWizardPatch, buildAdminWizardPatch, buildAirbnbOpsWizardPatch, buildHybridWizardPatch, applyWizardPatch, enabledScenarioIds, scenarioView
   };
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
 })();
