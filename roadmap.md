@@ -154,7 +154,7 @@ Consolidada em 24/10/2026, com duas dependências explicitamente abertas.
 - #24 concluída na V25: o caminho capital → compra passou a habilitar cenários após uma aquisição válida ser configurada;
 - #28 concluída na V25: capital disponível, custos de aquisição, CAPEX e capital de giro agora entram de forma auditável;
 - #42 concluída na V25 com escopo de compra integralmente coberta pelo capital disponível; financiamento/aporte adicional foi separado para backlog;
-- #26 permanece dependente da calibração real da administradora (#5/#32);
+- #26 concluída na V26 com presets provisórios Essencial/Premium; revisão formal deslocada para #44/#32;
 - estrutura genérica de revisão/aplicação compartilhada entre os wizards;
 - metadados descritivos ficam separados das variáveis que afetam o motor;
 - nenhuma regra econômica é criada silenciosamente pela camada de onboarding;
@@ -173,6 +173,24 @@ Concluída em 24/10/2026.
 - #42, #28 e #24 concluídas;
 - regressão confirmou zero alteração no cenário-base de imóvel já possuído e nos horizontes 1/3/5 anos;
 - suíte ampliada para 25 testes.
+
+### V26 — administradora Essencial/Premium provisória
+Concluída em 24/10/2026.
+
+- wizard da administradora implementado (#26);
+- presets Essencial 15% e Premium 25%;
+- taxa Airbnb alocada por parcela econômica no preset;
+- limpeza Essencial entra na base de 15%;
+- limpeza Premium vai integralmente à administradora e fica fora da base de 25%;
+- uplift provisório de ocupação = +20% relativo;
+- diária/ADR sem uplift por default;
+- enxoval Premium pago e pertencente à administradora;
+- manutenção Premium gerenciada pela administradora, mas paga pelo proprietário;
+- premissas explicitamente marcadas como provisórias;
+- #44 criada para revisão após resposta formal;
+- #45 criada para comparação simultânea Essencial × Premium;
+- cenário-base V25 preservado numericamente;
+- suíte completa: 26/26 testes.
 
 ## Rodadas de execução
 
@@ -267,14 +285,14 @@ Issues concluídas:
 O calendário mensal continua deliberadamente fora desta Epic e permanece na Issue #41.
 
 ### Epic — wizards de onboarding e configuração
-**Epic:** #23
+**Epic:** #23 · **Concluída em 24/10/2026 — V26**
 
 Objetivo: descobrir primeiro **quais cenários fazem sentido** e depois orientar o preenchimento das premissas.
 
 Issues filhas:
 - #24 — wizard principal de situação inicial/cenários;
 - #25 — benchmark financeiro/custo de oportunidade;
-- #26 — proposta de administradora;
+- #26 — proposta de administradora — concluída na V26;
 - #27 — operação Airbnb;
 - #28 — aquisição/venda do imóvel;
 - #29 — uso parcial do imóvel.
