@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 33,
+  "version": 34,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 33,
+    "version": 34,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
