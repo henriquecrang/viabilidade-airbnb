@@ -3318,14 +3318,20 @@
 
     const adminScenarios = calc.scenarios.filter((scenario) => ['airbnb-admin','airbnb-rented-admin'].includes(scenario.id));
     if (adminScenarios.length) {
-      if (state.guidedSetup?.adminProposal?.configured && state.guidedSetup.adminProposal.provisionalAssumptions) {
+      if (state.guidedSetup?.adminProposal?.configured) {
         const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
-        messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa premissas provisórias aprovadas em 24/10/2026. Revisar quando chegar a resposta formal da administradora (Issue #44).` });
+        if (state.guidedSetup.adminProposal.calibrationStatus === 'official-response') {
+          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. A meta de ocupação é uma afirmação comercial da administradora e deve ser interpretada como hipótese, não como histórico auditado.` });
+        } else if (state.guidedSetup.adminProposal.provisionalAssumptions) {
+          messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa uma calibração provisória antiga; reaplique o wizard para usar as respostas oficiais da V28.` });
+        }
       }
       adminScenarios.forEach((scenario) => {
         messages.push({ text: `${scenario.label} estima ${number1.format(scenario.workHoursAnnual)} horas suas por ano após tarefas delegadas e supervisão residual.` });
       });
-      if (n(state.airbnb.adminNightlyRateImpactPct) !== 0 || n(state.airbnb.adminOccupancyImpactPp) !== 0 || n(state.airbnb.adminOccupancyImpactRelativePct) !== 0) {
+      if (state.airbnb.adminOccupancyMode === 'target-floor' && n(state.airbnb.adminOccupancyTargetPct) > 0) {
+        messages.push({ text: `A gestão profissional usa piso-alvo de ${number1.format(n(state.airbnb.adminOccupancyTargetPct))}% de ocupação; no cenário atual isso exige ${number1.format(calc.adminOccupancyTargetExtraPp)} p.p. adicionais após os demais ajustes. O uplift de diária permanece em ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}%.` });
+      } else if (n(state.airbnb.adminNightlyRateImpactPct) !== 0 || n(state.airbnb.adminOccupancyImpactPp) !== 0 || n(state.airbnb.adminOccupancyImpactRelativePct) !== 0) {
         messages.push({ text: `A gestão profissional está configurada com ${number1.format(n(state.airbnb.adminNightlyRateImpactPct))}% na diária, ${number1.format(n(state.airbnb.adminOccupancyImpactRelativePct))}% relativo na ocupação e ${number1.format(n(state.airbnb.adminOccupancyImpactPp))} p.p. adicionais. A mesma regra comercial é aplicada aos dois regimes de posse.` });
       }
     }
@@ -4147,14 +4153,14 @@
       preview.innerHTML = `
         <h3>Revise antes de aplicar</h3>
         <ul class="wizard-change-list">
-          <li>Preset provisório: <strong>Administradora ${planLabel}</strong> · comissão <strong>${number1.format(x.commissionPct)}%</strong>.</li>
-          <li>Performance: <strong>+${number1.format(x.occupancyRelativePct)}% relativo</strong> na ocupação · <strong>${number1.format(x.nightlyRateImpactPct)}%</strong> na diária.</li>
-          <li>Airbnb: <strong>${x.platformFeeAllocation==='split-shares'?'cada parte paga a taxa sobre sua parcela':'proprietário suporta a taxa sobre o bruto'}</strong>.</li>
-          <li>Limpeza: <strong>${x.cleaningFeeRecipient==='admin'?'100% para a administradora':'permanece na parcela compartilhada'}</strong> · ${x.cleaningInCommissionBase?'entra':'não entra'} na base da comissão.</li>
+          <li>Calibração oficial: <strong>Administradora ${planLabel}</strong> · comissão <strong>${number1.format(x.commissionPct)}%</strong>.</li>
+          <li>Performance: <strong>${x.occupancyMode==='target-floor'?`piso-alvo de ${number1.format(x.occupancyTargetPct)}%`:`${number1.format(x.occupancyRelativePct)}% relativo + ${number1.format(x.occupancyImpactPp)} p.p.`}</strong> na ocupação · <strong>${number1.format(x.nightlyRateImpactPct)}%</strong> na diária.</li>
+          <li>Airbnb: <strong>${x.platformFeeAllocation==='split-shares'?'a taxa é descontada antes da divisão, equivalente a cada parte suportar sua parcela':'proprietário suporta a taxa sobre o bruto'}</strong>.</li>
+          <li>Limpeza: <strong>${x.cleaningFeeRecipient==='admin'?'100% para a administradora':'entra no valor compartilhado'}</strong> · ${x.cleaningInCommissionBase?'entra':'não entra'} na base da divisão.</li>
           <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
-          <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'não integra o patrimônio do proprietário'}.</li>
-          <li>Manutenção: ${x.maintenanceManaged?'administradora gerencia':'sem gestão presumida'} · ${x.maintenanceIncluded?'custo incluído':'proprietário paga os reparos'}.</li>
-          <li class="wizard-warning"><strong>Provisório:</strong> revisar quando vier a resposta formal da administradora — Issue #44.</li>
+          <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'fica com quem comprou, portanto não integra seu patrimônio neste preset'}.</li>
+          <li>Manutenção do imóvel/equipamentos: ${x.maintenanceIncluded?'custo incluído':'proprietário paga'} · ${x.maintenanceManaged?'gestão pela administradora marcada':'gestão dos reparos não presumida'}.</li>
+          <li class="wizard-warning"><strong>Atenção:</strong> a ocupação acima de 80% é uma alegação comercial da administradora, ainda sem histórico auditado anexado.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
