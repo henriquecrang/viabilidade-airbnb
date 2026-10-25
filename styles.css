@@ -315,10 +315,6 @@ td.money-cell, td.percent-cell { font-variant-numeric: tabular-nums; white-space
 .breakdown dl > div { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #edf0ed; padding: 6px 0; }
 .breakdown dt { color: var(--muted); font-size: .7rem; }
 .breakdown dd { margin: 0; font-weight: 700; font-size: .72rem; text-align: right; }
-.breakdown-labor-line { background: var(--accent-soft); margin: 4px -6px -2px; padding: 9px 6px !important; border-radius: 8px; }
-.breakdown-labor-line dt { color: #315d9b; font-weight: 800; }
-.breakdown-labor-line dt small { display: block; margin-top: 2px; color: var(--muted); font-weight: 500; font-size: .62rem; }
-.breakdown-labor-line dd { color: #244d86; max-width: 58%; }
 .diagnostics { margin-top: 14px; display: grid; gap: 8px; }
 .diagnostic { border-radius: 10px; padding: 9px 11px; background: #fff; border: 1px solid var(--border); color: var(--muted); font-size: .8rem; }
 .diagnostic.warning { background: var(--warning-soft); border-color: #f3dfaa; color: #6f4a12; }
