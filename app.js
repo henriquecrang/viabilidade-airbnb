@@ -2279,78 +2279,101 @@
       }, true);
     };
 
-    const makeRentedScenario = () => {
-      const reserveContribution = selfReserveContribution;
-      const linkedReserve = selfLinkedReserveEnd;
-      const freeCash = rentedOperatingCash - reserveContribution;
+    const makeAirbnbScenario = ({
+      id, label, possession, management,
+      grossRevenue, opCosts, tax, operatingCash,
+      reserveContribution, reserveOpening: scenarioReserveOpening, linkedReserve,
+      workingCapitalAmount, capex, setupResidual, setupDepreciation,
+      laborCost, workHoursAnnual, details = {}
+    }) => {
+      const rented = possession === 'rented';
+      const freeCash = operatingCash - reserveContribution;
       const externalFundingRequired = Math.max(0, -freeCash);
       const distributableCash = Math.max(0, freeCash);
-      const workingCapitalValue = workingCapital.rented;
-      const baseInitialCapital = rentedSetup + reserveOpening + rentedSecurityDeposit + workingCapitalValue;
-      const initialCapital = baseInitialCapital + externalFundingRequired;
-      const tiedCapital = linkedReserve + rentedSecurityDeposit + workingCapitalValue;
-      const endNetWorth = rentedSetupResidual + distributableCash + linkedReserve + rentedSecurityDeposit + workingCapitalValue;
+      const workingCapitalValue = Math.max(0, n(workingCapitalAmount));
+      const securityDeposit = rented ? rentedSecurityDeposit : 0;
+
+      let baseInitialCapital;
+      let initialCapital;
+      let endNetWorth;
+      let purchaseCapitalRequired = 0;
+      let acquisitionFundingGap = 0;
+      let acquisitionValid = true;
+      let leftoverInvestmentInitial = 0;
+      let leftoverInvestmentEnd = 0;
+      let scenarioDetails = details;
+
+      if (rented) {
+        baseInitialCapital = capex + scenarioReserveOpening + securityDeposit + workingCapitalValue;
+        initialCapital = baseInitialCapital + externalFundingRequired;
+        endNetWorth = setupResidual + distributableCash + linkedReserve + securityDeposit + workingCapitalValue;
+      } else {
+        purchaseCapitalRequired = propertyValue + acquisitionPurchaseCosts + capex + scenarioReserveOpening + workingCapitalValue;
+        acquisitionFundingGap = purchaseMode ? Math.max(0, purchaseCapitalRequired - acquisitionAvailableCapital) : 0;
+        acquisitionValid = !purchaseMode || acquisitionFundingGap <= 1e-9;
+        leftoverInvestmentInitial = purchaseMode && acquisitionValid
+          ? Math.max(0, acquisitionAvailableCapital - purchaseCapitalRequired)
+          : 0;
+        const leftoverInvestment = investmentForCapital(leftoverInvestmentInitial, leftoverInvestmentInitial);
+        leftoverInvestmentEnd = purchaseMode ? leftoverInvestment.endNetWorth : 0;
+        baseInitialCapital = purchaseMode
+          ? acquisitionAvailableCapital
+          : propertyValue + capex + scenarioReserveOpening + workingCapitalValue;
+        initialCapital = baseInitialCapital + externalFundingRequired;
+        endNetWorth = propertyEndValue + setupResidual + distributableCash + linkedReserve + workingCapitalValue + leftoverInvestmentEnd;
+        if (purchaseMode) {
+          scenarioDetails = {
+            ...details,
+            'Capital disponível antes da compra': acquisitionAvailableCapital,
+            'Preço de compra do imóvel': propertyValue,
+            'Custos de aquisição consumidos': acquisitionPurchaseCosts,
+            'Necessidade inicial da compra': purchaseCapitalRequired,
+            'Capital remanescente aplicado': leftoverInvestmentInitial,
+            'Valor final da sobra aplicada': leftoverInvestmentEnd
+          };
+        }
+      }
+
       const wealthCreation = endNetWorth - initialCapital;
       const inflationFactor = 1 + inflation;
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
       const realWealthCreation = realEndNetWorth - initialCapital;
       const capitalPreservationAmount = initialCapital * inflation;
       const nominalExcessOverPreservation = endNetWorth - initialCapital * inflationFactor;
+      const realFreeCash = inflationFactor > 0 ? freeCash / inflationFactor : freeCash;
       const cashYield = initialCapital > 0 ? freeCash / initialCapital : 0;
+      const nominalTotalReturn = initialCapital > 0 ? wealthCreation / initialCapital : 0;
       const realTotalReturn = initialCapital > 0 ? realWealthCreation / initialCapital : 0;
+      const tiedCapital = linkedReserve + workingCapitalValue + securityDeposit;
+
       return enrichScenarioWithBenchmark({
-        id: 'airbnb-rented', label: 'Airbnb em imóvel alugado', grossRevenue: airbnbRevenue, opCosts: rentedOperatingCosts, tax: rentedTax,
-        operatingCash: rentedOperatingCash, cashPreservationRequirement: 0, preservationShortfall: 0, reserveContribution, reserveOpening, linkedReserve,
-        workingCapital: workingCapitalValue, tiedCapital,
-        freeCash, netCash: freeCash, distributableCash, externalFundingRequired, monthlyNet: freeCash / 12,
-        capex: rentedSetup, setupResidual: rentedSetupResidual, setupDepreciation: rentedSetupDepreciation,
-        firstYearCash: freeCash - rentedSetup, laborCost: workCost.rented, workHoursAnnual: workHours.rented,
-        economicResult: freeCash - workCost.rented, firstYearEconomic: freeCash - rentedSetup - workCost.rented,
-        baseInitialCapital, initialCapital, opportunityCapital: initialCapital, endNetWorth, realEndNetWorth,
-        wealthCreation, realWealthCreation, capitalPreservationAmount, nominalExcessOverPreservation,
-        realFreeCash: inflationFactor > 0 ? freeCash / inflationFactor : freeCash,
-        cashYield, nominalTotalReturn: initialCapital > 0 ? wealthCreation / initialCapital : 0, realTotalReturn,
-        details: {
-          'Receita de diárias': accommodationRevenue,
-          'Taxas cobradas do hóspede': guestFeeRevenue,
-          'Aluguel pago ao proprietário': rentedLeaseRent,
-          'Imóvel vem mobiliado': currentState.rentedAirbnb.furnished ? 1 : 0,
-          'Sublocação/temporada autorizada': currentState.rentedAirbnb.subleaseAuthorized ? 1 : 0,
-          'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts,
-          'Taxa da plataforma': platformFee,
-          'Diária média das noites vendidas': averageNightlyRate,
-          'ADR total': totalAdr,
-          'RevPAR de diárias': revPar,
-          'RevPAR total': totalRevPar,
-          'Custos por reservas': selfStayCosts,
-          'Custos mensais da operação': fixedRentedAirbnb,
-          'OPEX percentual aplicável ao locatário': rentedPctCosts,
-          'Deduções consideradas na base de IR': rentedTaxDeductions,
-          'Base tributável estimada': rentedTaxBase,
-          'IR estimado': rentedTax,
-          'Caixa antes das reservas': rentedOperatingCash,
-          'Aporte às reservas vinculadas': reserveContribution,
-          'Caução/garantia reembolsável': rentedSecurityDeposit,
-          'Capital de giro vinculado': workingCapitalValue,
-          'Capital vinculado final': tiedCapital,
-          'CAPEX de ativos aplicável': rentedSetupAssets,
-          'Custos iniciais não recuperáveis do contrato': rentedInitialLeaseCosts,
-          'CAPEX + custos iniciais do contrato': rentedSetup,
-          'Valor residual do CAPEX': rentedSetupResidual,
-          'Depreciação econômica do CAPEX': rentedSetupDepreciation,
-          'Aporte externo para cobrir déficit': externalFundingRequired,
-          'Capital de oportunidade': initialCapital,
-          'Ganho real do benchmark financeiro': investmentForCapital(initialCapital).realWealthCreation,
-          'Horas próprias no ano': workHours.rented,
-          'Valor do seu tempo': workCost.rented
-        }
-      });
+        id, label, possession, management,
+        grossRevenue, opCosts, tax, operatingCash,
+        cashPreservationRequirement: 0, preservationShortfall: 0,
+        reserveContribution, reserveOpening: scenarioReserveOpening, linkedReserve,
+        workingCapital: workingCapitalValue, securityDeposit, tiedCapital,
+        freeCash, netCash: freeCash, distributableCash, externalFundingRequired,
+        monthlyNet: freeCash / 12,
+        capex, setupResidual, setupDepreciation, firstYearCash: freeCash - capex,
+        laborCost, workHoursAnnual, economicResult: freeCash - laborCost,
+        firstYearEconomic: freeCash - capex - laborCost,
+        baseInitialCapital, initialCapital, opportunityCapital: initialCapital,
+        endNetWorth, realEndNetWorth, wealthCreation, realWealthCreation,
+        capitalPreservationAmount, nominalExcessOverPreservation,
+        realFreeCash, cashYield, nominalTotalReturn, realTotalReturn,
+        purchaseMode: !rented && purchaseMode,
+        acquisitionValid, acquisitionCosts: rented ? 0 : acquisitionPurchaseCosts,
+        purchaseCapitalRequired, acquisitionFundingGap, leftoverInvestmentInitial, leftoverInvestmentEnd,
+        details: scenarioDetails
+      }, !rented);
     };
 
-    const self = makePropertyScenario({
-      id: 'airbnb-self', label: 'Airbnb autogerido', grossRevenue: airbnbRevenue, opCosts: selfOperatingCosts, tax: selfTax,
-      operatingCash: selfOperatingCash, reserveContribution: selfReserveContribution, reserveOpening, linkedReserve: selfLinkedReserveEnd,
-      workingCapitalAmount: workingCapital.self, capex: selfSetup, setupResidual: selfSetupResidual, setupDepreciation: selfSetupDepreciation, laborCost: workCost.self, workHoursAnnual: workHours.self,
+    const self = makeAirbnbScenario({
+      id: 'airbnb-self', label: 'Airbnb próprio + autogestão', possession: 'owned', management: 'self',
+      grossRevenue: airbnbRevenue, opCosts: selfOperatingCosts, tax: selfTax, operatingCash: selfOperatingCash,
+      reserveContribution: selfReserveContribution, reserveOpening, linkedReserve: selfLinkedReserveEnd,
+      workingCapitalAmount: workingCapital.self, capex: selfSetup, setupResidual: selfSetupResidual,
+      setupDepreciation: selfSetupDepreciation, laborCost: workCost.self, workHoursAnnual: workHours.self,
       details: {
         'Receita de diárias': accommodationRevenue, 'Taxas cobradas do hóspede': guestFeeRevenue,
         'Taxa da plataforma': platformFee, 'Custos por reservas': selfStayCosts, 'Custos mensais': fixedAirbnb,
@@ -2360,43 +2383,108 @@
         'Capital de giro vinculado': workingCapital.self,
         'Diária média das noites vendidas': averageNightlyRate, 'ADR total': totalAdr,
         'RevPAR de diárias': revPar, 'RevPAR total': totalRevPar,
-        'CAPEX inicial': selfSetup, 'Valor residual do CAPEX': selfSetupResidual, 'Depreciação econômica do CAPEX': selfSetupDepreciation,
-        'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
+        'CAPEX inicial': selfSetup, 'Valor residual do CAPEX': selfSetupResidual,
+        'Depreciação econômica do CAPEX': selfSetupDepreciation,
+        'Valorização nominal do imóvel': propertyNominalGain,
+        'Parcela da valorização que cobre inflação': propertyInflationPreservation,
         'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
         'Horas próprias no ano': workHours.self, 'Valor do seu tempo': workCost.self
       }
     });
 
-    const admin = makePropertyScenario({
-      id: 'airbnb-admin', label: 'Airbnb com administradora', grossRevenue: adminAirbnbRevenue, opCosts: adminOperatingCosts, tax: adminTax,
-      operatingCash: adminOperatingCash, reserveContribution: adminReserveContribution, reserveOpening: adminReserveOpening, linkedReserve: adminLinkedReserveEnd,
-      workingCapitalAmount: workingCapital.admin, capex: adminSetup, setupResidual: adminSetupResidual, setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
+    const admin = makeAirbnbScenario({
+      id: 'airbnb-admin', label: 'Airbnb próprio + administradora', possession: 'owned', management: 'admin',
+      grossRevenue: adminAirbnbRevenue, opCosts: adminOperatingCosts, tax: adminTax, operatingCash: adminOperatingCash,
+      reserveContribution: adminReserveContribution, reserveOpening: adminReserveOpening, linkedReserve: adminLinkedReserveEnd,
+      workingCapitalAmount: workingCapital.admin, capex: adminSetup, setupResidual: adminSetupResidual,
+      setupDepreciation: adminSetupDepreciation, laborCost: workCost.admin, workHoursAnnual: workHours.admin,
       details: {
         'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
         'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação relativo': adminOccupancyImpactRelative,
         'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
-        'Base da comissão da administradora': adminCommissionBase,
-        'Comissão da administradora': adminFee,
+        'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
         'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
         'Receita bruta restante do proprietário antes da plataforma': adminOwnerRevenueBeforePlatform,
         'Mensalidade da administradora': adminMonthlyFee,
-        'Taxa da plataforma atribuída ao proprietário': adminPlatformFee, 'Custos por reservas não incluídos': adminStayCosts,
-        'Custos mensais não incluídos': adminFixedAirbnb, 'OPEX % não incluído': adminPctCosts,
-        'Deduções consideradas na base de IR': adminTaxDeductions, 'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax,
-        'Caixa antes das reservas': adminOperatingCash, 'Aporte às reservas vinculadas': adminReserveContribution,
-        'Reserva vinculada final': adminLinkedReserveEnd, 'Capital de giro vinculado': workingCapital.admin,
+        'Taxa da plataforma atribuída ao proprietário': adminPlatformFee,
+        'Custos por reservas não incluídos': adminStayCosts, 'Custos mensais não incluídos': adminFixedAirbnb,
+        'OPEX % não incluído': adminPctCosts, 'Deduções consideradas na base de IR': adminTaxDeductions,
+        'Base tributável estimada': adminTaxBase, 'IR estimado': adminTax, 'Caixa antes das reservas': adminOperatingCash,
+        'Aporte às reservas vinculadas': adminReserveContribution, 'Reserva vinculada final': adminLinkedReserveEnd,
+        'Capital de giro vinculado': workingCapital.admin,
         'Diária média das noites vendidas': adminAverageNightlyRate, 'ADR total': adminTotalAdr,
         'RevPAR de diárias': adminRevPar, 'RevPAR total': adminTotalRevPar,
-        'CAPEX + onboarding pago por você': adminSetup,
-        'CAPEX pago pela administradora': adminSetupData.paidByAdmin,
-        'Valor residual do CAPEX que permanece seu': adminSetupResidual, 'Custo econômico líquido do CAPEX': adminSetupDepreciation,
-        'Valorização nominal do imóvel': propertyNominalGain, 'Parcela da valorização que cobre inflação': propertyInflationPreservation,
+        'CAPEX + onboarding pago por você': adminSetup, 'CAPEX pago pela administradora': adminSetupData.paidByAdmin,
+        'Valor residual do CAPEX que permanece seu': adminSetupResidual,
+        'Custo econômico líquido do CAPEX': adminSetupDepreciation,
+        'Valorização nominal do imóvel': propertyNominalGain,
+        'Parcela da valorização que cobre inflação': propertyInflationPreservation,
         'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
         'Horas próprias no ano': workHours.admin, 'Valor do seu tempo': workCost.admin
       }
     });
 
-    const rented = makeRentedScenario();
+    const rented = makeAirbnbScenario({
+      id: 'airbnb-rented', label: 'Airbnb alugado + autogestão', possession: 'rented', management: 'self',
+      grossRevenue: airbnbRevenue, opCosts: rentedOperatingCosts, tax: rentedTax, operatingCash: rentedOperatingCash,
+      reserveContribution: selfReserveContribution, reserveOpening, linkedReserve: selfLinkedReserveEnd,
+      workingCapitalAmount: workingCapital.rented, capex: rentedSetup, setupResidual: rentedSetupResidual,
+      setupDepreciation: rentedSetupDepreciation, laborCost: workCost.rented, workHoursAnnual: workHours.rented,
+      details: {
+        'Receita de diárias': accommodationRevenue, 'Taxas cobradas do hóspede': guestFeeRevenue,
+        'Aluguel pago ao proprietário': rentedLeaseRent,
+        'Imóvel vem mobiliado': currentState.rentedAirbnb.furnished ? 1 : 0,
+        'Sublocação/temporada autorizada': currentState.rentedAirbnb.subleaseAuthorized ? 1 : 0,
+        'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts, 'Taxa da plataforma': platformFee,
+        'Diária média das noites vendidas': averageNightlyRate, 'ADR total': totalAdr,
+        'RevPAR de diárias': revPar, 'RevPAR total': totalRevPar,
+        'Custos por reservas': selfStayCosts, 'Custos mensais da operação': fixedRentedAirbnb,
+        'OPEX percentual aplicável ao locatário': rentedPctCosts,
+        'Deduções consideradas na base de IR': rentedTaxDeductions, 'Base tributável estimada': rentedTaxBase,
+        'IR estimado': rentedTax, 'Caixa antes das reservas': rentedOperatingCash,
+        'Aporte às reservas vinculadas': selfReserveContribution,
+        'Caução/garantia reembolsável': rentedSecurityDeposit, 'Capital de giro vinculado': workingCapital.rented,
+        'CAPEX de ativos aplicável': rentedSetupAssets, 'Custos iniciais não recuperáveis do contrato': rentedInitialLeaseCosts,
+        'CAPEX + custos iniciais do contrato': rentedSetup, 'Valor residual do CAPEX': rentedSetupResidual,
+        'Depreciação econômica do CAPEX': rentedSetupDepreciation,
+        'Horas próprias no ano': workHours.rented, 'Valor do seu tempo': workCost.rented
+      }
+    });
+
+    const rentedAdmin = makeAirbnbScenario({
+      id: 'airbnb-rented-admin', label: 'Airbnb alugado + administradora', possession: 'rented', management: 'admin',
+      grossRevenue: adminAirbnbRevenue, opCosts: adminRentedOperatingCosts, tax: adminRentedTax, operatingCash: adminRentedOperatingCash,
+      reserveContribution: adminReserveContribution, reserveOpening: adminReserveOpening, linkedReserve: adminLinkedReserveEnd,
+      workingCapitalAmount: workingCapital.rented, capex: rentedAdminSetup, setupResidual: rentedAdminSetupResidual,
+      setupDepreciation: rentedAdminSetupDepreciation, laborCost: workCost.rentedAdmin, workHoursAnnual: workHours.rentedAdmin,
+      details: {
+        'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
+        'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação relativo': adminOccupancyImpactRelative,
+        'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
+        'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
+        'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
+        'Taxa da plataforma atribuída ao operador': adminPlatformFee,
+        'Aluguel pago ao proprietário': rentedLeaseRent,
+        'Imóvel vem mobiliado': currentState.rentedAirbnb.furnished ? 1 : 0,
+        'Sublocação/temporada autorizada': currentState.rentedAirbnb.subleaseAuthorized ? 1 : 0,
+        'Custos anuais do contrato/garantia': rentedAnnualLeaseCosts,
+        'Custos por reservas não incluídos': adminStayCosts,
+        'Custos mensais não incluídos': adminFixedRentedAirbnb,
+        'OPEX % não incluído': adminRentedPctCosts,
+        'Deduções consideradas na base de IR': adminRentedTaxDeductions,
+        'Base tributável estimada': adminRentedTaxBase, 'IR estimado': adminRentedTax,
+        'Caixa antes das reservas': adminRentedOperatingCash,
+        'Aporte às reservas vinculadas': adminReserveContribution,
+        'Caução/garantia reembolsável': rentedSecurityDeposit, 'Capital de giro vinculado': workingCapital.rented,
+        'CAPEX + contrato + onboarding pago por você': rentedAdminSetup,
+        'CAPEX pago pela administradora': rentedAdminSetupData.paidByAdmin,
+        'Valor residual do CAPEX que permanece seu': rentedAdminSetupResidual,
+        'Depreciação econômica do CAPEX': rentedAdminSetupDepreciation,
+        'Diária média das noites vendidas': adminAverageNightlyRate, 'ADR total': adminTotalAdr,
+        'RevPAR de diárias': adminRevPar, 'RevPAR total': adminTotalRevPar,
+        'Horas próprias no ano': workHours.rentedAdmin, 'Valor do seu tempo': workCost.rentedAdmin
+      }
+    });
 
     const traditional = makePropertyScenario({
       id: 'traditional', label: 'Aluguel tradicional', grossRevenue: tradRevenue, opCosts: tradOperatingCosts, tax: tradTax,
