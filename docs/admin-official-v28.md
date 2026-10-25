@@ -42,7 +42,9 @@ Decisão de modelagem original da V28:
 - uplift default de diária = 0%;
 - a premissa não é usada como evidência independente no módulo de comparáveis de mercado.
 
-**Recalibração V30:** o piso fixo de 80% foi substituído por **+20 pontos percentuais sobre a ocupação autogerida de cada período**, com teto de 100%. Essa regra segue a diferença operacional informada pelo parceiro e permanece editável.
+**Recalibração V30:** o piso fixo de 80% foi substituído por +20 pontos percentuais sobre a ocupação autogerida de cada período, com teto de 100%.
+
+**Evolução V31:** esses 20 p.p. deixam de pertencer ao preset de um plano específico e viram uma **variável global calibrável de diferença de gestão**. A interface permite informar a ocupação pela lente sem administradora ou já com administradora e deriva a outra automaticamente.
 
 Decisão posterior: a Issue #46 foi descartada. Não será exigida validação adicional com histórico da administradora para sustentar esse default operacional.
 
