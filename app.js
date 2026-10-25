@@ -3435,7 +3435,7 @@
       if (state.guidedSetup?.adminProposal?.configured) {
         const planLabel = state.guidedSetup.adminProposal.plan === 'essential' ? 'Essencial' : 'Premium';
         if (state.guidedSetup.adminProposal.calibrationStatus === 'official-response') {
-          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. A meta de ocupação é uma afirmação comercial da administradora e deve ser interpretada como hipótese, não como histórico auditado.` });
+          messages.push({ text: `O preset Administradora ${planLabel} usa a calibração oficial recebida em 24/10/2026. O piso de ocupação de 80% é um default baseado na experiência operacional informada pelo parceiro e pode ser alterado pelo usuário.` });
         } else if (state.guidedSetup.adminProposal.provisionalAssumptions) {
           messages.push({ warning: true, text: `O preset Administradora ${planLabel} usa uma calibração provisória antiga; reaplique o wizard para usar as respostas oficiais da V28.` });
         }
@@ -3883,7 +3883,7 @@
           ${moneyInput('onboardingFee','Onboarding / setup',draft.onboardingFee)}
           <label class="field-group"><span class="field-label">Supervisão residual do proprietário</span><div class="input-suffix compact-control"><input data-wizard-field="supervisionHoursMonthly" type="number" min="0" step="0.5" value="${escapeAttr(draft.supervisionHoursMonthly)}" /><span>h/mês</span></div></label>
         </div>
-        <p class="helper">Resposta oficial: a administradora afirma que um Superhost costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset usa 80% como piso-alvo conservador e mantém 0% de uplift de diária. Essa afirmação é comercial e ainda não foi validada por histórico observado.</p>
+        <p class="helper">Resposta oficial: a administradora informa que um Superhost com apoio costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset usa 80% como piso-alvo default e mantém 0% de uplift de diária. O valor é uma premissa operacional editável, não uma regra fixa do modelo.</p>
       </div>
       <div class="wizard-section">
         <h3>Comissão, Airbnb e limpeza</h3>
@@ -3931,7 +3931,7 @@
           <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Resposta oficial: toda manutenção de equipamentos, imóvel e bens é do proprietário.</small></span></label>
         </div>
       </div>
-      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A ocupação de 80% é tratada como piso-alvo derivado da afirmação comercial da administradora, não como dado independente de mercado.</div>`;
+      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A ocupação de 80% é tratada como piso-alvo default baseado na experiência operacional informada pela administradora e permanece totalmente editável.</div>`;
   }
 
   function bindAdminWizardPresetChange() {
@@ -4299,7 +4299,7 @@
           <li>Atividades gerenciadas: <strong>${x.managedStayCount + x.managedMonthlyCount}</strong> · custos explicitamente incluídos: <strong>${x.includedStayCount + x.includedMonthlyCount}</strong>.</li>
           <li>Enxoval: ${x.linenAdminPays?'administradora paga':'proprietário paga'} · ${x.linenBelongsToOwner?'fica com o proprietário':'fica com quem comprou, portanto não integra seu patrimônio neste preset'}.</li>
           <li>Manutenção do imóvel/equipamentos: ${x.maintenanceIncluded?'custo incluído':'proprietário paga'} · ${x.maintenanceManaged?'gestão pela administradora marcada':'gestão dos reparos não presumida'}.</li>
-          <li class="wizard-warning"><strong>Atenção:</strong> a ocupação acima de 80% é uma alegação comercial da administradora, ainda sem histórico auditado anexado.</li>
+          <li>O piso de ocupação de <strong>80%</strong> é o default informado pelo parceiro e pode ser ajustado livremente nesta simulação.</li>
         </ul>`;
       setWizardReviewMode(true);
       return;
