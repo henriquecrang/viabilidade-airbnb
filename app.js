@@ -3328,6 +3328,8 @@
     const baseCalc = calculateModel(baseState);
     const purchaseMode = Boolean(baseCalc.purchaseMode);
     const acquisitionAvailableCapital = Math.max(0, n(baseCalc.acquisitionAvailableCapital));
+    const acquisitionAdditionalEquity = Math.max(0, n(baseCalc.acquisitionAdditionalEquity));
+    const acquisitionEquityCapital = Math.max(0, n(baseCalc.acquisitionEquityCapital, acquisitionAvailableCapital + acquisitionAdditionalEquity));
     const inflation = n(baseState.globals.inflationPct) / 100;
     const realAppreciation = n(baseState.globals.propertyRealAppreciationPct) / 100;
     const nominalAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
@@ -3347,6 +3349,11 @@
       const baseScenario = adminPlan
         ? calculateModelSingle(projectionState).scenarios.find((x) => x.id === underlyingScenarioId)
         : displayScenario;
+      const rentedPossession = baseScenario?.possession === 'rented';
+      const ownsProperty = !rentedPossession;
+      const financingSchedule = purchaseMode && ownsProperty
+        ? acquisitionFinancingSchedule(projectionState, years)
+        : { principal:0, rows:[], endingBalance:0 };
       let cumulativeFreeCashBeforeFunding = 0;
       let reserveBalance = Math.max(0, n(baseScenario.reserveOpening));
       let realLaborCost = 0;
@@ -3358,34 +3365,39 @@
         const yearState = inflateRecurringStateForYear(projectionState, y);
         const yearCalc = calculateModelSingle(yearState);
         const sc = yearCalc.scenarios.find((x) => x.id === underlyingScenarioId);
-        cumulativeFreeCashBeforeFunding += sc.freeCash;
+        const financeRow = financingSchedule.rows[y] || { payment:0, interest:0, principalPaid:0, endingBalance:0 };
+        const repeatedYear1Payment = purchaseMode && ownsProperty ? Math.max(0, n(sc.financingPayment)) : 0;
+        const adjustedFreeCash = n(sc.freeCash) + repeatedYear1Payment - Math.max(0, n(financeRow.payment));
+        cumulativeFreeCashBeforeFunding += adjustedFreeCash;
         reserveBalance += sc.reserveContribution;
         cumulativeWorkHours += Math.max(0, n(sc.workHoursAnnual));
         realLaborCost += sc.laborCost / Math.pow(1 + inflation, y);
         if (paybackYear == null && cumulativeFreeCashBeforeFunding >= baseScenario.capex) paybackYear = y + 1;
         yearsDetail.push({
           year: y + 1,
-          freeCash: sc.freeCash,
+          freeCash: adjustedFreeCash,
           operatingCash: sc.operatingCash,
           reserveContribution: sc.reserveContribution,
           laborCost: sc.laborCost,
           grossRevenue: sc.grossRevenue,
           opCosts: sc.opCosts,
-          tax: sc.tax
+          tax: sc.tax,
+          financingPayment: Math.max(0, n(financeRow.payment)),
+          financingInterest: Math.max(0, n(financeRow.interest)),
+          financingPrincipalPaid: Math.max(0, n(financeRow.principalPaid)),
+          financingBalance: Math.max(0, n(financeRow.endingBalance))
         });
       }
 
       const timing = buildAnnualFundingSchedule(yearsDetail, inflation);
       const cashBalance = timing.endingCashBalance;
       const externalFundingRequired = timing.externalFundingRequired;
-      const rentedPossession = baseScenario?.possession === 'rented';
-      const ownsProperty = !rentedPossession;
       const propertyEndValue = ownsProperty ? propertyValue * Math.pow(1 + nominalAppreciation, years) : 0;
       const setupResidual = setupResidualForHorizon(projectionState, underlyingScenarioId, years);
       const workingCapital = Math.max(0, n(baseScenario.workingCapital));
       const securityDeposit = rentedPossession ? Math.max(0, n(projectionState.rentedAirbnb.securityDeposit)) : 0;
       const baseCapitalForScenario = purchaseMode && ownsProperty
-        ? acquisitionAvailableCapital
+        ? acquisitionEquityCapital
         : Math.max(0, n(baseScenario.baseInitialCapital));
       const nominalCommittedCapital = baseCapitalForScenario + externalFundingRequired;
       const realInitialCapitalAtT0 = baseCapitalForScenario + timing.realFundingBasis;
@@ -3395,6 +3407,9 @@
         : null;
       const leftoverInvestmentEndWorth = leftoverInvestment?.endNetWorth || 0;
 
+      const financingBalanceAtHorizon = purchaseMode && ownsProperty
+        ? Math.max(0, n(financingSchedule.rows[years - 1]?.endingBalance, financingSchedule.endingBalance))
+        : 0;
       const exitConfig = projectionState.exitStrategy || {};
       const isTraditional = underlyingScenarioId === 'traditional';
       const isOwnedAirbnb = ownsProperty && underlyingScenarioId !== 'traditional';
@@ -3422,15 +3437,19 @@
         const fixedCosts = Math.max(0, n(projectionState.propertySale.fixedCosts));
         const capitalGainsTax = Math.max(0, n(projectionState.propertySale.capitalGainsTax));
         const otherCosts = Math.max(0, n(projectionState.propertySale.otherCosts));
-        const mortgageBalance = Math.max(0, n(projectionState.propertySale.mortgageBalance));
+        const mortgageBalance = purchaseMode
+          ? financingBalanceAtHorizon
+          : Math.max(0, n(projectionState.propertySale.mortgageBalance));
         exitCosts = brokerage + fixedCosts + capitalGainsTax + otherCosts + mortgageBalance;
         terminalPropertyValue = Math.max(0, propertySaleAtExit - exitCosts);
         terminalSetupResidual = setupResidual * clamp(n(exitConfig.ownedAssetRecoveryPct, 100), 0, 100) / 100;
         exitProceeds = terminalPropertyValue + terminalSetupResidual;
       }
 
+      const terminalDebt = purchaseMode && ownsProperty && exitStrategy !== 'liquidate' ? financingBalanceAtHorizon : 0;
       const endNetWorth = terminalPropertyValue + terminalSetupResidual + cashBalance + reserveBalance + workingCapital + terminalSecurityDeposit + leftoverInvestmentEndWorth
-        - (exitStrategy === 'liquidate' && rentedPossession ? exitCosts : 0);
+        - (exitStrategy === 'liquidate' && rentedPossession ? exitCosts : 0)
+        - terminalDebt;
       const inflationFactor = Math.pow(1 + inflation, years);
       const realEndNetWorth = inflationFactor > 0 ? endNetWorth / inflationFactor : endNetWorth;
       const realWealthCreation = realEndNetWorth - realInitialCapitalAtT0;
@@ -3442,8 +3461,8 @@
         benchmark = projectInvestmentOverHorizon(
           baseState,
           years,
-          acquisitionAvailableCapital,
-          acquisitionAvailableCapital
+          acquisitionEquityCapital,
+          acquisitionEquityCapital
         );
       } else if (ownsProperty) {
         const extraCapital = Math.max(0, n(baseScenario.baseInitialCapital) - propertyValue);
@@ -3481,6 +3500,9 @@
         grossSecurityDeposit: securityDeposit,
         leftoverInvestmentInitial,
         leftoverInvestmentEndWorth,
+        financingPrincipal: purchaseMode && ownsProperty ? Math.max(0, n(financingSchedule.principal)) : 0,
+        financingBalance: financingBalanceAtHorizon,
+        financingSchedule: financingSchedule.rows,
         cumulativeCash: cashBalance,
         cumulativeFreeCashBeforeFunding,
         externalFundingRequired,
@@ -3507,14 +3529,14 @@
     const investment = projectInvestmentOverHorizon(
       baseState,
       years,
-      purchaseMode ? acquisitionAvailableCapital : baseCalc.netSaleProceeds,
-      purchaseMode ? acquisitionAvailableCapital : baseCalc.startingPropertyEquity
+      purchaseMode ? acquisitionEquityCapital : baseCalc.netSaleProceeds,
+      purchaseMode ? acquisitionEquityCapital : baseCalc.startingPropertyEquity
     );
     projectedScenarios.push({
       id: 'investment',
       label: 'Investimento financeiro',
       years,
-      initialCapital: purchaseMode ? acquisitionAvailableCapital : baseCalc.startingPropertyEquity,
+      initialCapital: purchaseMode ? acquisitionEquityCapital : baseCalc.startingPropertyEquity,
       initialCapex: 0,
       setupResidual: 0,
       propertyEndValue: 0,
