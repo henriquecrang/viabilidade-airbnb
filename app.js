@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 26;
+  const APP_VERSION = 27;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -17,7 +17,7 @@
         configured: false,
         situation: 'owned',
         compareFinancial: true,
-        enabledScenarios: ['airbnb-self','airbnb-admin','airbnb-rented','traditional','investment'],
+        enabledScenarios: ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'],
         incompleteEconomicPath: false
       },
       financial: {
@@ -438,7 +438,7 @@
     const baseMap = {
       owned: ['airbnb-self','airbnb-admin','traditional'],
       'capital-buy': ['airbnb-self','airbnb-admin','traditional'],
-      'rent-third-party': ['airbnb-rented'],
+      'rent-third-party': ['airbnb-rented','airbnb-rented-admin'],
       'primary-home': ['airbnb-self','airbnb-admin'],
       'second-home': ['airbnb-self','airbnb-admin','traditional']
     };
@@ -1888,19 +1888,23 @@
     const monthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
     const adminMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminManages ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
     const rentedMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
+    const adminRentedMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && !x.adminManages ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
 
     const fixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const fixedRentedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const adminFixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const adminFixedRentedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const fixedTraditional = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional ? Math.max(0, n(x.amount)) * 12 : 0), 0);
 
     // OPEX percentual: apenas custos efetivamente consumidos. Reservas ficam fora daqui.
     const pctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
     const rentedPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const adminPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.adminIncluded ? 0 : Math.max(0, n(x.pct)) / 100), 0);
+    const adminRentedPctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb && !x.adminIncluded ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const selfPctCosts = airbnbRevenue * pctCostRate;
     const rentedPctCosts = airbnbRevenue * rentedPctCostRate;
     const adminPctCosts = adminAirbnbRevenue * adminPctCostRate;
+    const adminRentedPctCosts = adminAirbnbRevenue * adminRentedPctCostRate;
 
     // Reservas vinculadas: reduzem caixa livre, mas não patrimônio líquido.
     const reserveRate = currentState.reserveFunds.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
@@ -1927,10 +1931,12 @@
     const selfMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const adminMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const rentedMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const adminRentedMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const traditionalMonthlyTaxDeductions = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional && x.deductibleIR ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const selfPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const adminPctTaxDeductions = adminAirbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const rentedPctTaxDeductions = airbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR ? Math.max(0, n(x.pct)) / 100 : 0), 0);
+    const adminRentedPctTaxDeductions = adminAirbnbRevenue * currentState.percentageCosts.reduce((sum, x) => sum + (x.rentedAirbnb && x.deductibleIR && !x.adminIncluded ? Math.max(0, n(x.pct)) / 100 : 0), 0);
     const selfPlatformTaxDeduction = currentState.airbnb.platformFeeDeductibleIR ? platformFee : 0;
 
     const selfTaxDeductions = selfPlatformTaxDeduction + selfStayTaxDeductions + selfMonthlyTaxDeductions + selfPctTaxDeductions;
@@ -2043,6 +2049,15 @@
       (x) => x.rentedAirbnb && (!currentState.rentedAirbnb.furnished || !x.rentedOnlyIfUnfurnished),
       (x) => x.rentedAmount == null ? x.amount : x.rentedAmount
     );
+    const rentedAdminSetupData = currentState.setupCosts.reduce((acc, x) => {
+      if (!x.rentedAirbnb || (currentState.rentedAirbnb.furnished && x.rentedOnlyIfUnfurnished)) return acc;
+      const amount = Math.max(0, n(x.rentedAmount == null ? x.amount : x.rentedAmount));
+      const residualValue = amount * clamp(n(x.residualPct), 0, 100) / 100;
+      if (!x.adminPays) acc.capex += amount;
+      else acc.paidByAdmin += amount;
+      if (x.adminAssetBelongsToOwner) acc.residual += residualValue;
+      return acc;
+    }, { capex: 0, residual: 0, paidByAdmin: 0 });
     const traditionalSetupData = setupFor((x) => x.traditional);
     const selfSetup = selfSetupData.capex;
     const adminOnboarding = Math.max(0, n(currentState.airbnb.adminOnboardingFee));
@@ -2050,14 +2065,18 @@
     const rentedInitialLeaseCosts = Math.max(0, n(currentState.rentedAirbnb.initialLeaseCosts));
     const rentedSetupAssets = rentedSetupData.capex;
     const rentedSetup = rentedSetupAssets + rentedInitialLeaseCosts;
+    const rentedAdminSetupAssets = rentedAdminSetupData.capex;
+    const rentedAdminSetup = rentedAdminSetupAssets + rentedInitialLeaseCosts + adminOnboarding;
     const traditionalSetup = traditionalSetupData.capex;
     const selfSetupResidual = selfSetupData.residual;
     const adminSetupResidual = adminSetupData.residual;
     const rentedSetupResidual = rentedSetupData.residual;
+    const rentedAdminSetupResidual = rentedAdminSetupData.residual;
     const traditionalSetupResidual = traditionalSetupData.residual;
     const selfSetupDepreciation = selfSetup - selfSetupResidual;
     const adminSetupDepreciation = adminSetup - adminSetupResidual;
     const rentedSetupDepreciation = rentedSetup - rentedSetupResidual;
+    const rentedAdminSetupDepreciation = rentedAdminSetup - rentedAdminSetupResidual;
     const traditionalSetupDepreciation = traditionalSetup - traditionalSetupResidual;
 
     const tradRevenue = Math.max(0, n(currentState.traditional.monthlyRent)) * 12 * clamp(n(currentState.traditional.occupancyPct), 0, 100) / 100;
@@ -2096,6 +2115,16 @@
     const rentedTaxBase = Math.max(0, airbnbRevenue - rentedTaxDeductions);
     const rentedTax = rentedTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
     const rentedOperatingCash = airbnbRevenue - rentedOperatingCosts - rentedTax;
+
+    const adminRentedOperatingCosts = adminFee + adminCleaningPassThrough + adminMonthlyFee + adminPlatformFee
+      + adminStayCosts + adminFixedRentedAirbnb + adminRentedPctCosts + rentedLeaseRent + rentedAnnualLeaseCosts;
+    const adminRentedTaxDeductions = adminPlatformTaxDeduction + adminManagementTaxDeductions + adminCleaningPassThrough
+      + adminStayTaxDeductions + adminRentedMonthlyTaxDeductions + adminRentedPctTaxDeductions
+      + rentedLeaseRent
+      + (currentState.rentedAirbnb.annualLeaseCostsDeductibleIR ? rentedAnnualLeaseCosts : 0);
+    const adminRentedTaxBase = Math.max(0, adminAirbnbRevenue - adminRentedTaxDeductions);
+    const adminRentedTax = adminRentedTaxBase * Math.max(0, n(currentState.airbnb.taxPct)) / 100;
+    const adminRentedOperatingCash = adminAirbnbRevenue - adminRentedOperatingCosts - adminRentedTax;
 
     const salePrice = Math.max(0, propertyValue * (1 + n(currentState.propertySale.salePriceAdjustmentPct) / 100));
     const saleBrokerage = salePrice * Math.max(0, n(currentState.propertySale.brokeragePct)) / 100;
@@ -2144,6 +2173,8 @@
       self: Math.max(0, n(currentState.work.selfHoursMonthly)) * 12 + stayOwnerHoursAnnual + monthlyOwnerHoursAnnual,
       admin: Math.max(0, n(currentState.work.supervisionAdminHoursMonthly)) * 12 + adminStayOwnerHoursAnnual + adminMonthlyOwnerHoursAnnual,
       rented: Math.max(0, n(currentState.work.rentedAirbnbHoursMonthly)) * 12 + stayOwnerHoursAnnual + rentedMonthlyOwnerHoursAnnual,
+      rentedAdmin: (Math.max(0, n(currentState.work.rentedAirbnbHoursMonthly)) + Math.max(0, n(currentState.work.supervisionAdminHoursMonthly))) * 12
+        + adminStayOwnerHoursAnnual + adminRentedMonthlyOwnerHoursAnnual,
       traditional: Math.max(0, n(currentState.work.traditionalHoursMonthly)) * 12,
       investment: Math.max(0, n(currentState.work.investmentHoursMonthly)) * 12
     };
