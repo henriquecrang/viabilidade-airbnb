@@ -16,11 +16,11 @@ approx(defaultState.globals.ownerHourlyValue,100,1e-9,'valor da hora');
 
 const expectedSeasons = [
   ['reveillon',4,750,100],
-  ['verao',81,400,90],
+  ['verao',81,400,75],
   ['carnaval',7,750,100],
-  ['outono',91,250,70],
-  ['inverno',91,250,60],
-  ['primavera',91,250,70]
+  ['outono',91,250,55],
+  ['inverno',91,250,50],
+  ['primavera',91,250,55]
 ];
 assert(defaultState.seasons.length===6,'seis períodos sazonais');
 for(let i=0;i<expectedSeasons.length;i++){
@@ -34,9 +34,9 @@ for(let i=0;i<expectedSeasons.length;i++){
 approx(defaultState.seasons.reduce((sum,x)=>sum+x.days,0),365,1e-9,'dias no ano');
 
 const calc=calculateModel(defaultState);
-approx(calc.occupiedNights,265.9,1e-9,'noites ocupadas originais');
-approx(calc.weightedOccupancy,265.9/365,1e-12,'ocupação média ponderada');
-approx(calc.accommodationRevenue,82910,0.01,'receita de diárias recalibrada');
+approx(calc.occupiedNights,217.35,1e-9,'noites ocupadas V30');
+approx(calc.weightedOccupancy,217.35/365,1e-12,'ocupação média ponderada');
+approx(calc.accommodationRevenue,68950,0.01,'receita de diárias recalibrada');
 
 const self=scenario(calc,'airbnb-self');
 const admin=scenario(calc,'airbnb-admin');
@@ -44,7 +44,7 @@ const rented=scenario(calc,'airbnb-rented');
 const trad=scenario(calc,'traditional');
 const inv=scenario(calc,'investment');
 
-assert(self.workHoursAnnual>0,'autogestão precisa ter horas');
+approx(self.workHoursAnnual,263.25,1e-9,'autogestão manual V30');
 assert(admin.workHoursAnnual>0,'admin precisa ter supervisão');
 assert(trad.workHoursAnnual>0,'tradicional precisa ter horas');
 assert(inv.workHoursAnnual>0,'investimento precisa ter horas');
@@ -95,4 +95,4 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(html.includes('Custo econômico das horas'),'tabela deveria explicitar custo das horas');
 assert(html.includes('Resultado econômico (caixa − horas)'),'tabela deveria mostrar resultado econômico');
 
-console.log('V10 defaults: todos os testes passaram.');
+console.log('Defaults históricos + recalibração V30: todos os testes passaram.');
