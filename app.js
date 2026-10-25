@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 39;
+  const APP_VERSION = 40;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -3767,6 +3767,9 @@
       const total = scenario.economicRealWealthCreation;
       const annual = total / years;
       const monthly = total / (years * 12);
+      const laborMonthly = scenario.realLaborCost / (years * 12);
+      const totalRealMonthly = monthly + laborMonthly;
+      const workHoursMonthly = (scenario.cumulativeWorkHours || 0) / (years * 12);
       const diff = total - best.economicRealWealthCreation;
       const barWidth = Math.max(4, Math.abs(total) / maxAbsEconomic * 100);
       const payback = scenario.paybackYear == null ? 'sem payback no horizonte' : scenario.paybackYear === 0 ? 'sem CAPEX' : `payback no ano ${scenario.paybackYear}`;
@@ -3776,8 +3779,8 @@
           <div class="final-annual ${monthly < 0 ? 'negative' : ''}">${money.format(monthly)}</div>
           <div class="final-annual-label">resultado econômico real · média mensal equivalente</div>
           <div class="final-period-equivalents">
-            <div><span>Total · ${years} ano${years>1?'s':''}</span><strong>${money.format(total)}</strong></div>
-            <div><span>Média anual</span><strong>${money.format(annual)}</strong></div>
+            <div><span>Valor real mensal total</span><strong>${money.format(totalRealMonthly)}</strong><small>ganho real + valor do trabalho</small></div>
+            <div><span>Horas de trabalho/mês</span><strong>${number1.format(workHoursMonthly)} h</strong><small>tempo médio dedicado</small></div>
           </div>
           <div class="final-bar-track" aria-hidden="true"><span style="width:${barWidth.toFixed(1)}%"></span></div>
           <div class="money-lenses">
