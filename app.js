@@ -2426,6 +2426,8 @@
         'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
         'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação relativo': adminOccupancyImpactRelative,
         'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
+        'Ocupação alvo administrada (%)': adminOccupancyMode === 'target-floor' ? adminOccupancyTargetPct : 0,
+        'Ajuste efetivo para atingir o piso (p.p.)': adminOccupancyTargetExtraPp,
         'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
         'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
         'Receita bruta restante do proprietário antes da plataforma': adminOwnerRevenueBeforePlatform,
@@ -2485,6 +2487,8 @@
         'Receita de diárias': adminAccommodationRevenue, 'Taxas cobradas do hóspede': adminGuestFeeRevenue,
         'Impacto admin. na diária': adminNightlyRateImpact, 'Impacto admin. na ocupação relativo': adminOccupancyImpactRelative,
         'Impacto admin. na ocupação (p.p.)': adminOccupancyImpactPp,
+        'Ocupação alvo administrada (%)': adminOccupancyMode === 'target-floor' ? adminOccupancyTargetPct : 0,
+        'Ajuste efetivo para atingir o piso (p.p.)': adminOccupancyTargetExtraPp,
         'Base da comissão da administradora': adminCommissionBase, 'Comissão da administradora': adminFee,
         'Taxa de limpeza repassada à administradora': adminCleaningPassThrough,
         'Taxa da plataforma atribuída ao operador': adminPlatformFee,
@@ -2621,6 +2625,7 @@
       adminOccupiedNights, adminAccommodationRevenue, adminWeightedOccupancy, adminAverageNightlyRate, adminAdr, adminTotalAdr, adminRevPar, adminTotalRevPar,
       adminReservations, adminCleaningFeeRevenue, adminOtherGuestFeeRevenue, adminGuestFeeRevenue, adminAirbnbRevenue,
       adminCommissionBase, adminFee, adminCleaningPassThrough, adminOwnerRevenueBeforePlatform, adminPlatformFee,
+      adminOccupancyMode, adminOccupancyTargetPct, adminOccupancyTargetExtraPp,
       fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, adminFixedRentedAirbnb, fixedTraditional,
       pctCostRate, rentedPctCostRate, adminPctCostRate, adminRentedPctCostRate,
       adminRentedPctCosts, adminRentedOperatingCosts, adminRentedTaxDeductions, adminRentedTaxBase, adminRentedTax, adminRentedOperatingCash,
@@ -3265,8 +3270,11 @@
       const lines = Object.entries(scenario.details).map(([key, value]) => {
         const lowerKey = key.toLowerCase();
         const isRate = lowerKey.includes('taxa bruta nominal') || lowerKey.includes('impacto admin. na diária') || lowerKey.includes('ocupação relativo');
-        const isPercentagePoint = lowerKey.includes('impacto admin. na ocupação') && !lowerKey.includes('relativo');
-        const formatted = isPercentagePoint ? `${number1.format(value)} p.p.` : (isRate ? percent.format(value) : money.format(value));
+        const isPercentagePoint = (lowerKey.includes('impacto admin. na ocupação') && !lowerKey.includes('relativo'))
+          || lowerKey.includes('ajuste efetivo para atingir o piso');
+        const isPercentNumber = lowerKey.includes('ocupação alvo administrada');
+        const formatted = isPercentagePoint ? `${number1.format(value)} p.p.`
+          : (isPercentNumber ? `${number1.format(value)}%` : (isRate ? percent.format(value) : money.format(value)));
         return `<div><dt>${escapeHtml(key)}</dt><dd>${formatted}</dd></div>`;
       }).join('');
       return `<article class="breakdown"><h3>${escapeHtml(scenario.label)}</h3><dl>${lines}</dl></article>`;
@@ -3707,7 +3715,7 @@
         <td><input data-wizard-field="include_${escapeAttr(id)}" type="checkbox" ${draft[`include_${id}`]?'checked':''} /></td></tr>`;
     return `
       <div class="wizard-section">
-        <h3>Preset provisório</h3>
+        <h3>Calibração oficial</h3>
         <div class="wizard-form-grid">
           <label class="field-group"><span class="field-label">Plano</span>
             <select data-wizard-field="plan">
@@ -3716,13 +3724,21 @@
             </select>
           </label>
           ${pctInput('commissionPct','Comissão',draft.commissionPct)}
-          ${pctInput('occupancyRelativePct','Aumento relativo de ocupação',draft.occupancyRelativePct)}
+          <label class="field-group"><span class="field-label">Regra de ocupação administrada</span>
+            <select data-wizard-field="occupancyMode">
+              <option value="target-floor" ${draft.occupancyMode==='target-floor'?'selected':''}>Piso-alvo</option>
+              <option value="delta" ${draft.occupancyMode==='delta'?'selected':''}>Ajuste relativo / p.p.</option>
+            </select>
+          </label>
+          ${pctInput('occupancyTargetPct','Piso-alvo de ocupação',draft.occupancyTargetPct)}
+          ${pctInput('occupancyRelativePct','Ajuste relativo adicional',draft.occupancyRelativePct)}
+          ${pctInput('occupancyImpactPp','Ajuste adicional em p.p.',draft.occupancyImpactPp)}
           ${pctInput('nightlyRateImpactPct','Impacto na diária/ADR',draft.nightlyRateImpactPct)}
           ${moneyInput('monthlyFee','Mensalidade adicional',draft.monthlyFee)}
           ${moneyInput('onboardingFee','Onboarding / setup',draft.onboardingFee)}
           <label class="field-group"><span class="field-label">Supervisão residual do proprietário</span><div class="input-suffix compact-control"><input data-wizard-field="supervisionHoursMonthly" type="number" min="0" step="0.5" value="${escapeAttr(draft.supervisionHoursMonthly)}" /><span>h/mês</span></div></label>
         </div>
-        <p class="helper">O +20% de ocupação é provisoriamente interpretado como aumento relativo, não como +20 pontos percentuais. A diária permanece sem uplift por falta de evidência.</p>
+        <p class="helper">Resposta oficial: a administradora afirma que um Superhost costuma operar acima de 80% de ocupação, enquanto um proprietário sem apoio fica abaixo de 60%. O preset usa 80% como piso-alvo conservador e mantém 0% de uplift de diária. Essa afirmação é comercial e ainda não foi validada por histórico observado.</p>
       </div>
       <div class="wizard-section">
         <h3>Comissão, Airbnb e limpeza</h3>
@@ -3739,7 +3755,7 @@
               <option value="gross-owner" ${draft.platformFeeAllocation==='gross-owner'?'selected':''}>Proprietário suporta sobre o bruto</option>
             </select>
           </label>
-          <label class="field-group checkbox-field"><input data-wizard-field="cleaningInCommissionBase" type="checkbox" ${draft.cleaningInCommissionBase?'checked':''} /><span><strong>Limpeza entra na base da comissão</strong><small>Essencial: sim. Premium provisório: não.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="cleaningInCommissionBase" type="checkbox" ${draft.cleaningInCommissionBase?'checked':''} /><span><strong>Limpeza entra na base da comissão</strong><small>Resposta oficial: a taxa de limpeza aumenta o total pago pelo hóspede e entra na divisão em ambos os planos.</small></span></label>
         </div>
       </div>
       <div class="wizard-section">
@@ -3764,13 +3780,13 @@
       <div class="wizard-section">
         <h3>Enxoval e manutenção</h3>
         <div class="wizard-form-grid">
-          <label class="field-group checkbox-field"><input data-wizard-field="linenAdminPays" type="checkbox" ${draft.linenAdminPays?'checked':''} /><span><strong>Administradora paga o enxoval inicial</strong><small>Premissa provisória do Premium.</small></span></label>
-          <label class="field-group checkbox-field"><input data-wizard-field="linenBelongsToOwner" type="checkbox" ${draft.linenBelongsToOwner?'checked':''} /><span><strong>Enxoval fica com o proprietário</strong><small>No Premium provisório, fica desmarcado.</small></span></label>
-          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceManaged" type="checkbox" ${draft.maintenanceManaged?'checked':''} /><span><strong>Admin gerencia pequenos reparos/eletrodomésticos</strong><small>Gerenciar não significa pagar.</small></span></label>
-          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Premissa provisória: desmarcado; proprietário paga.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="linenAdminPays" type="checkbox" ${draft.linenAdminPays?'checked':''} /><span><strong>Administradora paga o enxoval inicial</strong><small>No Premium, a administradora compra o enxoval; a resposta oficial diz que o bem pertence a quem compra.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="linenBelongsToOwner" type="checkbox" ${draft.linenBelongsToOwner?'checked':''} /><span><strong>Enxoval fica com o proprietário</strong><small>No Premium fica desmarcado quando a administradora é quem compra.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceManaged" type="checkbox" ${draft.maintenanceManaged?'checked':''} /><span><strong>Admin gerencia pequenos reparos/eletrodomésticos</strong><small>A resposta oficial só confirma que esses custos são do proprietário; gestão dos reparos não é presumida.</small></span></label>
+          <label class="field-group checkbox-field"><input data-wizard-field="maintenanceIncluded" type="checkbox" ${draft.maintenanceIncluded?'checked':''} /><span><strong>Custo de manutenção incluído</strong><small>Resposta oficial: toda manutenção de equipamentos, imóvel e bens é do proprietário.</small></span></label>
         </div>
       </div>
-      <div class="concept-note"><strong>Premissas provisórias:</strong> este preset foi autorizado para permitir avanço antes da resposta formal da administradora. A revisão obrigatória está registrada na Issue #44.</div>`;
+      <div class="concept-note"><strong>Calibração oficial recebida em 24/10/2026:</strong> comissão, limpeza, titularidade do enxoval e responsabilidade de manutenção foram atualizadas. A ocupação de 80% é tratada como piso-alvo derivado da afirmação comercial da administradora, não como dado independente de mercado.</div>`;
   }
 
   function bindAdminWizardPresetChange() {
