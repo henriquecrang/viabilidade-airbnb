@@ -2089,6 +2089,39 @@
     };
   }
 
+  function acquisitionFinancingSchedule(inputState = defaultState, horizonYears = 1) {
+    const meta = inputState?.guidedSetup?.acquisitionSale || {};
+    const principal = Math.max(0, n(meta.financingPrincipal));
+    const rate = Math.max(0, n(meta.financingAnnualRatePct)) / 100;
+    const termYears = Math.max(1, Math.round(n(meta.financingTermYears, 20)));
+    const years = Math.max(1, Math.round(n(horizonYears, 1)));
+    const originationCosts = Math.max(0, n(meta.financingOriginationCosts));
+    const annualPayment = principal <= 0
+      ? 0
+      : (rate <= 1e-12
+        ? principal / termYears
+        : principal * rate / (1 - Math.pow(1 + rate, -termYears)));
+    let balance = principal;
+    const rows = [];
+    for (let year = 1; year <= years; year += 1) {
+      if (balance <= 1e-9 || year > termYears) {
+        rows.push({ year, openingBalance: Math.max(0,balance), interest: 0, principalPaid: 0, payment: 0, endingBalance: Math.max(0,balance) });
+        continue;
+      }
+      const openingBalance = balance;
+      const interest = openingBalance * rate;
+      let payment = Math.min(annualPayment, openingBalance + interest);
+      let principalPaid = Math.max(0, payment - interest);
+      if (year === termYears || principalPaid > openingBalance) {
+        principalPaid = openingBalance;
+        payment = interest + principalPaid;
+      }
+      balance = Math.max(0, openingBalance - principalPaid);
+      rows.push({ year, openingBalance, interest, principalPaid, payment, endingBalance: balance });
+    }
+    return { principal, rate, termYears, annualPayment, originationCosts, rows, endingBalance: balance };
+  }
+
   function calculateModelSingle(inputState = state) {
     const currentState = inputState;
     const propertyValue = Math.max(0, n(currentState.globals.propertyValue));
@@ -2098,7 +2131,13 @@
       && acquisitionMeta.position === 'buy'
       && acquisitionMeta.purchaseEconomicsComplete === true;
     const acquisitionAvailableCapital = purchaseMode ? Math.max(0, n(acquisitionMeta.availableCapital)) : 0;
+    const acquisitionAdditionalEquity = purchaseMode ? Math.max(0, n(acquisitionMeta.additionalEquity)) : 0;
+    const acquisitionEquityCapital = acquisitionAvailableCapital + acquisitionAdditionalEquity;
     const acquisitionPurchaseCosts = purchaseMode ? Math.max(0, n(acquisitionMeta.purchaseCosts)) : 0;
+    const acquisitionFinancing = purchaseMode ? acquisitionFinancingSchedule(currentState, 1) : acquisitionFinancingSchedule({ guidedSetup:{ acquisitionSale:{} } }, 1);
+    const acquisitionFinancingPrincipal = purchaseMode ? acquisitionFinancing.principal : 0;
+    const acquisitionFinancingOriginationCosts = purchaseMode ? acquisitionFinancing.originationCosts : 0;
+    const acquisitionFinancingYear1 = purchaseMode ? (acquisitionFinancing.rows[0] || {payment:0,interest:0,principalPaid:0,endingBalance:0}) : {payment:0,interest:0,principalPaid:0,endingBalance:0};
     const inflation = n(currentState.globals.inflationPct) / 100;
     const realAppreciation = n(currentState.globals.propertyRealAppreciationPct) / 100;
     const nominalPropertyAppreciation = (1 + inflation) * (1 + realAppreciation) - 1;
