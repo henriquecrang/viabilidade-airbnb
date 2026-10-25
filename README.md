@@ -161,7 +161,7 @@ Regra atual:
 - o benchmark sem compra investe o capital inicial integral, sem aplicar custos de venda de um imóvel que ainda não existe;
 - quando o usuário já possui o imóvel, permanece a regra anterior: vender implica corretagem e demais custos de liquidação, e apenas o capital líquido é investido.
 
-Nesta versão, **não existe financiamento nem aporte adicional para completar uma compra que exceda o capital disponível**. O wizard rejeita essa configuração. Essa expansão foi separada para o backlog, para não introduzir dívida, juros e aportes assimétricos sem modelagem explícita.
+Historicamente, a V25 exigia compra integralmente coberta pelo capital disponível. Essa restrição foi superada na **V43**, que passou a aceitar aporte adicional e financiamento explicitamente configurados.
 
 Os horizontes continuam anuais (1/3/5 anos), e o comportamento default de quem já possui o imóvel permanece numericamente idêntico à V24.
 
@@ -447,6 +447,38 @@ Pode permanecer aplicado ou ser liquidado ao fim do horizonte. O custo percentua
 
 A comparação final mostra a estratégia terminal e os custos/deduções de saída.
 
+## V43 — aporte adicional e financiamento explícito
+
+A Issue #43 remove a restrição de compra exclusivamente à vista, sem introduzir nenhuma fonte de recursos implícita.
+
+No assistente **Aquisição e venda**, o usuário pode configurar:
+- capital inicialmente disponível;
+- aporte adicional de capital próprio;
+- principal financiado;
+- taxa efetiva anual;
+- prazo em anos;
+- custos de contratação do crédito.
+
+O motor anual usa uma parcela anual fixa equivalente e registra, ano a ano:
+- pagamento;
+- juros;
+- amortização;
+- saldo devedor.
+
+### Tratamento econômico
+
+- a dívida **não** é riqueza do usuário;
+- o capital inicial da estratégia é o capital próprio disponível + aporte adicional;
+- o benchmark financeiro recebe esse mesmo capital próprio, nunca o principal financiado;
+- parcelas do financiamento reduzem o caixa;
+- amortização reduz o saldo devedor;
+- o saldo devedor reduz o patrimônio líquido;
+- se o imóvel for vendido no horizonte, o saldo calculado naquele ano é quitado na venda;
+- custos de contratação entram uma única vez na necessidade inicial;
+- qualquer sobra de capital próprio continua aplicada financeiramente.
+
+Com todos os novos campos em zero, o caminho cash-only da V25 permanece numericamente compatível.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
@@ -580,8 +612,8 @@ Isso faz a corretagem e demais custos aparecerem como perda patrimonial real da 
 
 A corretagem é editável. O CRECI-RJ informa que a remuneração é de livre negociação; a referência de 5% foi escolhida por ser praticada em operações da Loft no Rio de Janeiro.
 
-### Limitação atual
-Se houver saldo de financiamento, ele é quitado na conversão para caixa. Os cenários que mantêm o imóvel ainda não modelam juros e amortização da dívida; o aplicativo gera um alerta para essa assimetria.
+### Financiamento do imóvel
+Para imóveis já possuídos, o campo de saldo de financiamento informado na venda continua sendo tratado como dívida a quitar na conversão para caixa. Para o caminho **capital → compra**, a V43 modela explicitamente principal, taxa, prazo, juros, amortização, saldo devedor e custos de contratação.
 
 
 ## V15 — CAPEX específico do Airbnb alugado
@@ -770,7 +802,7 @@ A camada de onboarding guiado foi adicionada sem criar um segundo motor econômi
 - já possui imóvel, moradia principal, segunda residência e Airbnb em imóvel alugado filtram apenas os cenários exibidos;
 - premissas dos cenários ocultos continuam salvas e o motor detalhado não é apagado;
 - no Airbnb alugado, o benchmark financeiro permanece embutido no próprio cenário; o investimento standalone baseado na venda do imóvel não é exibido;
-- o caminho **“tenho capital e penso em comprar”** foi completado na V25: compra e benchmark partem do mesmo capital inicial; a compra precisa caber integralmente nesse capital.
+- o caminho **“tenho capital e penso em comprar”** foi ampliado na V43: compra e benchmark partem do mesmo capital próprio, enquanto financiamento é tratado como dívida e nunca como riqueza do benchmark.
 
 ### #25 — benchmark financeiro
 
