@@ -307,6 +307,18 @@ Na comparação final, a **média mensal equivalente** passa a ser o valor princ
 
 A mudança é apenas de hierarquia visual: ranking, projeções e fórmulas permanecem inalterados. A média mensal continua sendo o total do horizonte dividido pelo número de meses, não um fluxo mensal real.
 
+## V34 — resultado principal sensível ao valor da hora
+
+A Issue #51 corrige uma inconsistência da comparação final: o valor econômico da hora já afetava o custo do trabalho e o resultado econômico, mas o número principal dos cards e o ranking ainda usavam o excedente financeiro nominal, que não desconta o trabalho próprio.
+
+Desde a V34:
+- o número principal mensal e o ranking usam **resultado econômico real**;
+- alterar o valor da hora afeta imediatamente os cenários com trabalho próprio;
+- o excedente nominal sobre preservação continua visível como **lente financeira secundária**;
+- a tabela 1/3/5 também destaca o resultado econômico real e mostra o ganho patrimonial/caixa separadamente.
+
+Isso mantém explícita a distinção entre resultado financeiro e custo econômico do tempo.
+
 ## Limitações atuais
 
 - O motor ativo é **anual**, com horizontes de 1, 3 e 5 anos (default: 3); valores mensais são apenas médias mensais equivalentes.
