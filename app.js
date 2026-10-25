@@ -714,6 +714,11 @@
     const currentMarketValue = Math.max(0, n(draft.currentMarketValue, inputState?.globals?.propertyValue));
     const purchasePrice = Math.max(0, n(draft.purchasePrice, currentMarketValue));
     const purchaseCosts = Math.max(0, n(draft.purchaseCosts));
+    const additionalEquity = Math.max(0, n(draft.additionalEquity));
+    const financingPrincipal = Math.max(0, n(draft.financingPrincipal));
+    const financingAnnualRatePct = Math.max(0, n(draft.financingAnnualRatePct));
+    const financingTermYears = Math.max(1, Math.round(n(draft.financingTermYears, 20)));
+    const financingOriginationCosts = Math.max(0, n(draft.financingOriginationCosts));
     const propertyValue = position === 'buy' ? purchasePrice : currentMarketValue;
     const workingCapitalTarget = ['airbnbSelf','airbnbAdmin','traditional'].includes(draft.workingCapitalTarget)
       ? draft.workingCapitalTarget
@@ -736,18 +741,26 @@
     }
 
     const reserveOpeningTotal = (inputState?.reserveFunds || []).reduce((sum, x) => sum + Math.max(0, n(x.openingBalance)), 0);
-    const purchaseCapitalNeedKnown = propertyValue + purchaseCosts + setupTotal + reserveOpeningTotal + workingCapitalAmount;
+    const purchaseCapitalNeedKnown = propertyValue + purchaseCosts + setupTotal + reserveOpeningTotal + workingCapitalAmount + financingOriginationCosts;
+    const ownCapitalPool = availableCapital + additionalEquity;
+    const ownCapitalRequired = Math.max(0, purchaseCapitalNeedKnown - financingPrincipal);
     const purchaseFundingGap = position === 'buy'
-      ? Math.max(0, purchaseCapitalNeedKnown - availableCapital)
+      ? Math.max(0, ownCapitalRequired - ownCapitalPool)
       : 0;
     const leftoverCapital = position === 'buy'
-      ? Math.max(0, availableCapital - purchaseCapitalNeedKnown)
+      ? Math.max(0, ownCapitalPool - ownCapitalRequired)
       : 0;
+    const fundingMode = financingPrincipal > 0 && additionalEquity > 0
+      ? 'mixed'
+      : (financingPrincipal > 0 ? 'financing' : (additionalEquity > 0 ? 'additional-equity' : 'cash'));
     const errors = [];
-    if (position === 'buy' && availableCapital <= 0) errors.push('Informe um capital disponível maior que zero para o caminho de compra.');
+    if (position === 'buy' && ownCapitalPool + financingPrincipal <= 0) errors.push('Informe alguma fonte de capital para o caminho de compra.');
     if (position === 'buy' && purchasePrice <= 0) errors.push('Informe um preço de compra maior que zero.');
+    if (position === 'buy' && financingPrincipal > purchaseCapitalNeedKnown + 1e-9) {
+      errors.push('O principal financiado não pode exceder a necessidade inicial total da aquisição.');
+    }
     if (position === 'buy' && purchaseFundingGap > 1e-9) {
-      errors.push(`O capital disponível é insuficiente: faltam ${money.format(purchaseFundingGap)} para cobrir compra, custos de aquisição, CAPEX, reservas iniciais e capital de giro. Esta versão não cria financiamento nem aporte adicional para completar a compra.`);
+      errors.push(`As fontes explícitas ainda são insuficientes: faltam ${money.format(purchaseFundingGap)} após capital disponível, aporte adicional e financiamento.`);
     }
     const purchaseEconomicsComplete = position !== 'buy' || errors.length === 0;
 
@@ -757,11 +770,19 @@
       availableCapital,
       purchasePrice,
       purchaseCosts,
+      additionalEquity,
+      financingPrincipal,
+      financingAnnualRatePct,
+      financingTermYears,
+      financingOriginationCosts,
+      fundingMode,
       workingCapitalTarget,
       workingCapitalAmount,
       purchaseEconomicsComplete,
-      cashOnlyPurchase: true,
+      cashOnlyPurchase: fundingMode === 'cash',
       purchaseCapitalNeedKnown,
+      ownCapitalPool,
+      ownCapitalRequired,
       purchaseFundingGap,
       leftoverCapital,
       modelGapIssue: null
@@ -786,6 +807,14 @@
       normalized: {
         position,
         availableCapital,
+        additionalEquity,
+        ownCapitalPool,
+        ownCapitalRequired,
+        financingPrincipal,
+        financingAnnualRatePct,
+        financingTermYears,
+        financingOriginationCosts,
+        fundingMode,
         propertyValue,
         purchasePrice,
         purchaseCosts,
@@ -807,7 +836,6 @@
       }
     };
   }
-
 
   function buildAdminWizardPatch(draft = {}, inputState = defaultState) {
     const plan = draft.plan === 'essential' ? 'essential' : 'premium';
