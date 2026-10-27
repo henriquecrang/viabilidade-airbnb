@@ -1,15 +1,16 @@
 # Simulador patrimonial — Airbnb × aluguel × investimento
 
-Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar seis categorias-base de estratégia:
+Aplicação web estática (HTML + CSS + JavaScript, sem dependências) para comparar sete categorias-base de estratégia:
 
 1. Airbnb em imóvel próprio, autogerido
 2. Airbnb em imóvel próprio, com administradora
 3. Airbnb em imóvel alugado, autogerido
 4. Airbnb em imóvel alugado, com administradora
-5. Aluguel tradicional
-6. Investimento financeiro
+5. Imóvel próprio parado
+6. Aluguel tradicional
+7. Investimento financeiro
 
-Na comparação final, os modos “com administradora” são desdobrados em **Essencial** e **Premium**, resultando em até oito cenários simultâneos.
+Na comparação final, os modos “com administradora” são desdobrados em **Essencial** e **Premium**, resultando em até nove cenários simultâneos.
 
 Pode ser aberta localmente ou publicada no GitHub Pages. As simulações podem ser exportadas/importadas em JSON.
 
@@ -294,7 +295,7 @@ A Issue #49 reorganiza a seção final para funcionar como a principal tela de d
 - os cards finais usam a projeção plurianual, e não apenas o resultado do primeiro ano;
 - o indicador principal mostra **total do horizonte**, **média anual** (total ÷ anos) e **média mensal equivalente** (total ÷ meses);
 - Essencial e Premium são sempre disponibilizados separadamente na comparação final, mesmo antes de abrir o wizard da administradora;
-- os oito cenários podem ser exibidos ou ocultados individualmente por um seletor acima dos cards;
+- desde a V44, os nove cenários podem ser exibidos ou ocultados individualmente por um seletor acima dos cards;
 - esse filtro altera apenas a apresentação final, não as premissas econômicas;
 - a tabela 1/3/5 anos respeita o mesmo conjunto de cenários selecionados;
 - o topo da aplicação ganhou **Restaurar defaults**, que recompõe toda a simulação a partir da configuração padrão atual após confirmação.
@@ -478,6 +479,22 @@ O motor anual usa uma parcela anual fixa equivalente e registra, ano a ano:
 - qualquer sobra de capital próprio continua aplicada financeiramente.
 
 Com todos os novos campos em zero, o caminho cash-only da V25 permanece numericamente compatível.
+
+## V44 — imóvel parado como baseline de inação
+
+A Issue #58 adiciona **Imóvel parado** como cenário explícito para quem já possui ou pretende comprar o imóvel e decide não gerar renda com ele.
+
+Regras:
+- receita de locação = **R$ 0**;
+- o imóvel permanece no patrimônio e segue a valorização configurada;
+- custos mensais marcados como **Imóvel parado** continuam sendo pagos;
+- não há taxa de plataforma, comissão de administradora, custo por reserva ou IR sobre aluguel;
+- o proprietário tem default de **0,5 h/mês** de supervisão básica;
+- o cenário participa normalmente do benchmark e das projeções de 1/3/5 anos.
+
+No cenário-base atual, os custos de carregamento marcados somam **R$ 16.585/ano**. No horizonte padrão de 3 anos, o resultado econômico real fica em aproximadamente **–R$ 1.375/mês equivalente**.
+
+A tabela de custos mensais ganhou uma coluna própria para controlar quais despesas continuam existindo quando o imóvel fica parado. O wizard principal oferece esse cenário apenas nos caminhos **já possuo o imóvel** e **tenho capital e penso em comprar**.
 
 ## Limitações atuais
 
