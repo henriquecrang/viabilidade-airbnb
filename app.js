@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 43;
+  const APP_VERSION = 44;
   const STORAGE_KEY = 'simulador-airbnb-state-v1'; // mantido para migrar automaticamente a V1
   const UI_STORAGE_KEY = 'simulador-airbnb-ui-v1';
 
@@ -18,6 +18,7 @@
         'airbnb-rented',
         'airbnb-rented-admin-essential',
         'airbnb-rented-admin',
+        'idle-property',
         'traditional',
         'investment'
       ]
@@ -27,7 +28,7 @@
         configured: false,
         situation: 'owned',
         compareFinancial: true,
-        enabledScenarios: ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'],
+        enabledScenarios: ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','idle-property','traditional','investment'],
         incompleteEconomicPath: false
       },
       financial: {
@@ -293,6 +294,7 @@
       selfHoursMonthly: 1,
       supervisionAdminHoursMonthly: 1,
       traditionalHoursMonthly: 1.5,
+      idlePropertyHoursMonthly: 0.5,
       investmentHoursMonthly: 0.5,
       rentedAirbnbHoursMonthly: 1
     },
@@ -380,23 +382,23 @@
       { id: 'checkin', name: 'Check-in / check-out presencial', amount: 0, ownerHoursPerReservation: 1, adminManages: true, adminIncluded: false, deductibleIR: false }
     ],
     monthlyCosts: [
-      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 1.5, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: true, adminIncluded: false, deductibleIR: false },
-      { id: 'seguro', name: 'Seguro do imóvel / incêndio', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'seguro-garantia', name: 'Seguro-fiança / garantia locatícia', amount: 0, ownerHoursMonthly: 0, airbnb: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'iptu', name: 'IPTU', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
-      { id: 'tcl', name: 'TCL — coleta de lixo (R$ 625/ano)', amount: 625 / 12, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
-      { id: 'agua', name: 'Água + esgoto', amount: 200, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'luz', name: 'Energia elétrica', amount: 400, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'gas', name: 'Gás', amount: 100, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'condominio', name: 'Condomínio ordinário', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: true },
-      { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false },
-      { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }
+      { id: 'marketing', name: 'Gestão comercial e marketing', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'presales', name: 'Atendimento de reservas / pré-venda', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'guest-support', name: 'Atendimento contínuo ao hóspede', amount: 0, ownerHoursMonthly: 2, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'local-support', name: 'Suporte operacional / plantão local', amount: 0, ownerHoursMonthly: 1, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'software', name: 'Software e automação', amount: 0, ownerHoursMonthly: 0.5, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'pricing', name: 'Gestão de preços / dynamic pricing', amount: 0, ownerHoursMonthly: 1.5, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: true, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro', name: 'Seguro do imóvel / incêndio', amount: 60, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'seguro-garantia', name: 'Seguro-fiança / garantia locatícia', amount: 0, ownerHoursMonthly: 0, airbnb: false, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'iptu', name: 'IPTU', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'tcl', name: 'TCL — coleta de lixo (R$ 625/ano)', amount: 625 / 12, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: false, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'agua', name: 'Água + esgoto', amount: 200, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'luz', name: 'Energia elétrica', amount: 400, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'gas', name: 'Gás', amount: 100, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'internet', name: 'Internet', amount: 120, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'condominio', name: 'Condomínio ordinário', amount: 450, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: true, adminManages: false, adminIncluded: false, deductibleIR: true },
+      { id: 'contabilidade', name: 'Contabilidade / administração', amount: 0, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: false, adminIncluded: false, deductibleIR: false },
+      { id: 'licencas', name: 'Licenças e taxas administrativas', amount: 30, ownerHoursMonthly: 0, airbnb: true, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: false, adminIncluded: false, deductibleIR: false }
     ],
     percentageCosts: [
       { id: 'maintenance', name: 'Manutenção e reparos operacionais', pct: 2, rentedAirbnb: true, adminIncluded: false, deductibleIR: false },
@@ -505,17 +507,19 @@
       ? draft.situation
       : 'owned';
     const baseMap = {
-      owned: ['airbnb-self','airbnb-admin','traditional'],
-      'capital-buy': ['airbnb-self','airbnb-admin','traditional'],
+      owned: ['airbnb-self','airbnb-admin','idle-property','traditional'],
+      'capital-buy': ['airbnb-self','airbnb-admin','idle-property','traditional'],
       'rent-third-party': ['airbnb-rented','airbnb-rented-admin'],
       'primary-home': ['airbnb-self','airbnb-admin'],
       'second-home': ['airbnb-self','airbnb-admin','traditional']
     };
 
     const hasScenarioFields = FINAL_SCENARIO_IDS.some((id) => Object.prototype.hasOwnProperty.call(draft, `scenario_${id}`));
-    const selectedFinalScenarioIds = hasScenarioFields
+    const idlePropertyEligible = ['owned','capital-buy'].includes(situation);
+    const selectedFinalScenarioIdsRaw = hasScenarioFields
       ? FINAL_SCENARIO_IDS.filter((id) => Boolean(draft[`scenario_${id}`]))
       : finalVisibleScenarioIds(inputState);
+    const selectedFinalScenarioIds = selectedFinalScenarioIdsRaw.filter((id) => id !== 'idle-property' || idlePropertyEligible);
     const compareFinancial = hasScenarioFields
       ? selectedFinalScenarioIds.includes('investment')
       : draft.compareFinancial !== false;
@@ -1123,6 +1127,7 @@
         hybridIncremental: Boolean(item.hybridIncremental),
         rentedAirbnb: item.rentedAirbnb == null ? item.airbnb !== false : Boolean(item.rentedAirbnb),
         traditional: Boolean(item.traditional),
+        idleProperty: item.idleProperty == null ? Boolean(def?.idleProperty) : Boolean(item.idleProperty),
         adminManages: Boolean(item.adminManages),
         adminIncluded: Boolean(item.adminIncluded),
         deductibleIR: item.deductibleIR == null ? Boolean(def?.deductibleIR) : Boolean(item.deductibleIR)
@@ -1672,6 +1677,7 @@
         <td class="center-cell"><input data-array="monthlyCosts" data-field="hybridIncremental" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.hybridIncremental ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} aria-label="Custo incremental no uso híbrido" /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="rentedAirbnb" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.rentedAirbnb ? 'checked' : ''} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="traditional" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.traditional ? 'checked' : ''} /></td>
+        <td class="center-cell"><input data-array="monthlyCosts" data-field="idleProperty" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.idleProperty ? 'checked' : ''} aria-label="Aplica ao imóvel parado" /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="adminManages" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminManages ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="adminIncluded" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.adminIncluded ? 'checked' : ''} ${item.airbnb ? '' : 'disabled'} /></td>
         <td class="center-cell"><input data-array="monthlyCosts" data-field="deductibleIR" data-id="${escapeAttr(item.id)}" type="checkbox" ${item.deductibleIR ? 'checked' : ''} /></td>
@@ -1976,7 +1982,7 @@
 
   function addSeason() { state.seasons.push({ id: uid('season'), name: 'Novo período', days: 0, personalUseDays: 0, habitualUseDays: 0, operationalUnavailableDays: 0, unavailableDays: 0, nightlyRate: 0, occupancyPct: 0 }); refreshDynamic(); }
   function addStayCost() { state.stayCosts.push({ id: uid('stay'), name: 'Novo custo', amount: 0, ownerHoursPerReservation: 0, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
-  function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, hybridIncremental: false, rentedAirbnb: true, traditional: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
+  function addMonthlyCost() { state.monthlyCosts.push({ id: uid('monthly'), name: 'Novo custo', amount: 0, ownerHoursMonthly: 0, airbnb: true, hybridIncremental: false, rentedAirbnb: true, traditional: false, idleProperty: false, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addPercentageCost() { state.percentageCosts.push({ id: uid('pct'), name: 'Novo custo percentual', pct: 0, rentedAirbnb: true, adminManages: false, adminIncluded: false, deductibleIR: false }); refreshDynamic(); }
   function addReserveFund() { state.reserveFunds.push({ id: uid('reserve'), name: 'Nova reserva vinculada', pct: 0, openingBalance: 0, adminIncluded: false }); refreshDynamic(); }
   function addSetupCost() { state.setupCosts.push({ id: uid('setup'), name: 'Novo custo de implantação', amount: 0, rentedAmount: 0, residualPct: 0, airbnb: true, rentedAirbnb: true, rentedOnlyIfUnfurnished: false, traditional: false, adminPays: false, adminAssetBelongsToOwner: true }); refreshDynamic(); }
@@ -3590,6 +3596,7 @@
     'airbnb-rented',
     'airbnb-rented-admin-essential',
     'airbnb-rented-admin',
+    'idle-property',
     'traditional',
     'investment'
   ];
@@ -3845,8 +3852,8 @@
     const configured = inputState?.guidedSetup?.main;
     const comparePlans = adminComparisonEnabled(inputState);
     const known = comparePlans
-      ? ['airbnb-self','airbnb-admin-essential','airbnb-admin','airbnb-rented','airbnb-rented-admin-essential','airbnb-rented-admin','traditional','investment']
-      : ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','traditional','investment'];
+      ? ['airbnb-self','airbnb-admin-essential','airbnb-admin','airbnb-rented','airbnb-rented-admin-essential','airbnb-rented-admin','idle-property','traditional','investment']
+      : ['airbnb-self','airbnb-admin','airbnb-rented','airbnb-rented-admin','idle-property','traditional','investment'];
     if (!configured?.configured || !Array.isArray(configured.enabledScenarios) || configured.enabledScenarios.length === 0) return known;
     const selected = [];
     for (const id of configured.enabledScenarios) {
@@ -4225,6 +4232,7 @@
       'airbnb-rented':'Airbnb alugado · autogestão',
       'airbnb-rented-admin-essential':'Airbnb alugado · Admin Essencial',
       'airbnb-rented-admin':'Airbnb alugado · Admin Premium',
+      'idle-property':'Imóvel parado',
       traditional:'Aluguel tradicional',
       investment:'Investimento financeiro'
     };
@@ -4246,7 +4254,10 @@
       <div class="wizard-section">
         <h3>2. Cenários que quero ver na comparação final</h3>
         <div class="wizard-form-grid">
-          ${FINAL_SCENARIO_IDS.map((id)=>`<label class="field-group checkbox-field"><input data-wizard-field="scenario_${escapeAttr(id)}" type="checkbox" ${draft[`scenario_${id}`]?'checked':''} /><span><strong>${escapeHtml(scenarioLabels[id])}</strong></span></label>`).join('')}
+          ${FINAL_SCENARIO_IDS.map((id)=>{
+            const disabled = id === 'idle-property' && !['owned','capital-buy'].includes(draft.situation);
+            return `<label class="field-group checkbox-field ${disabled?'disabled':''}"><input data-wizard-field="scenario_${escapeAttr(id)}" type="checkbox" ${draft[`scenario_${id}`]?'checked':''} ${disabled?'disabled':''} /><span><strong>${escapeHtml(scenarioLabels[id])}</strong></span></label>`;
+          }).join('')}
         </div>
         <p class="helper">Este filtro muda apenas o quadro final. O motor continua preservando as demais premissas.</p>
       </div>
