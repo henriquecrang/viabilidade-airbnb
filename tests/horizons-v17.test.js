@@ -15,7 +15,7 @@ const p3=calculateHorizonProjection(defaultState,3);
 const p5=calculateHorizonProjection(defaultState,5);
 assert(p1.years===1&&p3.years===3&&p5.years===5,'horizontes');
 for(const p of [p1,p3,p5]){
-  assert(p.scenarios.length===6,'seis cenários após matriz V27');
+  assert(p.scenarios.length===7,'sete cenários após inclusão do imóvel parado');
   for(const s of p.scenarios){
     assert(Number.isFinite(s.realWealthCreation),`${s.id} ganho real inválido`);
     assert(Number.isFinite(s.endNetWorth),`${s.id} patrimônio inválido`);
