@@ -18,16 +18,16 @@ assert(defaultState.guidedSetup.adminComparisonEnabled===false,'estado-base não
 
 const projection=finalProjection(null,defaultState);
 assert(projection.years===3,'projeção final default deve usar 3 anos');
-assert(projection.scenarios.length===8,'final deve disponibilizar oito cenários');
+assert(projection.scenarios.length===9,'final deve disponibilizar nove cenários');
 for(const id of [
   'airbnb-self','airbnb-admin-essential','airbnb-admin',
   'airbnb-rented','airbnb-rented-admin-essential','airbnb-rented-admin',
-  'traditional','investment'
+  'idle-property','traditional','investment'
 ]){
   assert(projection.scenarios.some(x=>x.id===id),`cenário final ausente: ${id}`);
 }
 
-assert(finalVisibleScenarioIds(defaultState).length===8,'todos os cenários devem iniciar visíveis');
+assert(finalVisibleScenarioIds(defaultState).length===9,'todos os cenários devem iniciar visíveis');
 const filtered=JSON.parse(JSON.stringify(defaultState));
 filtered.analysis.finalScenarioIds=['airbnb-self','investment'];
 assert(JSON.stringify(finalVisibleScenarioIds(filtered))===JSON.stringify(['airbnb-self','investment']),'filtro final deve ser independente');
@@ -42,7 +42,7 @@ assert(html.includes('id="finalHorizonYears"'),'seletor de horizonte final ausen
 assert(html.includes('id="restoreDefaultsButton"'),'botão de restaurar defaults ausente');
 assert(html.includes('Restaurar defaults'),'rótulo de reset ausente');
 
-console.log('V32 resumo final: oito cenários, filtros, 3 anos e reset passaram.');
+console.log('V32+ resumo final: filtros, 3 anos, reset e cenário parado passaram.');
 
 
 const appSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
