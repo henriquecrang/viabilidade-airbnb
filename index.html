@@ -153,6 +153,7 @@
               <label class="field-group"><span class="field-label">Supervisão da administradora</span><div class="input-suffix compact-control"><input data-path="work.supervisionAdminHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div><small class="field-help">Tempo residual para acompanhar a empresa, mesmo quando as tarefas estão delegadas.</small></label>
               <label class="field-group"><span class="field-label">Outras horas gerais · Airbnb alugado</span><div class="input-suffix compact-control"><input data-path="work.rentedAirbnbHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
               <label class="field-group"><span class="field-label">Aluguel tradicional</span><div class="input-suffix compact-control"><input data-path="work.traditionalHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
+              <label class="field-group"><span class="field-label">Imóvel parado</span><div class="input-suffix compact-control"><input data-path="work.idlePropertyHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div><small class="field-help">Supervisão mínima do imóvel sem operação de aluguel.</small></label>
               <label class="field-group"><span class="field-label">Investimento financeiro</span><div class="input-suffix compact-control"><input data-path="work.investmentHoursMonthly" type="number" min="0" step="0.5" /><span>h/mês</span></div></label>
             </div>
           </div>
@@ -341,9 +342,9 @@
             <div class="table-card compact-table-card">
               <div class="table-scroll">
                 <table class="monthly-cost-table admin-table">
-                  <thead><tr><th>Item</th><th>Valor mensal</th><th>Seu tempo/mês</th><th>Airbnb próprio</th><th>Incremental<br><small>uso híbrido</small></th><th>Locatário paga<br><small>Airbnb alugado</small></th><th>Aluguel tradicional</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
+                  <thead><tr><th>Item</th><th>Valor mensal</th><th>Seu tempo/mês</th><th>Airbnb próprio</th><th>Incremental<br><small>uso híbrido</small></th><th>Locatário paga<br><small>Airbnb alugado</small></th><th>Aluguel tradicional</th><th>Imóvel parado</th><th>Admin gerencia</th><th>Custo incluído</th><th>Dedutível IR</th><th></th></tr></thead>
                   <tbody id="monthlyCostRows"></tbody>
-                  <tfoot><tr><th>Total anual</th><th></th><th></th><th id="monthlyAirbnbTotal">—</th><th id="monthlyRentedAirbnbTotal">—</th><th id="monthlyTraditionalTotal">—</th><th></th><th><span id="monthlyAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th><th></th></tr></tfoot>
+                  <tfoot><tr><th>Total anual</th><th></th><th></th><th id="monthlyAirbnbTotal">—</th><th></th><th id="monthlyRentedAirbnbTotal">—</th><th id="monthlyTraditionalTotal">—</th><th id="monthlyIdlePropertyTotal">—</th><th></th><th><span id="monthlyAdminExcludedTotal">—</span><small class="footer-hint">pago no cenário admin.</small></th><th></th><th></th></tr></tfoot>
                 </table>
               </div>
             </div>
@@ -587,7 +588,7 @@
         <div>
           <p class="eyebrow">Resumo final</p>
           <h2 id="final-summary-heading">Quanto você ganha em cada cenário</h2>
-          <p>O destaque principal é o excedente nominal que sobra depois de preservar o poder de compra do capital comprometido. Caixa livre, ganho patrimonial real e capital vinculado continuam visíveis como lentes complementares.</p>
+          <p>O destaque principal é o resultado econômico real mensal equivalente, já considerando o valor do seu tempo. Caixa livre, ganho patrimonial real e capital vinculado continuam visíveis como lentes complementares.</p>
         </div>
         <div class="final-winner" id="finalWinner"></div>
       </div>
@@ -611,7 +612,7 @@
         <div id="horizonComparison"></div>
       </div>
       <p class="final-summary-note"><strong>Médias equivalentes:</strong> na projeção plurianual, a média anual é o total do horizonte dividido pelo número de anos e a média mensal é o total dividido pelo número de meses. Não representam fluxo de caixa mês a mês.</p>
-      <p class="final-summary-note">O ranking usa o excedente nominal sobre preservação do poder de compra. Caixa livre continua sendo mostrado separadamente: ele mede liquidez, enquanto o excedente também captura variações patrimoniais além da inflação. Patrimônio nominal, patrimônio real e capital vinculado permanecem separados para evitar dupla contagem.</p>
+      <p class="final-summary-note">O ranking usa o resultado econômico real. Caixa livre continua sendo mostrado separadamente porque mede liquidez; patrimônio nominal, patrimônio real e capital vinculado permanecem separados para evitar dupla contagem.</p>
     </section>
   </main>
 
