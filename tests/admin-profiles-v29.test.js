@@ -12,7 +12,7 @@ function assert(c,m){if(!c)throw new Error(m);}
 
 assert(defaultState.version>=29,'estado deve preservar a arquitetura V29+');
 assert(defaultState.guidedSetup.adminComparisonEnabled===false,'comparação não pode ligar silenciosamente');
-assert(calculateModel(defaultState).scenarios.length===6,'cenário-base V28 deve permanecer com seis estratégias antes do wizard');
+assert(calculateModel(defaultState).scenarios.length===7,'cenário-base deve acrescentar imóvel parado sem alterar a arquitetura V29');
 
 let s=clone(defaultState);
 const essential={...adminWizardPresetDraft('essential',s),commissionPct:12};
@@ -26,10 +26,11 @@ assert(s.guidedSetup.adminProfiles.essential.commissionPct===12,'editar Premium 
 assert(s.guidedSetup.adminProfiles.premium.commissionPct===30,'Premium deve manter configuração independente');
 
 const calc=calculateModel(s);
-assert(calc.scenarios.length===8,'comparação ativa deve expor oito estratégias');
+assert(calc.scenarios.length===9,'comparação ativa deve expor nove estratégias com imóvel parado');
 for(const id of ['airbnb-admin-essential','airbnb-admin','airbnb-rented-admin-essential','airbnb-rented-admin']){
   assert(calc.scenarios.some(x=>x.id===id),`variante administrada ausente: ${id}`);
 }
+assert(calc.scenarios.some(x=>x.id==='idle-property'),'imóvel parado deve permanecer na comparação ativa');
 const essentialOwned=calc.scenarios.find(x=>x.id==='airbnb-admin-essential');
 const premiumOwned=calc.scenarios.find(x=>x.id==='airbnb-admin');
 assert(essentialOwned.adminPlan==='essential','tag Essencial ausente');
