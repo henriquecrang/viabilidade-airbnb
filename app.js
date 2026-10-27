@@ -2275,12 +2275,14 @@
     const adminMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminManages ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
     const rentedMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
     const adminRentedMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && !x.adminManages ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
+    const idleMonthlyOwnerHoursAnnual = currentState.monthlyCosts.reduce((sum, x) => sum + (x.idleProperty ? Math.max(0, n(x.ownerHoursMonthly)) * 12 : 0), 0);
 
     const fixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const fixedRentedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const adminFixedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.airbnb && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const adminFixedRentedAirbnb = currentState.monthlyCosts.reduce((sum, x) => sum + (x.rentedAirbnb && !x.adminIncluded ? Math.max(0, n(x.amount)) * 12 : 0), 0);
     const fixedTraditional = currentState.monthlyCosts.reduce((sum, x) => sum + (x.traditional ? Math.max(0, n(x.amount)) * 12 : 0), 0);
+    const fixedIdleProperty = currentState.monthlyCosts.reduce((sum, x) => sum + (x.idleProperty ? Math.max(0, n(x.amount)) * 12 : 0), 0);
 
     // OPEX percentual: apenas custos efetivamente consumidos. Reservas ficam fora daqui.
     const pctCostRate = currentState.percentageCosts.reduce((sum, x) => sum + Math.max(0, n(x.pct)) / 100, 0);
@@ -2569,6 +2571,7 @@
       rentedAdmin: (Math.max(0, n(currentState.work.rentedAirbnbHoursMonthly)) + Math.max(0, n(currentState.work.supervisionAdminHoursMonthly))) * 12
         + adminStayOwnerHoursAnnual + adminRentedMonthlyOwnerHoursAnnual,
       traditional: Math.max(0, n(currentState.work.traditionalHoursMonthly)) * 12,
+      idleProperty: Math.max(0, n(currentState.work.idlePropertyHoursMonthly)) * 12 + idleMonthlyOwnerHoursAnnual,
       investment: Math.max(0, n(currentState.work.investmentHoursMonthly)) * 12
     };
     const workCost = Object.fromEntries(Object.entries(workHours).map(([key, hours]) => [key, hours * hourlyValue]));
@@ -2926,6 +2929,24 @@
       }
     });
 
+    const idleProperty = makePropertyScenario({
+      id: 'idle-property', label: 'Imóvel parado',
+      grossRevenue: 0, opCosts: fixedIdleProperty, tax: 0, operatingCash: -fixedIdleProperty,
+      reserveContribution: 0, reserveOpening: 0, linkedReserve: 0,
+      workingCapitalAmount: 0, capex: 0, setupResidual: 0, setupDepreciation: 0,
+      laborCost: workCost.idleProperty, workHoursAnnual: workHours.idleProperty,
+      details: {
+        'Receita de locação': 0,
+        'Custos anuais de carregamento': fixedIdleProperty,
+        'IR sobre aluguel': 0,
+        'Valorização nominal do imóvel': propertyNominalGain,
+        'Parcela da valorização que cobre inflação': propertyInflationPreservation,
+        'Valorização nominal acima da inflação': propertyNominalGainBeyondInflation,
+        'Horas próprias no ano': workHours.idleProperty,
+        'Valor do seu tempo': workCost.idleProperty
+      }
+    });
+
     const traditional = makePropertyScenario({
       id: 'traditional', label: 'Aluguel tradicional', grossRevenue: tradRevenue, opCosts: tradOperatingCosts, tax: tradTax,
       operatingCash: tradOperatingCash, reserveContribution: 0, reserveOpening: 0, linkedReserve: 0,
@@ -3004,7 +3025,7 @@
     };
 
     // Complementa detalhes de oportunidade depois que os cenários já foram enriquecidos.
-    [self, admin, rented, rentedAdmin, traditional].forEach((scenario) => {
+    [idleProperty, self, admin, rented, rentedAdmin, traditional].forEach((scenario) => {
       scenario.details['Aporte externo para cobrir déficit'] = scenario.externalFundingRequired;
       scenario.details['Capital de oportunidade'] = scenario.opportunityCapital;
       scenario.details['Ganho real do benchmark financeiro'] = scenario.benchmarkRealGain;
@@ -3012,7 +3033,7 @@
       scenario.details['Δ econômico vs. benchmark'] = scenario.economicGapVsBenchmark;
     });
 
-    const scenarios = [self, admin, rented, rentedAdmin, traditional, investment];
+    const scenarios = [idleProperty, self, admin, rented, rentedAdmin, traditional, investment];
     const bestCash = [...scenarios].sort((a, b) => b.freeCash - a.freeCash)[0];
     const bestFirstYear = [...scenarios].sort((a, b) => b.firstYearCash - a.firstYearCash)[0];
     const bestEconomic = [...scenarios].sort((a, b) => b.economicResult - a.economicResult)[0];
@@ -3043,7 +3064,7 @@
       adminCommissionBase, adminCommissionGrossShare, adminPlatformFeeAttributedToAdmin,
       adminFee, adminCleaningPassThrough, adminOwnerRevenueAfterPlatformAndSplit, adminPlatformFee,
       adminOccupancyMode, adminOccupancyTargetPct, adminOccupancyTargetExtraPp,
-      fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, adminFixedRentedAirbnb, fixedTraditional,
+      fixedAirbnb, fixedRentedAirbnb, adminFixedAirbnb, adminFixedRentedAirbnb, fixedTraditional, fixedIdleProperty,
       pctCostRate, rentedPctCostRate, adminPctCostRate, adminRentedPctCostRate,
       adminRentedPctCosts, adminRentedOperatingCosts, adminRentedTaxDeductions, adminRentedTaxBase, adminRentedTax, adminRentedOperatingCash,
       reserveRate, adminReserveRate, reserveOpening, adminReserveOpening, selfReserveContribution, adminReserveContribution,
@@ -3124,6 +3145,7 @@
     const variant = (source, id, label, plan) => source ? ({ ...source, id, label, adminPlan: plan }) : null;
 
     const scenarios = [
+      scenario(base, 'idle-property'),
       scenario(base, 'airbnb-self'),
       variant(scenario(essentialCalc, 'airbnb-admin'), 'airbnb-admin-essential', 'Airbnb próprio + Admin Essencial', 'essential'),
       variant(scenario(premiumCalc, 'airbnb-admin'), 'airbnb-admin', 'Airbnb próprio + Admin Premium', 'premium'),
@@ -3736,6 +3758,7 @@
     $('#monthlyAirbnbTotal').textContent = money.format(calc.fixedAirbnb);
     $('#monthlyRentedAirbnbTotal').textContent = money.format(calc.fixedRentedAirbnb);
     $('#monthlyTraditionalTotal').textContent = money.format(calc.fixedTraditional);
+    $('#monthlyIdlePropertyTotal').textContent = money.format(calc.fixedIdleProperty);
     $('#monthlyAdminExcludedTotal').textContent = money.format(calc.adminFixedAirbnb);
     $('#percentageCostTotal').textContent = percent.format(calc.pctCostRate);
     $('#reserveFundTotal').textContent = percent.format(calc.reserveRate);
@@ -3954,15 +3977,17 @@
     const hasAdmin = hasOwnedAdmin || hasRentedAdmin;
     const hasRented = hasRentedSelf || hasRentedAdmin;
     const hasTraditional = visible.has('traditional');
+    const hasIdleProperty = visible.has('idle-property');
     const hasInvestment = visible.has('investment');
     const hasAnyAirbnb = hasSelf || hasAdmin || hasRented;
     const hasOwnedAirbnb = hasSelf || hasOwnedAdmin;
-    const hasOwnedPropertyComparison = hasSelf || hasOwnedAdmin || hasTraditional || hasInvestment;
+    const hasOwnedPropertyComparison = hasSelf || hasOwnedAdmin || hasTraditional || hasIdleProperty || hasInvestment;
 
     if (Math.abs(calc.totalDays - 365) > 0.001 && hasAnyAirbnb) messages.push({ warning: true, text: `Os períodos somam ${number1.format(calc.totalDays)} dias. A comparação anual fica desalinhada até chegar a 365.` });
     if (n(state.airbnb.taxPct) === 0 && hasAnyAirbnb) messages.push({ warning: true, text: 'O IR efetivo do Airbnb está em 0%. Isso pode superestimar o caixa livre.' });
     if (calc.blockedDays > 0 && hasAnyAirbnb) messages.push({ text: `${number1.format(calc.blockedDays)} dias não entram na oferta: ${number1.format(calc.personalUseDays)} de uso pessoal, ${number1.format(calc.habitualUseDays)} de moradia e ${number1.format(calc.operationalUnavailableDays)} de indisponibilidade operacional. A ocupação de ${percent.format(calc.weightedOccupancy)} usa apenas os ${number1.format(calc.availableDays)} dias efetivamente ofertados.` });
     if (calc.blockedOverflowDays > 0 && hasAnyAirbnb) messages.push({ warning: true, text: `A classificação de dias excede a duração dos períodos em ${number1.format(calc.blockedOverflowDays)} dia(s). O motor limitou automaticamente o bloqueio ao total de dias disponível; ajuste a tabela para eliminar a inconsistência.` });
+    if (hasIdleProperty) messages.push({ text: `Imóvel parado considera receita de locação zero e ${money.format(calc.fixedIdleProperty)} ao ano de custos de carregamento marcados na tabela de custos mensais.` });
     if (calc.hybridUse?.active && hasOwnedAirbnb) messages.push({ text: `Na lente de uso híbrido, o Airbnb gera ${money.format(calc.hybridUse.freeCash)} de caixa incremental e o uso próprio/moradia gera ${money.format(calc.hybridUse.consumptionBenefit)} de benefício líquido de consumo. Esses valores permanecem separados de receita e patrimônio.` });
     if (calc.reservations > 0 && hasAnyAirbnb) messages.push({ text: `O modelo estima ${number1.format(calc.reservations)} reservas/ano. Cada R$ 10 adicionados ao custo por reserva reduzem em aproximadamente ${money.format(calc.reservations * 10)} ao ano os cenários Airbnb que assumem esse custo.` });
     if (calc.selfReserveContribution > 0 && hasSelf) messages.push({ text: `${money.format(calc.selfReserveContribution)} são transferidos para reservas vinculadas no Airbnb autogerido. Esse valor reduz o caixa livre, mas continua dentro do patrimônio.` });
