@@ -7,10 +7,10 @@ function assert(c,m){if(!c)throw new Error(m);}
 
 let p=buildMainWizardPatch({situation:'owned',compareFinancial:true},defaultState);
 assert(p.valid,'imóvel próprio deve ser válido');
-assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','traditional','investment']),'cenários de imóvel próprio');
+assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','idle-property','traditional','investment']),'cenários de imóvel próprio');
 
 p=buildMainWizardPatch({situation:'owned',compareFinancial:false},defaultState);
-assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','traditional']),'imóvel próprio sem investimento');
+assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','idle-property','traditional']),'imóvel próprio sem investimento');
 
 p=buildMainWizardPatch({situation:'primary-home',compareFinancial:true},defaultState);
 assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','investment']),'moradia principal');
@@ -35,11 +35,11 @@ assert(acquisition.valid,'aquisição de teste');
 let capitalState=applyWizardPatch(defaultState,acquisition);
 p=buildMainWizardPatch({situation:'capital-buy',compareFinancial:true},capitalState);
 assert(p.valid,'capital→compra deve ser válido após aquisição à vista configurada');
-assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','traditional','investment']),'cenários capital→compra');
+assert(JSON.stringify(p.normalized.enabledScenarios)===JSON.stringify(['airbnb-self','airbnb-admin','idle-property','traditional','investment']),'cenários capital→compra');
 assert(p.values['analysis.startingPosition']==='capital','posição inicial deve ser capital');
 
 capitalState=applyWizardPatch(capitalState,p);
-assert(JSON.stringify(enabledScenarioIds(capitalState))===JSON.stringify(['airbnb-self','airbnb-admin','traditional','investment']),'filtro capital→compra salvo');
+assert(JSON.stringify(enabledScenarioIds(capitalState))===JSON.stringify(['airbnb-self','airbnb-admin','idle-property','traditional','investment']),'filtro capital→compra salvo');
 
 const configured=applyWizardPatch(defaultState,buildMainWizardPatch({situation:'primary-home',compareFinancial:false},defaultState));
 assert(JSON.stringify(enabledScenarioIds(configured))===JSON.stringify(['airbnb-self','airbnb-admin']),'filtro salvo');
