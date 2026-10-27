@@ -1,9 +1,9 @@
 {
   "app": "simulador-airbnb",
-  "version": 43,
+  "version": 44,
   "exportedAt": "2026-10-24T00:00:00.000Z",
   "simulation": {
-    "version": 43,
+    "version": 44,
     "name": "Rio de Janeiro — cenário-base de mercado (out/2026)",
     "analysis": {
       "startingPosition": "property",
@@ -15,6 +15,7 @@
         "airbnb-rented",
         "airbnb-rented-admin-essential",
         "airbnb-rented-admin",
+        "idle-property",
         "traditional",
         "investment"
       ]
@@ -545,7 +546,8 @@
       "supervisionAdminHoursMonthly": 1,
       "traditionalHoursMonthly": 1.5,
       "investmentHoursMonthly": 0.5,
-      "rentedAirbnbHoursMonthly": 1
+      "rentedAirbnbHoursMonthly": 1,
+      "idlePropertyHoursMonthly": 0.5
     },
     "airbnb": {
       "platformFeePct": 16,
@@ -722,7 +724,8 @@
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "presales",
@@ -735,7 +738,8 @@
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "guest-support",
@@ -748,7 +752,8 @@
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "local-support",
@@ -761,7 +766,8 @@
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "software",
@@ -774,7 +780,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "pricing",
@@ -787,7 +794,8 @@
         "adminManages": true,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "seguro",
@@ -800,7 +808,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "seguro-garantia",
@@ -813,7 +822,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "iptu",
@@ -826,7 +836,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": true,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "tcl",
@@ -839,7 +850,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": true,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "agua",
@@ -852,7 +864,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "luz",
@@ -865,7 +878,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "gas",
@@ -878,7 +892,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "internet",
@@ -891,7 +906,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "condominio",
@@ -904,7 +920,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": true,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": true
       },
       {
         "id": "contabilidade",
@@ -917,7 +934,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       },
       {
         "id": "licencas",
@@ -930,7 +948,8 @@
         "adminManages": false,
         "adminIncluded": false,
         "deductibleIR": false,
-        "hybridIncremental": false
+        "hybridIncremental": false,
+        "idleProperty": false
       }
     ],
     "percentageCosts": [
@@ -1155,6 +1174,7 @@
           "airbnb-admin",
           "airbnb-rented",
           "airbnb-rented-admin",
+          "idle-property",
           "traditional",
           "investment"
         ],
