@@ -379,6 +379,19 @@ Concluída em 25/10/2026 — Issue #43.
 - caminho cash-only V25 preservado;
 - suíte completa: 40/40 testes.
 
+### V44 — imóvel parado
+Concluída em 26/10/2026 — Issue #58.
+
+- novo cenário `idle-property` / **Imóvel parado**;
+- receita de locação zero;
+- custos de carregamento configuráveis por item mensal;
+- patrimônio e valorização do imóvel preservados;
+- 0,5 h/mês de supervisão básica por default;
+- integrado a benchmark, financiamento, saída e horizontes 1/3/5;
+- disponível no wizard para imóvel próprio/compra, mas não para arbitragem com imóvel alugado;
+- comparação final passa a oferecer até nove cenários;
+- suíte completa: 41/41 testes.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
