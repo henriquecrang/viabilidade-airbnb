@@ -74,3 +74,8 @@ Simulações antigas recebem os novos campos por merge de defaults. Valores prev
 Suíte completa: **32/32 testes**.
 
 Teste específico: `tests/final-summary-v32.test.js`.
+
+
+## Evolução V44
+
+A V44 acrescenta **Imóvel parado** à comparação final. O seletor passa de oito para **nove cenários** no default. A arquitetura de filtro da V32 permanece a mesma: `analysis.finalScenarioIds` continua controlando apenas o que é exibido no resumo.
