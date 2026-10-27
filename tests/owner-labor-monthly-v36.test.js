@@ -28,6 +28,7 @@ const zero=clone(defaultState);
 zero.work.selfHoursMonthly=0;
 zero.work.supervisionAdminHoursMonthly=0;
 zero.work.traditionalHoursMonthly=0;
+zero.work.idlePropertyHoursMonthly=0;
 zero.work.investmentHoursMonthly=0;
 zero.work.rentedAirbnbHoursMonthly=0;
 for(const x of zero.stayCosts) x.ownerHoursPerReservation=0;
