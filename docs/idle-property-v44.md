@@ -62,12 +62,13 @@ No wizard principal ele é elegível em:
 
 Não é elegível no caminho de imóvel alugado de terceiro.
 
-## Default atual
+## Default atual — seguro atualizado em 31/10/2026
 
 - receita anual: R$ 0;
-- custos de carregamento: R$ 16.585/ano;
+- seguro: R$ 300/ano (R$ 25/mês);
+- custos de carregamento: R$ 16.165/ano;
 - trabalho: 0,5 h/mês;
-- horizonte de 3 anos: aproximadamente –R$ 1.375/mês de resultado econômico real equivalente.
+- horizonte de 3 anos: aproximadamente –R$ 1.342/mês de resultado econômico real equivalente.
 
 ## Verificação
 

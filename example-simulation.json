@@ -800,7 +800,7 @@
       {
         "id": "seguro",
         "name": "Seguro do imóvel / incêndio",
-        "amount": 60,
+        "amount": 25,
         "ownerHoursMonthly": 0,
         "airbnb": true,
         "rentedAirbnb": false,

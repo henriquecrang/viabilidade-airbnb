@@ -30,7 +30,7 @@ O estado ativo não é alterado durante o questionário. Fechar, Escape ou Cance
 - Sazonalidade pode ser mantida ou preenchida período por período; não se cria uma média anual que apague o desenho sazonal.
 - Operação detalhada pode ser preenchida item por item ou mantida com referências expostas na revisão.
 - Seguro/IPTU/TCL são perguntados por ano e convertidos para o valor mensal interno; contas de consumo e condomínio são mensais.
-- Não se recalibrou o cenário-base: inclusive o seguro mantém a referência anterior de R$ 720/ano, editável no novo fluxo.
+- O seguro padrão foi atualizado em 31/10/2026, por solicitação do usuário, para R$ 300/ano (R$ 25/mês). O fluxo lê essa referência dos defaults e permite editá-la. Configurações já salvas mantêm seus valores.
 - O benchmark continua presente economicamente mesmo se seu card não estiver selecionado. Por isso seus parâmetros e, para imóvel próprio, custos de venda são coletados.
 - No aluguel tradicional, há uma escolha simples para condomínio/IPTU/TCL: inquilino ou proprietário. Em arbitragem: só consumo; consumo+condomínio; consumo+condomínio+IPTU/TCL. Divisões específicas permanecem editáveis na tabela.
 - Comparação Premium ou Essencial isolado respeitada também nos resultados detalhados; os antigos assistentes mantêm sua expansão por categoria.

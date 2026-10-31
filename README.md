@@ -498,9 +498,11 @@ Regras:
 - o proprietário tem default de **0,5 h/mês** de supervisão básica;
 - o cenário participa normalmente do benchmark e das projeções de 1/3/5 anos.
 
-No cenário-base atual, os custos de carregamento marcados somam **R$ 16.585/ano**. No horizonte padrão de 3 anos, o resultado econômico real fica em aproximadamente **–R$ 1.375/mês equivalente**.
+No cenário-base atual, os custos de carregamento marcados somam **R$ 16.165/ano**. No horizonte padrão de 3 anos, o resultado econômico real fica em aproximadamente **–R$ 1.342/mês equivalente**.
 
 A tabela de custos mensais ganhou uma coluna própria para controlar quais despesas continuam existindo quando o imóvel fica parado. O wizard principal oferece esse cenário apenas nos caminhos **já possuo o imóvel** e **tenho capital e penso em comprar**.
+
+O seguro padrão foi atualizado em 31/10/2026 para **R$ 300/ano (R$ 25/mês)**, conforme a referência informada pelo usuário. Novas simulações e a restauração dos defaults usam esse valor; configurações já salvas preservam seus próprios valores.
 
 ## Limitações atuais
 
