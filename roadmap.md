@@ -401,6 +401,26 @@ Concluída em 26/10/2026 — Issue #58.
 - revisão editável e referências identificadas;
 - detalhes e decisões em `docs/guided-preset.md`.
 
+## Próxima evolução — aluguel tradicional mobiliado
+**Issue:** [#60](https://github.com/henriquecrang/viabilidade-airbnb/issues/60) · **Prioridade:** P2 · **Status:** backlog
+
+Comparar simultaneamente **aluguel tradicional sem mobília × mobiliado**. O apartamento de referência seria oferecido com geladeira, fogão, ar-condicionado, cama, sofá e demais bens.
+
+A modelagem deve considerar:
+- aluguel mobiliado próprio, com eventual prêmio explícito e editável; classificar corretamente o aluguel-base atual para não aplicar o adicional duas vezes;
+- inventário por item, distinguindo bens já existentes de novas compras;
+- valor econômico atual, custo de reposição, idade/estado, vida útil remanescente e residual;
+- manutenção, depreciação econômica, reserva e compra efetiva de reposição como eventos distintos;
+- reposições por item ao longo dos horizontes anuais de 1/3/5 anos, com correção dos custos e tratamento do patrimônio residual;
+- custo de oportunidade e patrimônio inicial comparáveis entre estratégias, sem duplicar o valor da mobília no valor do imóvel;
+- integração aos resultados, filtros, wizards, financiamento, saída e simulações salvas.
+
+**Princípio:** depreciação não é saída de caixa; aporte à reserva continua sendo patrimônio; compra de reposição troca caixa por um novo ativo. Evitar dupla contagem entre esses movimentos. Custos, prazos de troca e prêmio no aluguel do imóvel-base ainda precisam de calibração explícita.
+
+O motor já reconhece CAPEX/residual/depreciação em itens marcados para aluguel tradicional, mas ainda não oferece os dois cenários independentes nem ciclos de reposição e reserva específica. A evolução usa o motor anual atual e não depende da #41.
+
+Esta solicitação registra a evolução no roadmap; a implementação fica para uma próxima rodada.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
