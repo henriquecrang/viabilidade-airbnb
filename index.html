@@ -40,9 +40,10 @@
       <div>
         <p class="eyebrow">Configuração guiada</p>
         <h2 id="guided-setup-title">Preencha premissas sem esconder o modelo</h2>
-        <p>Use “Configurar simulação” para percorrer as premissas que mais mudam a decisão. Os assistentes especializados continuam disponíveis para ajustes detalhados, e todos os campos normais permanecem editáveis.</p>
+        <p>Comece uma nova simulação com uma pergunta por vez ou use os assistentes para ajustar a configuração atual. Todos os campos continuam editáveis.</p>
       </div>
       <div class="guided-setup-actions">
+        <button class="button primary" id="openPresetSetup" type="button">Criar nova simulação guiada</button>
         <button class="button primary" id="openMainWizard" type="button">Configurar simulação</button>
         <button class="button secondary" id="openFinancialWizard" type="button">Benchmark financeiro</button>
         <button class="button secondary" id="openPropertyWizard" type="button">Aquisição e venda</button>
@@ -51,6 +52,23 @@
         <button class="button secondary" id="openHybridWizard" type="button">Uso parcial / híbrido</button>
       </div>
     </section>
+
+    <dialog class="preset-dialog" id="presetDialog" aria-labelledby="presetTitle" aria-describedby="presetHelp">
+      <form class="preset-shell" novalidate>
+        <header class="preset-header">
+          <div class="preset-progress" id="presetProgress"></div>
+          <button type="button" class="button icon" data-preset-action="cancel" aria-label="Fechar configuração e descartar rascunho">×</button>
+        </header>
+        <div class="preset-heading">
+          <p class="eyebrow">Nova simulação guiada</p>
+          <h2 id="presetTitle" tabindex="-1"></h2>
+          <p id="presetHelp"></p>
+        </div>
+        <div id="presetBody" class="preset-body"></div>
+        <p id="presetError" class="preset-error" role="alert" hidden></p>
+        <footer class="preset-actions" id="presetActions"></footer>
+      </form>
+    </dialog>
 
     <dialog class="wizard-dialog" id="wizardDialog" aria-labelledby="wizardTitle">
       <form method="dialog" class="wizard-shell" id="wizardShell">
@@ -617,6 +635,7 @@
   </main>
 
   <footer><p>Aplicação estática · HTML + CSS + JavaScript · sem dependências externas.</p></footer>
+  <script src="guided-preset.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

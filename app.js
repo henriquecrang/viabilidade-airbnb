@@ -3880,8 +3880,8 @@
     if (!configured?.configured || !Array.isArray(configured.enabledScenarios) || configured.enabledScenarios.length === 0) return known;
     const selected = [];
     for (const id of configured.enabledScenarios) {
-      if (comparePlans && id === 'airbnb-admin') selected.push('airbnb-admin-essential','airbnb-admin');
-      else if (comparePlans && id === 'airbnb-rented-admin') selected.push('airbnb-rented-admin-essential','airbnb-rented-admin');
+      if (comparePlans && !configured.exactScenarioSelection && id === 'airbnb-admin') selected.push('airbnb-admin-essential','airbnb-admin');
+      else if (comparePlans && !configured.exactScenarioSelection && id === 'airbnb-rented-admin') selected.push('airbnb-rented-admin-essential','airbnb-rented-admin');
       else if (known.includes(id)) selected.push(id);
     }
     const unique = [...new Set(selected)];
@@ -5132,6 +5132,16 @@
     bindMarketComparables();
     bindAccordions();
     bindWizards();
+    window.GuidedPreset?.init({
+      getState: () => state,
+      exportCurrent: exportSimulation,
+      applyState: (next) => {
+        state = normalizeState(next);
+        autosave();
+        renderAll();
+        showNotice(`Nova simulação “${state.name}” criada. Todos os campos e assistentes continuam disponíveis para ajustes.`);
+      }
+    });
     bindFinalComparisonControls();
     $('#addSeasonButton').addEventListener('click', addSeason);
     $('#addStayCostButton').addEventListener('click', addStayCost);

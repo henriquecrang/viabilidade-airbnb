@@ -14,6 +14,12 @@ Na comparação final, os modos “com administradora” são desdobrados em **E
 
 Pode ser aberta localmente ou publicada no GitHub Pages. As simulações podem ser exportadas/importadas em JSON.
 
+## Nova simulação guiada
+
+Use **Criar nova simulação guiada** para montar um novo preset em um pop-in com uma pergunta por vez. O fluxo adapta as perguntas ao imóvel/capital, modalidades, gestão e planos escolhidos. Oferece baixar o JSON atual antes de começar e só substitui a simulação na confirmação final. Cancelar preserva os valores atuais.
+
+Os assistentes existentes continuam disponíveis. Referências do cenário-base são editáveis e identificadas na revisão. Veja [fluxo, decisões e verificação](docs/guided-preset.md).
+
 ## Princípios do modelo
 
 O simulador separa deliberadamente quatro conceitos que não devem ser misturados:

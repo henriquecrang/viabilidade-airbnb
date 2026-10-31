@@ -392,6 +392,15 @@ Concluída em 26/10/2026 — Issue #58.
 - comparação final passa a oferecer até nove cenários;
 - suíte completa: 41/41 testes.
 
+### Configuração inicial em pop-in — Issue #59
+
+- novo botão **Criar nova simulação guiada**, preservando os assistentes existentes;
+- uma pergunta por vez, com ramificações para imóvel próprio, compra e arbitragem;
+- backup JSON oferecido antes de começar;
+- novo preset criado em rascunho independente, aplicado apenas na confirmação;
+- revisão editável e referências identificadas;
+- detalhes e decisões em `docs/guided-preset.md`.
+
 ## Rodadas de execução
 
 ### Rodada B — fidelidade do cenário administrado
